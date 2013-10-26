@@ -2,7 +2,8 @@
 #import time
 
 # using gevent for event loop and greenlet scheduling
-import gevent
+#import gevent
+from gevent import Greenlet 
 from gevent.event import Event
 #from gevent import monkey; monkey.patch_time()
 from gevent.threadpool import ThreadPool
@@ -32,6 +33,7 @@ class StateRunner(object):
         self._stop = False
 
         self.state = None
+        self._greenlet = None
         self._init_state()
 
     def get_opts(self):
@@ -50,7 +52,7 @@ class StateRunner(object):
     def run(self):
         self._stop = False
         state_results = []
-        self._idle.clear()
+        
         for state in self._states:
             #state_results.append("run state! " + time.strftime('%H:%M:%S')) 
             ret = self._pool.spawn(self.state.call_high, state)
@@ -60,12 +62,31 @@ class StateRunner(object):
             if self._stop:
                 break
 
-        self._idle.set()
+        
         return state_results
+
+    def spawn(self):
+        self._idle.wait()
+        self._idle.clear()
+        self._greenlet = Greenlet(self.run)
+        self._greenlet.start()
+
+    def wait(self):
+        if self._idle.is_set():
+            if self._greenlet.ready():
+                return self._greenlet.value
+            else:
+                return None
+
+        ret = self._greenlet.get()
+        self._idle.set()
+        return ret
 
     def stop(self, timeout = None):
         self._stop = True
         if not self._idle.wait(timeout):
+            self._greenlet.kill(block=False)
+            self._idle.set()
             return False
         return True
 
@@ -134,10 +155,14 @@ def main():
     print json.dumps(runner.get_opts(), sort_keys=True,
           indent=4, separators=(',', ': '))
 
-    ret = gevent.spawn(runner.run)
+    runner.spawn()
+    ret = runner.wait()
     #ret = runner.run()
-    print json.dumps(ret.get(), sort_keys=True,
-          indent=4, separators=(',', ': '))
+    if ret:
+        print json.dumps(ret, sort_keys=True,
+              indent=4, separators=(',', ': '))
+    else:
+        print "wait failed"
 
 if __name__ == '__main__':
     main()
