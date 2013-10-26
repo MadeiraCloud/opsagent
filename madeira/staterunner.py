@@ -33,8 +33,10 @@ class StateRunner(object):
 
     def run(self):
         for state in self._states:
-            ret = self.state.call_high(state)
-            print json.dumps(ret, sort_keys=True,
+            ret = self._pool.spawn(self.state.call_high, state)
+            gevent.wait()
+
+            print json.dumps(ret.get(), sort_keys=True,
                   indent=4, separators=(',', ': '))
 
     def _init_state(self):
@@ -61,10 +63,7 @@ class StateRunner(object):
                   indent=4, separators=(',', ': '))
 
         self._pool.spawn(init_state)
-        try:
-            gevent.run()
-        except AttributeError:
-            gevent.wait()
+        gevent.wait()
 
 # codes for test
 def main():
@@ -86,7 +85,25 @@ def main():
         },
     }
 
-    runner = StateRunner([predefine_states])
+    clean_up_states = {
+        'cleanpkgs' : {
+            '__env__': 'base',
+            '__sls__': 'madeira',
+            'pkg' : [
+                {
+                    'pkgs': [
+                        'cowsay',
+                    ],
+                },
+                'purged',
+                {
+                    'order': 10000
+                }
+            ]
+        }
+    }
+
+    runner = StateRunner([predefine_states, clean_up_states])
     runner.run()
 
 if __name__ == '__main__':
