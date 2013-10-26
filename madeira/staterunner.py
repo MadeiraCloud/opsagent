@@ -1,7 +1,10 @@
 #!/usr/bin/env python
+#import time
 
 # using gevent for event loop and greenlet scheduling
 import gevent
+from gevent.event import Event
+#from gevent import monkey; monkey.patch_time()
 from gevent.threadpool import ThreadPool
 
 # using salt for provisioning
@@ -23,31 +26,51 @@ class StateRunner(object):
         self._opts   = opts
         self._states = states
 
-        self.state =None
+        self._idle = Event()
+        self._idle.set()
+
+        self._stop = False
+
+        self.state = None
         self._init_state()
 
     def get_opts(self):
         return self._opts
 
-    def set_states(self, states = []):
+    def set_states(self, states = [], timeout = None):
         if not type(states) == list:
             raise StateRunException('No state list to run')
+        if not self._idle().wait(timeout): 
+            # Timeout -> set failed
+            return False
+
         self._states = states
+        return True
 
     def run(self):
+        self._stop = False
         state_results = []
+        self._idle.clear()
         for state in self._states:
+            #state_results.append("run state! " + time.strftime('%H:%M:%S')) 
             ret = self._pool.spawn(self.state.call_high, state)
-            ret.wait()
             state_results.append(ret.get())
+            #state_results.append("get result " + time.strftime('%H:%M:%S')) 
+
+            if self._stop:
+                break
+
+        self._idle.set()
         return state_results
 
     def stop(self, timeout = None):
-        pass
+        self._stop = True
+        if not self._idle.wait(timeout):
+            return False
+        return True
 
     def _init_state(self):
         ret = self._pool.spawn(lambda opts: State(opts), self._opts)
-        ret.wait()
         self.state = ret.get()
 
 # codes for test
@@ -79,6 +102,7 @@ def main():
                     'pkgs': [
                         'cowsay',
                     ],
+                    'refresh': False,
                 },
                 'installed',
                 {
@@ -110,8 +134,9 @@ def main():
     print json.dumps(runner.get_opts(), sort_keys=True,
           indent=4, separators=(',', ': '))
 
-    ret = runner.run()
-    print json.dumps(ret, sort_keys=True,
+    ret = gevent.spawn(runner.run)
+    #ret = runner.run()
+    print json.dumps(ret.get(), sort_keys=True,
           indent=4, separators=(',', ': '))
 
 if __name__ == '__main__':
