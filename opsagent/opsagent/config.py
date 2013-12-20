@@ -13,11 +13,7 @@ from copy import deepcopy
 
 # Custon imports
 import utils
-
-
-#TODO: ConfigFileFormatException
-#TODO: ConfigFileException
-#TODO: Paradox between required and default
+import exception
 
 
 # Config class
@@ -35,7 +31,7 @@ class Config():
         }
 
     def __init__(self, file=None):
-        self.__parser = SafeConfigParser(defaultValues)
+        self.__parser = SafeConfigParser(allow_no_value=True)
         self.__c = (deepcopy(defaultValues)
                     if defaultValues
                     else {})

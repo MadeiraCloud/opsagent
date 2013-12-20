@@ -7,8 +7,15 @@ Madeira OpsAgent launcher file
 '''
 
 
+# System imports
 from optparse import *
 import logging
+
+
+# Custom imports
+import opsagent.utils
+import opsagent.exception
+import opsagent.config
 
 
 # global defines
@@ -29,8 +36,66 @@ def __log(lvl, file=None):
     logger.addHandler(handler)
 
 
+# TODO (use library?)
+def daemonize(self):
+    try:
+        """ Ref:  http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/66012 """
+        # Disable coredump
+        #"ulimit -c 0"
+
+	# First fork
+        try:
+            pid = os.fork()
+            if pid > 0: 
+                # Exit first parent
+                sys.exit(0) 
+        except OSError, e:
+            # TODO
+            self.logger.error("Cannot run Karajan in daemon mode: (%d) %s\n" % (e.errno, e.strerror))
+            raise KarajanException
+	
+	# Decouple from parent environment.
+        os.chdir("/")
+        os.umask(0)
+        os.setsid() #test id
+	#suid/sgid
+
+	# Second fork
+        try:
+            pid = os.fork()
+            if pid > 0: 
+                # Exit second parent.
+                sys.exit(0) 
+        except OSError, e:
+            # TODO
+            self.logger.error("Cannot run Karajan in daemon mode: (%d) %s\n" % (e.errno, e.strerror))
+            raise KarajanException
+			
+        # Open file descriptors and print start message
+        si = file(Default.Forge.Karajan.stdin, 'r')
+        so = file(Default.Forge.Karajan.stdout, 'a+')
+        se = file(Default.Forge.Karajan.stderr, 'a+', 0)
+        pid = os.getpid()
+        sys.stderr.write("\nStarted Karajan with pid %i\n\n" % pid)
+        sys.stderr.flush()
+        if not os.path.exists(os.path.dirname(self.config.pidfile)):
+            os.mkdir(os.path.dirname(self.config.pidfile))
+        file(self.config.pidfile,'w+').write("%i\n" % pid)
+		
+        # Redirect standard file descriptors.
+        os.close(sys.stdin.fileno())
+        os.close(sys.stdout.fileno())
+        os.close(sys.stderr.fileno())
+        os.dup2(si.fileno(), sys.stdin.fileno())
+        os.dup2(so.fileno(), sys.stdout.fileno())
+        os.dup2(se.fileno(), sys.stderr.fileno())
+    except OSError, msg:
+        self.logger.error("Cannot run Karajan in daemon mode: %s" % msg)
+        raise KarajanException
+
+
 # option parser
-def main_parse():
+def optParse():
     parser = OptionParser(usage=USAGE, version=VERSION)
     parser.add_option("-c", "--config-file", action="store", dest="config_file",
                       help="specify config file"
@@ -52,7 +117,7 @@ def main_parse():
 
 def main():
     # options parsing
-    options, args = main_parse()
+    options, args = optParse()
 
     # set log level
     loglvl = 'INFO'
@@ -64,8 +129,8 @@ def main():
     config = Config(options.config_file).getConfig()
 
     # start daemon
-    if options.daemon:
-        loadAsDaemon()
+#    if options.daemon:
+#        loadAsDaemon()
 
     # start here
     # ..
