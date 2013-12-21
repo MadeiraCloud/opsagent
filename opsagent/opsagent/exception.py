@@ -13,6 +13,8 @@ import utils
 class ConfigFileFormatException(Exception): pass
 class ConfigFileException(Exception): pass
 
+# Network exceptions
+class NetworkConnectionException(Exception): pass
 
 # General Exception
 class OpsAgentException(Exception): pass

@@ -28,6 +28,9 @@ class Config():
         'toto': {
             'tata': "tutu",
             },
+        'network': {
+            'ws_uri': "ws://localhost:9000/echo"
+            }
         }
 
     def __init__(self, file=None):
