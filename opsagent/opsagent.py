@@ -16,7 +16,7 @@ import logging
 import opsagent.utils
 import opsagent.exception
 import opsagent.config
-
+from opsagent.manager import Manager
 
 # global defines
 USAGE = 'usage: %prog [-hqvd] [-l logfile] [-c configfile]'
@@ -132,8 +132,9 @@ def main():
 #    if options.daemon:
 #        loadAsDaemon()
 
-    # start here
-    # ..
+    # start
+    manager = Manager(config)
+    manager.run()
 
 if __name__ == '__main__':
     main()

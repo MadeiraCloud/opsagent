@@ -21,22 +21,15 @@ import time
 # Salt interface
 class SaltExec():
     def __init__(self):
-        self.__currentVersion = None
         self.__running = False
-
-    def getVersion(self):
-        return self.__currentVersion
-
-    def setVersion(self):
-        self.__currentVersion = globals.REQ['states_version']
 
     def isRunning(self):
         return self.__running
 
     def runState(self, state):
         self.__running = True
-        print "salt start"
-        print "%s"%(state)
+        utils.log("DEBUG", "Salt start",('runState',self))
+        utils.log("DEBUG", "State content '%s'"%(state),('runState',self))
         time.sleep(10)
-        print "salt end"
+        utils.log("DEBUG", "Salt end",('runState',self))
         self.__running = False
