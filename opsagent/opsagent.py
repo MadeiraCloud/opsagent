@@ -13,9 +13,9 @@ import logging
 
 
 # Custom imports
-import opsagent.utils
-import opsagent.exception
-import opsagent.config
+from opsagent import utils
+from opsagent import exception
+from opsagent import config
 from opsagent.manager import Manager
 
 # global defines

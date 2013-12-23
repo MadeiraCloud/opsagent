@@ -11,31 +11,47 @@ import gevent
 from gevent import monkey
 monkey.patch_all()
 
-# libraries
-import ws4py
-from ws4py.client.geventclient import WebSocketClient
-
 # System imports
 import json
 import time
+
+# Libraries imports
+import ws4py
+from ws4py.client.geventclient import WebSocketClient
+
+# Custom imports
+import opsagent.utils
+import opsagent.exception
 
 
 # Defines
 RETRY=5
 
 
-# Network communicator
+# Network communicator object
 class NetworkConnector():
-    def __init__(self, uri, retry=True):
-        self.__uri = uri
+    def __init__(self, config, retry=True):
+        self.__uri = config['network']['ws_uri']
         self.__retry = retry
         self.__ws = None
+        self.__writers = []
         self.__connect(self.__retry)
 
+    # DONE
+    # TODO add log
+    # Add a new writer in queue (executes once previous is done)
+    def __addWriter(self, func, *args, **kw_args):
+        if self.__writers[:1] != self.__writers[-1:]:
+            self.__writers[0].wait()
+            self.__writers.pop(0)
+        func(*args, **kw_args)
+
+    # DONE
+    # Connect to WS server
     def __connect(self, retry):
         try:
             utils.log("DEBUG", "Connecting to backend '%s'."%(self._uri),('__connect',self))
-            self.__ws = WebSocketClient(self.__uri, protocols=['http-only', 'chat']) #TODO: change protocol
+            self.__ws = WebSocketClient(self.__uri)
             self.__ws.connect()
             utils.log("INFO", "Connected to backend '%s'"%(self.__uri))
         except Exception as e:
@@ -47,16 +63,26 @@ class NetworkConnector():
             else:
                 raise NetworkConnectionException
 
-    def send(self, msg):
+    # TMP DONE
+    # TODO debug log
+    # Write on socket
+    def __sendGreenlet(self, toSend):
         try:
-            utils.log("DEBUG", "Sending data '%s'..."%(msg),('send',self))
-            toSend = json.dumps(msg)
             self.__ws.send(toSend)
-            utils.log("DEBUG", "Data sent.",('send',self))
         except Exception as e: #TODO see which exception to catch
             utils.log("ERROR", "Write error: '%s'"%(e))
-            self.__connect(self._retry)
+            self.__connect(self.__retry)
 
+    # DONE
+    # Create a writer object
+    def send(self, msg):
+        utils.log("DEBUG", "Sending data '%s'..."%(msg),('send',self))
+        toSend = json.dumps(msg)
+        self.__writers.append(gevent.spawn(self.addWriter, self.__sendGreenlet, toSend))
+        utils.log("DEBUG", "Data sent.",('send',self))
+
+    # DONE
+    # Receive some data
     def recv(self):
         msg = None
         try:
