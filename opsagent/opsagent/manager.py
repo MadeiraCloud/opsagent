@@ -28,7 +28,7 @@ class Manager():
         # variables
         self.__config = config
         self.__running = True
-        self.__network = NetworkConnector(config)
+        self.__socket = NetworkConnector(config)
         self.__state = StateRunner(config)
 
         # greenlets
@@ -142,7 +142,7 @@ class Manager():
             utils.log("ERROR", "Action not binded, label: '%s'"%(actionLabel))
         except Exception as e:
             utils.log("ERROR", "Uncaught exception '%s'"%(e))
-            
+
 
     def __getID(self):
         self.__config['runtime']['instance_id'] = 1

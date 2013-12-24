@@ -7,7 +7,7 @@ Madeira OpsAgent configuration manager class
 
 # System imports
 import ConfigParser
-from ConfigParser import RawConfigParser
+from ConfigParser import SafeConfigParser
 from copy import deepcopy
 
 
@@ -25,24 +25,25 @@ class Config():
         }
 
     defaultValues = {
+        'runtime': {},
         'toto': {
             'tata': "tutu",
             },
         'network': {
-            'ws_uri': "ws://localhost:9000/echo"
+            'ws_uri': "ws://localhost:8000/websocket/"
             }
         }
 
     def __init__(self, file=None):
         self.__parser = SafeConfigParser(allow_no_value=True)
-        self.__c = (deepcopy(defaultValues)
-                    if defaultValues
+        self.__c = (deepcopy(Config.defaultValues)
+                    if Config.defaultValues
                     else {})
         if file:
             self.__readFile(file)
             try:
                 self.__parseFile()
-                self.__checkRequired(requiredKeys)
+                self.__checkRequired(Config.requiredKeys)
             except Exception as e:
                 utils.log("ERROR", "Invalid config file '%s': %s"%(file,e))
                 raise ConfigFileException

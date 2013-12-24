@@ -15,7 +15,7 @@ import logging
 # Custom imports
 from opsagent import utils
 from opsagent import exception
-from opsagent import config
+from opsagent.config import Config
 from opsagent.manager import Manager
 
 # global defines
@@ -65,7 +65,7 @@ def daemonize(self):
             pid = os.fork()
             if pid > 0: 
                 # Exit second parent.
-                sys.exit(0) 
+                sys.exit(0)
         except OSError, e:
             # TODO
             self.logger.error("Cannot run Karajan in daemon mode: (%d) %s\n" % (e.errno, e.strerror))

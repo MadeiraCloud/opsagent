@@ -20,7 +20,7 @@ import ws4py
 from ws4py.client.geventclient import WebSocketClient
 
 # Custom imports
-import opsagent.utils
+from opsagent import utils
 import opsagent.exception
 
 
@@ -50,7 +50,7 @@ class NetworkConnector():
     # Connect to WS server
     def __connect(self, retry):
         try:
-            utils.log("DEBUG", "Connecting to backend '%s'."%(self._uri),('__connect',self))
+            utils.log("DEBUG", "Connecting to backend '%s'."%(self.__uri),('__connect',self))
             self.__ws = WebSocketClient(self.__uri)
             self.__ws.connect()
             utils.log("INFO", "Connected to backend '%s'"%(self.__uri))
