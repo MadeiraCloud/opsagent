@@ -78,7 +78,7 @@ class NetworkConnector():
     def send(self, msg):
         utils.log("DEBUG", "Sending data '%s'..."%(msg),('send',self))
         toSend = json.dumps(msg)
-        self.__writers.append(gevent.spawn(self.addWriter, self.__sendGreenlet, toSend))
+        self.__writers.append(gevent.spawn(self.__addWriter, self.__sendGreenlet, toSend))
         utils.log("DEBUG", "Data sent.",('send',self))
 
     # DONE
