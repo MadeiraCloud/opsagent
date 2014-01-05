@@ -17,11 +17,9 @@ class ConfigFileException(Exception): pass
 class NetworkConnectionException(Exception): pass
 
 # Manager exceptions
+class ManagerInvalidMetaFormatException(Exception): pass
 class ManagerInvalidStateFormatException(Exception): pass
-class ManagerInvalidWaitFormatException(Exception): pass
-
-# StatesWorker exceptions
-#class SWNoStatesException(Exception): pass
+class ManagerInvalidStateIdException(Exception): pass
 
 # General Exception
 class OpsAgentException(Exception): pass
