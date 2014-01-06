@@ -1,0 +1,212 @@
+{
+	"component" : {
+		"init" : {
+			"state" : [
+				{
+					"stateid" 	: "1",
+					"module" 	:  "package.yum.package",
+					"parameter" : {
+						"name" 			: {"git" : ""},
+						"verify_gpg"	: false
+					}
+				},
+
+				{
+					"stateid"	: "2",
+					"module" 	: "scm.git",
+					"parameter" : {
+						"repo"		:	"ssh - ssh://root@211.98.26.6/opt/source/madeira.git",
+						"branch"	:	"master",
+						"version"	:	"",
+						"ssh_key"	:	"",
+						"path"		:	"/madeira",
+						"user"		:	"root",
+						"group"		:	"root"
+					}
+				},
+
+				{
+					"stateid"	: "3",
+					"module"	: "sys.user",
+					"parameter"	:	{
+						"username"	:	"InstantForge",
+						"password"	:	"",
+						"fullname"	:	"InstantForge",
+						"shell"		:	"/sbin/nologin",
+						"home"		:	"/madeira",
+						"nologin"	:	"True",
+						"groups"	:	[ "root" ]
+					}
+				}
+			]
+		},
+
+		"redis" : {
+			"state" : [
+				{
+					"stateid"	: "1",
+					"module" 	: "scm.git",
+					"parameter" : {
+						"repo" 		: "git - git@github.com:antirez/redis.git",
+						"branch" 	: "master",
+						"path"		: "/madeira/deps/redis",
+						"user"		: "root",
+						"group"		: "root"
+					}
+				},
+
+				{
+					"stateid"	: "2",
+					"module" 	: "sys.cmd",
+					"parameter" : {
+						"bin"		:	"/bin/bash",
+						"cmd"		:	"make; make install; make test",
+						"cwd"		:	"/madeira/deps/redis",
+						"user"		:	"root",
+						"group"		:	"root"
+					}
+				},
+
+				{
+					"stateid"	: "3",
+					"module" 	: "sys.cmd",
+					"parameter" : {
+						"bin" 		:	"/bin/bash",
+						"cmd"		:	"sed -i -e '/^export LD_LIBRARY_PATH=/d'  ~/.bashrc; sed -i -e '/^export PYTHONPATH=/d'  ~/.bashrc; sed -i -e '/^export INSTANT_HOME=/d'  ~/.bashrc; echo >>  ~/.bashrc; echo 'export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib/' >>  ~/.bashrc; echo 'export PYTHONPATH=${SRC}/api/Source/' >> ~/.bashrc; echo 'export INSTANT_HOME=${MADEIRA}' >> ~/.bashrc; source ~/.bashrc;",
+						"cwd"		:	"/madeira/deps/redis",
+						"user"		:	"root",
+						"group"		:	"root"
+					}
+				},
+				{
+					"stateid"	: "4",
+					"module"	: "path.dir",
+					"parameter"	:	{
+						"path"		:	"/madeira/db/journal",
+						"user"		:	"root",
+						"group"		:	"root",
+						"mode"		:	"0755",
+						"recursive"	:	"True"
+					}
+				},
+				{
+					"stateid"	: "5",
+					"module" 	: "sys.cmd",
+					"parameter" : {
+						"bin"	:	"/bin/bash",
+						"cmd"	:	"chown InstantForge -R /madeira",
+						"user"	:	"root",
+						"group"	:	"root",
+						"onlyif":	"[ `cat /etc/passwd | grep ^InstantForge | wc -l` -eq 1 ]"
+					}
+				}
+			]
+		},
+
+		"boost" : {
+			"state" : [
+				{
+					"stateid"	: "1", // install pkgs
+					"module"	: "package.yum.package",
+					"parameter" : {
+						"name" : {
+							"gcc" 				: "",
+							"gcc-c++"			: "",
+							"zlib-devel"		: "",
+							"bzip2-devel"		: "",
+							"libstdc++"			: "",
+							"libstdc++-devel"	: "",
+							"libicu"			: ""
+						},
+						"verify_gpg"	: false
+					}
+				},
+
+				{
+					"stateid"	: "2", // install boost
+					"module"	: "sys.cmd",
+					"parameter"	: {
+						"bin"		:	"/bin/bash",
+						"cmd"		:	"rpm -i *.el6.x86_64.rpm",
+						"cwd"		:	"/madeira/util/boostrpm/rpm",
+						"user"		:	"root",
+						"group"		:	"root"
+					}
+				}
+			]
+		},
+
+		"thrift" : {
+			"state" : [
+				{
+					"stateid"	: "1", // check boost
+				},
+
+				{
+					"stateid"	: "2", // install pkgs
+					"module"	: "package.yum.package",
+					"parameter" : {
+						"name" : {
+							"automake"			: "",
+							"libtool"			: "",
+							"flex"				: "",
+							"bison"				: "",
+							"pkgconfig"			: "",
+							"gcc-c++"			: "",
+							"boost-devel"		: "",
+							"libevent-devel"	: "",
+							"zlib-devel"		: "",
+							"python-devel"		: "",
+							"ruby-devel"		: ""
+						}
+					}
+				},
+
+				{
+					"stateid"	: "3", // download thrift
+				},
+
+				{
+					"stateid"	: "4", // make and install
+				},
+
+				{
+					"stateid"	: "5", // config
+				}
+			]
+		},
+
+		"scribe" : {
+			"state" : [
+				{
+					"stateid"	: "1", // check and install thrift
+					"module"	: "",
+				},
+
+				{
+					"stateid"	: "2"	// download scribe
+				},
+
+				{
+					"stateid"	: "3"	// make and install
+				},
+
+				{
+					"stateid"	: "4"	// config
+				},
+
+				{
+					"stateid"	: "5",
+					"module" 	: "sys.cmd",
+					"parameter" : {
+						"bin"	:	"/bin/bash",
+						"cmd"	:	"chown InstantForge -R /madeira",
+						"user"	:	"root",
+						"group"	:	"root",
+						"onlyif":	"[ `cat /etc/passwd | grep ^InstantForge | wc -l` -eq 1 ]"
+					}
+				}
+			]
+		}
+	}
+}
