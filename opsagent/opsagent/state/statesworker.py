@@ -146,6 +146,7 @@ class StatesWorker(threading.Thread):
     def state_done(self, id):
         utils.log("DEBUG", "Adding id '%s' to done states list."%(id),'state_done',self)
         self.__done.append(id)
+        self.__wait_event.set()
     ##
 
 
