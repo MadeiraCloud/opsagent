@@ -115,6 +115,18 @@ def optParse():
     return parser.parse_args()
 
 
+def run(config):
+    try:
+        manager = Manager(url=config['network']['ws_uri'], config=config)
+        manager.connect()
+        manager.run_forever()
+    except Exception as a:
+        manager.close()
+        # TODO not sure?
+#        del manager
+        run(config)
+
+
 def main():
     # options parsing
     options, args = optParse()
@@ -133,8 +145,8 @@ def main():
 #        loadAsDaemon()
 
     # start
-    manager = Manager(config)
-    manager.run()
+    run(config, manager)
+
 
 if __name__ == '__main__':
     main()
