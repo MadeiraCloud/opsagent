@@ -17,6 +17,7 @@ from opsagent import utils
 from opsagent import exception
 from opsagent.config import Config
 from opsagent.manager import Manager
+from opsagent.state.statesworker import StatesWorker
 
 # global defines
 USAGE = 'usage: %prog [-hqvd] [-l logfile] [-c configfile]'
@@ -115,16 +116,15 @@ def optParse():
     return parser.parse_args()
 
 
-def run(config):
+def run(config, sw):
     try:
-        manager = Manager(url=config['network']['ws_uri'], config=config)
+        manager = Manager(url=config['network']['ws_uri'], config=config, statesworker=sw)
         manager.connect()
+        sw.set_manager(manager)
         manager.run_forever()
     except Exception as a:
         manager.close()
-        # TODO not sure?
-#        del manager
-        run(config)
+    run(config, sw)
 
 
 def main():
@@ -145,7 +145,8 @@ def main():
 #        loadAsDaemon()
 
     # start
-    run(config, manager)
+    sw = StatesWorker(config=config)
+    run(config, sw)
 
 
 if __name__ == '__main__':
