@@ -613,7 +613,9 @@ class StatePreparation(object):
 			type = 'service'
 
 		addin = {}
+		watch = {}
 		srv_name = None
+
 		for attr, value in parameter.items():
 			if not value: continue
 
@@ -629,11 +631,13 @@ class StatePreparation(object):
 					addin['conf_file'] = value
 				elif attr == 'watch':
 					if isinstance(value, list):
-						addin['watch'] = value
+						watch['watch'] = value
 
 		if not addin or not srv_name:
 			print "invalid parameters"
 			return 3
+
+		## add watch
 
 		tag = self.__get_tag(module, uid, step, srv_name, state)
 		srv_state = {
