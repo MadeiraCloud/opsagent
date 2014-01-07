@@ -16,11 +16,6 @@ import utils
 import exception
 
 
-# Global config
-global DEBUG_DELAY
-DEBUG_DELAY=0
-
-
 # Config class
 class Config():
     requiredKeys = {
@@ -30,9 +25,6 @@ class Config():
         }
 
     defaultValues = {
-        'debug': {
-            'delay': 0.1,
-            },
         'runtime': {},
         'toto': {
             'tata': "tutu",
@@ -60,13 +52,12 @@ class Config():
                 raise ConfigFileException
             else:
                 utils.log("INFO", "Config file loaded '%s'."%(file),('__init__',self))
-        DEBUG_DELAY = config['debug']['delay']
 
     def __read_file(self, file):
         try:
             self.__parser.read(file)
         except ConfigParser.ParsingError as e:
-            utils.log("ERROR", "Can't load config file %s, %s"%(file,e)('__readfile',self))
+            utils.log("ERROR", "Can't load config file %s, %s"%(file,e),('__readfile',self))
         else:
             utils.log("DEBUG", "Config file parsed %s."%(file),('__readfile',self))
 
@@ -82,12 +73,12 @@ class Config():
         valid = True
         for section in required:
             if section not in self.__c:
-                utils.log("ERROR", "Missing section '%s' in current configuration file."%(section),'check_required',self)
+                utils.log("ERROR", "Missing section '%s' in current configuration file."%(section),('check_required',self))
                 valid = False
                 continue
             for key in required[section]:
                 if key not in self.__c[section]:
-                    utils.log("ERROR", "Missing key '%s' in section '%s' in current configuration file."%(key,section),'check_required',self)
+                    utils.log("ERROR", "Missing key '%s' in section '%s' in current configuration file."%(key,section),('check_required',self))
                     valid = False
                 else:
                     utils.log("DEBUG", "Required key '%s' in section '%s' in current configuration file found."%(key,section),('check_required',self))

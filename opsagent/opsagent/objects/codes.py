@@ -7,7 +7,7 @@ Madeira OpsAgent protocol defines
 
 ## GENERAL
 # Protocol
-PROTOCOL_VERSION="1"
+PROTOCOL_VERSION=1
 
 ## CODES
 # Init Requests
@@ -19,7 +19,7 @@ RECIPE_DATA="RecipeMetadata"
 # Wait Server Push
 WAIT_DATA="State"
 # Agent Log Report
-STATELOG="state_log"
+STATELOG="StateLog"
 
 ## ERROR MESSAGES
 M_INVALID_JSON_SEND="Invalid JSON data to send"

@@ -10,12 +10,13 @@ Madeira OpsAgent launcher file
 # System imports
 from optparse import *
 import logging
+import time
 
 
 # Custom imports
+from opsagent.config import Config
 from opsagent import utils
 from opsagent import exception
-from opsagent.config import Config
 from opsagent.manager import Manager
 from opsagent.state.statesworker import StatesWorker
 
@@ -117,14 +118,25 @@ def optParse():
 
 
 def run(config, sw):
+    utils.log("DEBUG", "Creating Network Manager ...",('run',None))
+    manager = Manager(url=config['network']['ws_uri'], config=config, statesworker=sw)
+    utils.log("DEBUG", "Network Manager created.",('run',None))
     try:
-        manager = Manager(url=config['network']['ws_uri'], config=config, statesworker=sw)
+        utils.log("DEBUG", "Connecting manager to backend.",('run',None))
         manager.connect()
+        utils.log("DEBUG", "Connection done, registering to StateWorker.",('run',None))
         sw.set_manager(manager)
+        utils.log("DEBUG", "Registration done, running forever ...",('run',None))
         manager.run_forever()
-    except Exception as a:
-        manager.close()
-    run(config, sw)
+        utils.log("DEBUG", "Network connection lost/aborted.",('run',None))
+    except Exception as e:
+        utils.log("ERROR", "Network error: '%s'"%(e),('run',None))
+        if manager.connected():
+            utils.log("INFO", "Connection not closed. Closing ...",('run',None))
+            manager.close()
+            utils.log("DEBUG", "Connection closed.",('run',None))
+        else:
+            utils.log("DEBUG", "Connection already closed.",('run',None))
 
 
 def main():
@@ -146,7 +158,15 @@ def main():
 
     # start
     sw = StatesWorker(config=config)
-    run(config, sw)
+    sw.start()
+    while True:
+#    if True:
+        try:
+            run(config, sw)
+        except Exception as e:
+            utils.log("ERROR", "Unexpected error: '%s'"%(e),('main',None))
+        time.sleep(0.1)
+        utils.log("WARNING", "Conenction aborted, retrying ...",('main',None))
 
 
 if __name__ == '__main__':
