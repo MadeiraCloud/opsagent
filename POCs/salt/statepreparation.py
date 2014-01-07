@@ -367,14 +367,15 @@ class StatePreparation(object):
 			tag = self.__get_tag('path.file', uid, step, path, state)
 
 			repo_state = {
-				path	:	{
+				tag	:	{
 					'file'	:	[
 						state,
 						{
+							'name'		:	path,
 							'user'		:	'root',
 							'group'		:	'root',
 							'mode'		:	'644',
-							'content'	:	content,
+							'contents'	:	content,
 						}
 					]
 				}
