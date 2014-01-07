@@ -7,6 +7,7 @@ Madeira OpsAgent utilities
 
 # System imports
 import logging
+import time
 
 
 # Logging defines
@@ -20,8 +21,10 @@ LOGGING_EQ = {
 
 # Custom logging
 def log(action, content, fc=None):
+    if DEBUG_DELAY:
+        time.sleep(DEBUG_DELAY)
     out = ""
-    if fc:
+    if fc and logging.getLogger().getEffectiveLevel() == logging.debug:
         (f,c) = fc
         c = (c.__class__.__name__ if type(c) is not str else c)
         out += ("%s.%s(): "%(c,f)

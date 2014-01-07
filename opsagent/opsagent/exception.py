@@ -21,7 +21,8 @@ class ManagerInvalidStateFormatException(Exception): pass
 class ManagerInvalidWaitFormatException(Exception): pass
 
 # StatesWorker exceptions
-#class SWNoStatesException(Exception): pass
+class SWWaitFormatException(Exception): pass
+class SWNoManagerException(Exception): pass
 
 # General Exception
 class OpsAgentException(Exception): pass
