@@ -73,7 +73,7 @@ class StatePreparation(object):
 
 					if p_state['module'] in self.pre_mapping:
 
-						state = self.pre_mapping[p_state['module']](p_state, uid, step)
+						state = self.pre_mapping[p_state['module']](p_state['module'], p_state['parameter'], uid, step)
 
 						if state:
 							if isinstance(state, dict) or isinstance(state, list):
@@ -95,94 +95,172 @@ class StatePreparation(object):
 
 		return self.states
 
+	def transfer_module(self, module, parameter, step=None):
+		"""
+			Transfer module to salt state.
+		"""
+		state = None
+		if module and module in self.pre_mapping:
+
+			state = self.pre_mapping[module](module, parameter, None, step)
+
+		return state
+
+	def exec_salt(self, step, module, parameter):
+		"""
+			Transfer the module json to salt state and execute it.
+			return result format: (result,err_log,out_log), result:True/False
+		"""
+
+		salt_opts = {
+			'file_client':       'local',
+			'renderer':          'yaml_jinja',
+			'failhard':          False,
+			'state_top':         'salt://top.sls',
+			'nodegroups':        {},
+			'file_roots':        {'base': ['/srv/salt']},
+			'state_auto_order':  False,
+			'extension_modules': '/var/cache/salt/minion/extmods',
+			'id':                '',
+			'pillar_roots':      '',
+			'cachedir':          '/code/OpsAgent/cache',
+			'test':              False,
+		}
+
+		states = []
+
+		# transfer json
+		state = self.transfer_module(module, parameter, step)
+
+		if not state or not isinstance(state, dict) or not isinstance(state, list):
+			print "Transfer json to salt state failed"
+			return (False, None, 'Transfer json to salt state failed')
+
+		if isinstance(state, dict):
+			states.append(state)
+		elif isinstance(state, list):
+			states = state
+
+		# execuse salt state
+		runner = StateRunner(salt_opts, states)
+		print json.dumps(runner.get_opts(), sort_keys=True,
+			  indent=4, separators=(',', ': '))
+
+		# execute the salt state
+		ret = runner.run()
+		if ret:
+			result = []
+			# parse the ret and return
+			print json.dumps(ret, sort_keys=True,
+				  indent=4, separators=(',', ': '))
+
+			## set error and output log
+			for r in ret:
+				result.append((r['result'], None, None))
+
+			return result
+
+		else:
+			return (False, None, "wait failed")
+
 	## package
-	def _package_yum_package(self, p_state, uid=None, step=None):
+	def _package_yum_package(self, module, parameter, uid=None, step=None):
 		"""
 			Transfer yum package to salt state.
 		"""
-		return self.__package(p_state, 'pkg', uid, step)
+		return self.__package(module, parameter, uid, step)
 
-	def _package_apt_package(self, p_state, uid=None, step=None):
+	def _package_apt_package(self, module, parameter, uid=None, step=None):
 		"""
 			Transfer apt package to salt state.
 		"""
-		return self.__package(p_state, 'pkg', uid, step)
+		return self.__package(module, parameter, uid, step)
 
-	def _package_gem_package(self, p_state, uid=None, step=None):
+	def _package_gem_package(self, module, parameter, uid=None, step=None):
 		"""
 			Transfer gem package to salt state.
 		"""
-		return self.__package(p_state, 'gem', uid, step)
+		return self.__package(module, parameter, uid, step)
 
-	def _package_npm_package(self, p_state, uid=None, step=None):
+	def _package_npm_package(self, module, parameter, uid=None, step=None):
 		"""
 			Transfer npm package to salt state.
 		"""
 
-		return self.__package(p_state, 'npm', uid, step)
+		return self.__package(module, parameter, uid, step)
 
-	def _package_pecl_package(self, p_state, uid=None, step=None):
+	def _package_pecl_package(self, module, parameter, uid=None, step=None):
 		"""
 			Transfer pecl package to salt state.
 		"""
-		return self.__package(p_state, 'pecl', uid, step)
+		return self.__package(module, parameter, uid, step)
 
-	def _package_pip_package(self, p_state, uid=None, step=None):
+	def _package_pip_package(self, module, parameter, uid=None, step=None):
 		"""
 			Transfer pip package to salt state.
 		"""
-		return self.__package(p_state, 'pip', uid, step)
+		return self.__package(module, parameter, uid, step)
 
-	def _package_zypper_package(self, p_state, uid=None, step=None):
+	def _package_zypper_package(self, module, parameter, uid=None, step=None):
 		"""
 			Transfer zypper package to salt state.
 		"""
-		return self.__package(p_state, 'zypper', uid, step)
+		return self.__package(module, parameter, uid, step)
 
-	def __package(self, p_state, type, uid=None, step=None):
+	def __package(self, module, parameter, uid=None, step=None):
 		"""
 			Transfer package to salt state.
 		"""
-		pkg_state = []
+		pkg_state = {}
 
 		# check
-		if not isinstance(p_state, dict) or 'parameter' not in p_state or 'name' not in p_state['parameter']:
+		if not isinstance(module, basestring) or not isinstance(parameter, dict) or 'name' not in parameter:
 			print "invalid preparation states"
 			return pkg_state
 
-		if self.__state_check('package', type) != 0:
+		if self.__check_module(module) != 0:
 			print "invalid package type"
 			return 2
 
-		state_mapping = {
-			'installed' : [],
-			'latest'	: [],
-		}
+		m_list = module.split('.')
+
+		state_mapping = {}
 		addin = {}
 
 		# add requisity
-		req = {}
 		requisities = []
-		req_state = None
-		req_module = 'pkg'
-		if type in ['npm', 'pecl', 'pip']:
-			req_state = self.__get_requisity(req_module, type)
+		if m_list[1] in ['npm', 'pecl', 'pip']:
+			req_state = self.__get_requisity('pkg', m_list[1])
 			if req_state:
 				req_tag = req_state.keys()[0]
-				requisities.append({req_module:req_tag})
+				requisities.append({'pkg':req_tag})
 
-				pkg_state.append(req_state)
+				pkg_state = req_state
+
+		if m_list[1] in ['apt', 'yum']:
+			m_list[1] = 'pkg'
 
 		# get package name and verson
-		for attr, value in p_state['parameter'].items():
+		for attr, value in parameter.items():
 			if not value: continue
 
 			if attr == 'name':
 				for name, version in value.items():
-					if version:
-						state_mapping['installed'].append({name:version})
+					state = 'installed'
+
+					if version in ['latest', 'removed', 'purged']:
+						state = version
+
+					if state not in state_mapping:	state_mapping[state] = []
+
+					if state == 'installed':
+						if version:
+							state_mapping[state].append({name:version})
+						else:
+							state_mapping[state].append(name)
+
 					else:
-						state_mapping['latest'].append(name)
+						state_mapping[state].append(name)
 
 			else:
 
@@ -194,73 +272,87 @@ class StatePreparation(object):
 		for state, packages in state_mapping.items():
 			if not packages: continue
 
-			pkgs = {
-				'pkgs' : packages
-			}
+			# requisity then one by one
+			# if requisities:
+			# 	for package in packages:
 
-			# requisity
+			# 		addin['name'] = package
+			# 		addin['require'] = requisities
+
+			# 		tag = self.__get_tag(module, uid, step, package, state)
+
+			# 		pkg_state.append(
+			# 			{
+			# 				tag : {
+			# 					m_list[1] : [
+			# 						addin,
+			# 						state
+			# 					]
+			# 				}
+			# 			}
+			# 		)
+
+			addin['names'] = packages
+
+			pkg = [
+				addin,
+				state
+			]
+
 			if requisities:
-				addin['require'] = requisities
+				pkg.append({'require':requisities})
 
-			# addin properties
-			if addin:
-				pkgs.update(addin)
+			tag = self.__get_tag(module, uid, step, 'pkgs', state)
 
-			tag = self.__get_tag(p_state['module'], uid, step, 'pkgs', state)
-
-			pkg_state.append(
-				{
-					tag : {
-						'pkg' : [
-							pkgs,
-							state,
-						]
-					}
-				}
-			)
+			pkg_state[tag] = {
+				m_list[1] : pkg
+			}
 
 		return pkg_state
 
 	## repo, source
-	def _package_yum_repo(self, p_state, uid=None, step=None):
+	def _package_yum_repo(self, module, parameter, uid=None, step=None):
 		"""
 			Transfer yum repository to salt state.
 		"""
-		return self.__repo(p_state, 'yum', uid, step)
+		return self.__repo(module, parameter, uid, step)
 
-	def _package_apt_repo(self, p_state, uid=None, step=None):
+	def _package_apt_repo(self, module, parameter, uid=None, step=None):
 		"""
 			Transfer apt repository to salt state.
 		"""
-		return self.__repo(p_state, 'apt', step)
+		return self.__repo(module, parameter, step)
 
-	def _package_gem_source(self, p_state, uid=None, step=None):
+	def _package_gem_source(self, module, parameter, uid=None, step=None):
 		"""
 			Transfer gem source to salt state.
 		"""
-		return self.__repo(p_state, 'gem', step)
+		return self.__repo(module, parameter, step)
 
-	def __repo(self, p_state, type, uid=None, step=None):
+	def __repo(self, module, parameter, uid=None, step=None):
 		"""
 			Transfer repository to salt state.
 		"""
 
 		# check
-		if not isinstance(p_state, dict) or 'parameter' not in p_state or 'name' not in p_state['parameter']:
+		if not isinstance(module, basestring) or not isinstance(parameter, dict) or 'name' not in parameter:
 			print "invalid preparation states"
 			return 1
 
-		if self.__state_check('repository', type) != 0:
+		if self.__check_module(module) != 0:
 			print "invalid repository type"
 			return 2
+
+		m_list = module.split('.')
+		type = m_list[1]
 
 		repo_state = None
 		state = None
 
 		# file
 		if type in ['apt', 'yum']:
-			filename = p_state['parameter']['name']
-			content  = p_state['parameter']['content']
+			filename = parameter['name']
+			content  = parameter['content']
 			if type == 'apt':
 				if not filename.endswith('.list'):
 					filename += '.list'
@@ -294,40 +386,43 @@ class StatePreparation(object):
 		return repo_state
 
 	## file, directory, symlink
-	def _path_file(self, p_state, uid=None, step=None):
+	def _path_file(self, module, parameter, uid=None, step=None):
 		"""
 			Transfer file to salt state.
 		"""
-		return self.__file(p_state, 'file', uid, step)
+		return self.__file(module, parameter, uid, step)
 
-	def _path_dir(self, p_state, uid=None, step=None):
+	def _path_dir(self, module, parameter, uid=None, step=None):
 		"""
 			Transfer directory to salt state.
 		"""
-		return self.__file(p_state, 'directory', uid, step)
+		return self.__file(module, parameter, uid, step)
 
-	def _path_symlink(self, p_state, uid=None, step=None):
+	def _path_symlink(self, module, parameter, uid=None, step=None):
 		"""
 			Transfer symlink to salt state.
 		"""
-		return self.__file(p_state, 'symlink', uid, step)
+		return self.__file(module, parameter, uid, step)
 
-	def __file(self, p_state, type, uid=None, step=None):
+	def __file(self, module, parameter, uid=None, step=None):
 		# check
-		if not isinstance(p_state, dict) or 'parameter' not in p_state:
+		if not isinstance(module, basestring) or not isinstance(parameter, dict):
 			print "invalid preparation states"
 			return 1
 
-		if self.__state_check('file', type) != 0:
+		if self.__check_module(module) != 0:
 			print "invalid file type"
 			return 2
+
+		m_list = module.split('.')
+		type = m_list[1]
 
 		## file path check
 
 		addin = {}
 		filename = None
 
-		for attr, value in p_state['parameter'].items():
+		for attr, value in parameter.items():
 			if not value: continue
 
 			if attr == 'path':
@@ -347,7 +442,7 @@ class StatePreparation(object):
 		if type == 'file':
 			state = 'managed'
 
-		tag = self.__get_tag(p_state['module'], uid, step, filename, state)
+		tag = self.__get_tag(module, uid, step, filename, state)
 
 		file_state = {
 			tag : {
@@ -361,26 +456,28 @@ class StatePreparation(object):
 		return file_state
 
 	## scm
-	def __scm(self, p_state, type, uid=None, step=None):
+	def __scm(self, module, parameter, uid=None, step=None):
 		"""
 			Transfer scm to salt state.
 		"""
 		# check
-		if not isinstance(p_state, dict) or 'parameter' not in p_state:
+		if not isinstance(module, basestring) or not isinstance(parameter, dict):
 			print "invalid preparation states"
 			return 1
 
-		if self.__state_check('scm', type) != 0:
+		if self.__check_module(module) != 0:
 			print "invalid scm type"
 			return 2
 
-		state = 'latest'
+		m_list = module.split('.')
+		type = m_list[1]
 
+		state = 'latest'
+		repo = None
 		addin = {}
 		scm_dir_addin = {}
-		repo = None
 
-		for attr, value in p_state['parameter'].items():
+		for attr, value in parameter.items():
 			if not value:	continue
 
 			if attr == 'repo':
@@ -460,7 +557,7 @@ class StatePreparation(object):
 		if requisities:
 			addin['require_in'] = requisities
 
-		tag = self.__get_tag(p_state['module'], uid, step, repo, state)
+		tag = self.__get_tag(module, uid, step, repo, state)
 		scm_state =	{
 			tag : {
 				type : [
@@ -474,38 +571,41 @@ class StatePreparation(object):
 
 		return scm_states
 
-	def _scm_git(self, p_state, uid=None, step=None):
+	def _scm_git(self, module, parameter, uid=None, step=None):
 		"""
 			Transfer git repo to salt state.
 		"""
-		return self.__scm(p_state, 'git', uid, step)
+		return self.__scm(module, parameter, uid, step)
 
-	def _scm_svn(self, p_state, uid=None, step=None):
+	def _scm_svn(self, module, parameter, uid=None, step=None):
 		"""
 			Transfer svn repo to salt state.
 		"""
-		return self.__scm(p_state, 'svn', uid, step)
+		return self.__scm(module, parameter, uid, step)
 
-	def _scm_hg(self, p_state, uid=None, step=None):
+	def _scm_hg(self, module, parameter, uid=None, step=None):
 		"""
 			Transfer hg repo to salt state.
 		"""
-		return self.__scm(p_state, 'hg', uid, step)
+		return self.__scm(module, parameter, uid, step)
 
 	## service
-	def __service(self, p_state, type):
+	def __service(self, module, parameter, type):
 		"""
 			Transfer service to salt state.
 		"""
 
 		# check
-		if not isinstance(p_state, dict) or 'parameter' not in p_state:
+		if not isinstance(module, basestring) or not isinstance(parameter, dict):
 			print "invalid preparation states"
 			return 1
 
-		if self.__state_check('service', type) != 0:
+		if self.__check_module(module) != 0:
 			print "invalid service state"
 			return 2
+
+		m_list = module.split('.')
+		type = m_list[1]
 
 		state = 'running'
 		if type in ['sysvinit', 'upstart']:
@@ -513,7 +613,7 @@ class StatePreparation(object):
 
 		addin = {}
 		srv_name = None
-		for attr, value in p_state['parameter'].items():
+		for attr, value in parameter.items():
 			if not value: continue
 
 			if attr == 'name':
@@ -534,7 +634,7 @@ class StatePreparation(object):
 			print "invalid parameters"
 			return 3
 
-		tag = self.__get_tag(p_state['module'], uid, step, srv_name, state)
+		tag = self.__get_tag(module, uid, step, srv_name, state)
 		srv_state = {
 			tag : [
 				state,
@@ -544,42 +644,44 @@ class StatePreparation(object):
 
 		return srv_state
 
-	def _service_supervisord(self, p_state, uid=None, step=None):
+	def _service_supervisord(self, module, parameter, uid=None, step=None):
 		"""
 			Transfer supervisord service to salt state.
 		"""
-		return self.__service(p_state, 'supervisord', uid, step)
+		return self.__service(module, parameter, uid, step)
 
-	def _service_sysvinit(self, p_state, uid=None, step=None):
+	def _service_sysvinit(self, module, parameter, uid=None, step=None):
 		"""
 			Transfer sysvinit service to salt state.
 		"""
-		return self.__service(p_state, 'service', uid, step)
+		return self.__service(module, parameter, uid, step)
 
-	def _service_upstart(self, p_state, uid=None, step=None):
+	def _service_upstart(self, module, parameter, uid=None, step=None):
 		"""
 			Transfer upstart service to salt state.
 		"""
-		return self.__service(p_state, 'service', uid, step)
+		return self.__service(module, parameter, uid, step)
 
 	## sys
-	def _sys_cmd(self, p_state, uid=None, step=None):
+	def _sys_cmd(self, module, parameter, uid=None, step=None):
 		"""
 			Transfer system cmd to salt state.
 		"""
 
 		# check
-		if not isinstance(p_state, dict) or 'parameter' not in p_state:
+		if not isinstance(module, basestring) or not isinstance(parameter, dict):
 			print "invalid preparation states"
 			return 1
 
-		if self.__state_check('sys', 'cmd') != 0:
+		if self.__check_module(module) != 0:
 			print "invalid system command state"
 			return 2
 
+		type = module.split('.')[1]
+
 		addin = {}
 		cmd = None
-		for attr, value in p_state['parameter'].items():
+		for attr, value in parameter.items():
 			if not value: continue
 
 			if attr == 'name' or attr == 'cmd':
@@ -603,7 +705,7 @@ class StatePreparation(object):
 
 		cmd_state = []
 		# deal content
-		if 'content' in p_state['parameter'] and p_state['parameter']['content']:
+		if 'content' in parameter and parameter['content']:
 			cmd_file_addin = {'mode':'0755'}
 
 			if 'user' in addin:
@@ -631,15 +733,15 @@ class StatePreparation(object):
 			addin['require'] = [ { 'file' : addin['name'] } ]
 
 		# deal args
-		if 'args' in p_state['parameter'] and p_state['parameter']['args']:
-			addin['name'] += ' ' + p_state['parameter']['args']
+		if 'args' in parameter and parameter['args']:
+			addin['name'] += ' ' + parameter['args']
 
 		state = 'run'
-		tag = self.__get_tag(p_state['module'], uid, step, cmd, state)
+		tag = self.__get_tag(module, uid, step, cmd, state)
 
 		cmd_state.append({
 			tag : {
-				'cmd' : [
+				type : [
 					state,
 					addin
 				]
@@ -648,31 +750,32 @@ class StatePreparation(object):
 
 		return cmd_state
 
-	def _sys_script(self, p_state, uid=None, step=None):
+	def _sys_script(self, module, parameter, uid=None, step=None):
 		"""
 			Transfer system script to salt state.
 		"""
 
-		return self._sys_cmd(p_state, uid, step)
+		return self._sys_cmd(module, parameter, uid, step)
 
-	def _sys_cron(self, p_state, uid=None, step=None):
+	def _sys_cron(self, module, parameter, uid=None, step=None):
 		"""
 			Transfer system cron to salt state.
 		"""
 
 		# check
-		if not isinstance(p_state, dict) or 'parameter' not in p_state:
+		if not isinstance(module, basestring) or not isinstance(parameter, dict):
 			print "invalid preparation states"
 			return 1
 
-		if self.__state_check('sys', 'cron') != 0:
+		if self.__check_module(module) != 0:
 			print "invalid system cron state"
 			return 2
 
+		type = module.split('.')[1]
 		addin = {}
 		cron = None
 
-		for attr, value in p_state['parameter'].items():
+		for attr, value in parameter.items():
 			if not value: continue
 
 			if attr == 'cmd':
@@ -698,35 +801,36 @@ class StatePreparation(object):
 			return 3
 
 		state = 'present'
-		tag = self.__get_tag(p_state['module'], uid, step, cron, state)
+		tag = self.__get_tag(module, uid, step, cron, state)
 
 		return {
 			tag : {
-				'cron' : [
+				type : [
 					state,
 					addin,
 				]
 			}
 		}
 
-	def _sys_user(self, p_state, uid=None, step=None):
+	def _sys_user(self, module, parameter, uid=None, step=None):
 		"""
 			Transfer system username to salt state.
 		"""
 
 		# check
-		if not isinstance(p_state, dict) or 'parameter' not in p_state:
+		if not isinstance(module, basestring) or not isinstance(parameter, dict):
 			print "invalid preparation states"
 			return 1
 
-		if self.__state_check('sys', 'mount') != 0:
+		if self.__check_module(module) != 0:
 			print "invalid system state"
 			return 2
 
+		type = module.split('.')[1]
 		addin = {}
 		user = None
 
-		for attr, value in p_state['parameter'].items():
+		for attr, value in parameter.items():
 			if not value: continue
 
 			if attr == 'username':
@@ -745,35 +849,36 @@ class StatePreparation(object):
 			return 3
 
 		state = 'present'
-		tag = self.__get_tag(p_state['module'], uid, step, user, state)
+		tag = self.__get_tag(module, uid, step, user, state)
 
 		return {
 			tag : {
-				'user' : [
+				type : [
 					state,
 					addin
 				]
 			}
 		}
 
-	def _sys_group(self, p_state, uid=None, step=None):
+	def _sys_group(self, module, parameter, uid=None, step=None):
 		"""
 			Transfer system group to salt state.
 		"""
 
 		# check
-		if not isinstance(p_state, dict) or 'parameter' not in p_state:
+		if not isinstance(module, basestring) or not isinstance(parameter, dict):
 			print "invalid preparation states"
 			return 1
 
-		if self.__state_check('sys', 'group') != 0:
+		if self.__check_module(module) != 0:
 			print "invalid system group state"
 			return 2
 
+		type = module.split('.')[1]
 		addin = {}
 		group = None
 
-		for attr, value in p_state['parameter'].items():
+		for attr, value in parameter.items():
 			if not value: continue
 
 			if attr == 'groupname':
@@ -793,36 +898,36 @@ class StatePreparation(object):
 			return 3
 
 		state = 'present'
-		tag = self.__get_tag(p_state['module'], uid, step, group, state)
+		tag = self.__get_tag(module, uid, step, group, state)
 
 		return {
 			tag : {
-				'group' : [
+				type : [
 					state,
 					addin
 				]
 			}
 		}
 
-	def _sys_hostname(self, p_state, uid=None, step=None):
+	def _sys_hostname(self, module, parameter, uid=None, step=None):
 		"""
 			Transfer system hostname to salt state.
 		"""
 
 		# check
-		if not isinstance(p_state, dict) or 'parameter' not in p_state:
+		if not isinstance(module, basestring) or not isinstance(parameter, dict):
 			print "invalid preparation states"
 			return 1
 
-		if self.__state_check('sys', 'host') != 0:
+		if self.__check_module(module) != 0:
 			print "invalid system hostname state"
 			return 2
 
 		addin = {}
-		host = p_state['parameter']['hostname']
-		ip = p_state['']
+		host = parameter['hostname']
+		ip = None
 
-		for attr, value in p_state['parameter'].items():
+		for attr, value in parameter.items():
 			if not value: continue
 
 			if attr == 'hostname':
@@ -847,23 +952,19 @@ class StatePreparation(object):
 			}
 		}
 
-	def _sys_hosts(self, p_state, uid=None, step=None):
+	def _sys_hosts(self, module, parameter, uid=None, step=None):
 		"""
 			Transfer system hosts to salt state.
 		"""
 
 		# check
-		if not isinstance(p_state, dict) or 'parameter' not in p_state:
+		if not isinstance(module, basestring) or not isinstance(parameter, dict):
 			print "invalid preparation states"
 			return 1
 
-		if self.__state_check('sys', 'host') != 0:
+		if self.__check_module(module) != 0:
 			print "invalid system hostname state"
 			return 2
-
-		if not p_state['parameter']['content']:
-			print "invalid parameters"
-			return 3
 
 		name = '/etc/hosts'
 		state = 'managed'
@@ -878,7 +979,7 @@ class StatePreparation(object):
 						'user'		:	'root',
 						'group'		:	'root',
 						'mode'		:	'0644',
-						'contents'	:	p_state['parameter']['content'],
+						'contents'	:	parameter['content'],
 					}
 				]
 			}
@@ -886,24 +987,26 @@ class StatePreparation(object):
 
 		return hosts_state
 
-	def _sys_mount(self, p_state, uid=None, step=None):
+	def _sys_mount(self, module, parameter, uid=None, step=None):
 		"""
 			Transfer system mount to salt state.
 		"""
 
 		# check
-		if not isinstance(p_state, dict) or 'parameter' not in p_state:
+		if not isinstance(module, basestring) or not isinstance(parameter, dict):
 			print "invalid preparation states"
 			return 1
 
-		if self.__state_check('sys', 'mount') != 0:
+		if self.__check_module(module) != 0:
 			print "invalid system state"
 			return 2
+
+		type = module.split('.')[1]
 
 		addin = {}
 		mount = None
 
-		for attr, value in p_state['parameter'].items():
+		for attr, value in parameter.items():
 			if not value: continue
 
 			if attr == 'path':
@@ -929,81 +1032,83 @@ class StatePreparation(object):
 			return 3
 
 		state = 'mounted'
-		tag = self.__get_tag(p_state['module'], uid, step, mount, state)
+		tag = self.__get_tag(module, uid, step, mount, state)
 
 		return {
 			tag : {
-				'mount' : [
+				type : [
 					state,
 					addin
 				]
 			}
 		}
 
-	def _sys_ntp(self, p_state, uid=None, step=None):
+	def _sys_ntp(self, module, parameter, uid=None, step=None):
 		"""
 			Transfer system ntp to salt state.
 		"""
 		# check
-		if not isinstance(p_state, dict) or 'parameter' not in p_state:
+		if not isinstance(module, basestring) or not isinstance(parameter, dict):
 			print "invalid preparation states"
 			return 1
 
-		if self.__state_check('sys', 'ntp') != 0:
+		if self.__check_module(module) != 0:
 			print "invalid system state"
 			return 2
 
 		addin = {}
 		ntp = None
 
-	def _sys_selinux(self, p_state, uid=None, step=None):
+	def _sys_selinux(self, module, parameter, uid=None, step=None):
 		"""
 			Transfer system selinux to salt state.
 		"""
 
 		# check
-		if not isinstance(p_state, dict) or 'parameter' not in p_state:
+		if not isinstance(module, basestring) or not isinstance(parameter, dict):
 			print "invalid preparation states"
 			return 1
 
-		if self.__state_check('sys', 'selinux') != 0:
+		if self.__check_module(module) != 0:
 			print "invalid system state"
 			return 2
 
+		type = module.split('.')[1]
 		selinuxname = None
 
 		if selinuxname:
 
 			return {
 				selinuxname : {
-					'selinux' : [
+					type : [
 						'boolean',
 						{
-							'value' : True if p_stata['parameter']['on'] == 'True' else False
+							'value' : parameter['on']
 						}
 					]
 				}
 			}
 
 	## ssh
-	def _system_ssh_auth(self, p_state, uid=None, step=None):
+	def _system_ssh_auth(self, module, parameter, uid=None, step=None):
 		"""
 			Transfer SSH authorized_key to salt state.
 		"""
 
 		# check
-		if not isinstance(p_state, dict) or 'parameter' not in p_state:
+		if not isinstance(module, basestring) or not isinstance(parameter, dict):
 			print "invalid preparation states"
 			return 1
 
-		if self.__state_check('sys', 'ssh_auth') != 0:
+		if self.__check_module(module) != 0:
 			print "invalid system SSH authorized_key state"
 			return 2
 
+		type = module.split('.', 1)[1].replace('.', '_')
 		addin = {}
 		authname = None
 
-		for attr, value in p_state['parameter'].items():
+		for attr, value in parameter.items():
 			if not value: continue
 
 			if attr == 'authname':
@@ -1029,35 +1134,36 @@ class StatePreparation(object):
 			return 3
 
 		state = 'present'
-		tag = self.__get_tag(p_state['module'], uid, step, authname, state)
+		tag = self.__get_tag(module, uid, step, authname, state)
 
 		return {
 			tag : {
-				'ssh_auth' : [
+				type : [
 					state,
 					addin,
 				]
 			}
 		}
 
-	def _system_ssh_known_host(self, p_state, uid=None, step=None):
+	def _system_ssh_known_host(self, module, parameter, uid=None, step=None):
 		"""
 			Transfer system SSH known_hosts to salt state.
 		"""
 
 		# check
-		if not isinstance(p_state, dict) or 'parameter' not in p_state:
+		if not isinstance(module, basestring) or not isinstance(parameter, dict):
 			print "invalid preparation states"
 			return 1
 
-		if self.__state_check('sys', 'ssh_known_hosts') != 0:
+		if self.__check_module(module) != 0:
 			print "invalid system SSH known_hosts state"
 			return 2
 
+		type = module.split('.', 1)[1].replace('.', '_')
 		addin = {}
 		known_hosts = None
 
-		for attr, value in p_state['parameter'].items():
+		for attr, value in parameter.items():
 			if not value: continue
 
 			if attr == 'hostname':
@@ -1081,11 +1187,11 @@ class StatePreparation(object):
 			return 3
 
 		state = 'present'
-		tag = self.__get_tag(p_state['module'], uid, step, known_hosts, state)
+		tag = self.__get_tag(module, uid, step, known_hosts, state)
 
 		return {
 			tag : {
-				'ssh_known_hosts' : [
+				type : [
 					state,
 					addin,
 				]
@@ -1135,7 +1241,7 @@ class StatePreparation(object):
 		name = state = None
 
 		if module == 'pkg':
-			name = self.requisity_map[state][type]
+			name = self.requisity_map[module][type]
 
 			state = 'installed'
 
@@ -1153,21 +1259,38 @@ class StatePreparation(object):
 				}
 			}
 
-	def __state_check(self, state, type):
+	def __check_module(self, module):
 		"""
-			Check state type.
+			Check format of module.
 		"""
-		type_map = {
-			'package'		: ['pkg', 'gem', 'npm', 'pecl', 'pip'],
-			'repository'	: ['apt', 'yum', 'gem', 'zypper'],
-			'file'			: ['file', 'directory', 'symlink'],
+
+		module_map = {
+			'package'		: ['apt', 'yum', 'gem', 'npm', 'pecl', 'pip'],
+			'repo'			: ['apt', 'yum', 'gem', 'zypper'],
+			'path'			: ['file', 'dir', 'symlink'],
 			'scm' 			: ['git', 'svn', 'hg'],
 			'service'		: ['supervisord', 'sysvinit', 'upstart'],
-			'sys'			: ['cmd', 'cron', 'group', 'host', 'mount', 'ntp', 'selinux', 'user', 'ssh_auth', 'ssh_known_hosts']
+			'sys'			: ['cmd', 'cron', 'group', 'host', 'mount', 'ntp', 'selinux', 'user'],
+			'system'		: ['ssh_auth', 'ssh_known_host']
 		}
 
-		if state not in type_map.keys() or type not in type_map[state]:
-			print "not supported type %s in %s state" % (type, state)
+		m_list = module.split('.')
+
+		if len(m_list) <= 1:
+			print "invalib module format"
+			return 1
+
+		p_module = m_list[0]
+		s_module = m_list[1]
+
+		if m_list[0] == 'package':
+			p_module = m_list[2]
+
+		elif m_list[0] == 'system':
+			s_module = module.split('.', 1)[1].replace('.', '_')
+
+		if p_module not in module_map.keys() or s_module not in module_map[p_module]:
+			print "not supported module: %s, %s" % (p_module, s_module)
 			return 2
 
 		return 0
@@ -1193,6 +1316,9 @@ def main():
 		'cachedir':          '/code/OpsAgent/cache',
 		'test':              False,
 	}
+
+	import pdb
+	pdb.set_trace()
 
 	sp = StatePreparation(pre_states)
 	states = sp.transfer()
