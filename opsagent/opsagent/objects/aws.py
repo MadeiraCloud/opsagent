@@ -13,9 +13,9 @@ RETRY_UD=5
 # Get instance ID from AWS
 def instance_id(config):
     # TODO
-    return 'iid'
+    return 'slurry'
 
 # Get app ID and token from AWS passed by Madeira
 def user_data(config):
     # TODO
-    return ('appid','uid')
+    return ('ethylic','token')

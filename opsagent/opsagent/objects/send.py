@@ -18,7 +18,7 @@ def handshake(init, error_proc):
             "app_id"           :   init.get('app_id'),
             "protocol_version" :   codes.PROTOCOL_VERSION,
             "instance_token"   :   init.get('instance_token'),
-            "error_proc"       :   "%s"%error_proc,
+#            "error_proc"       :   "%s"%error_proc,
             })
 
 
