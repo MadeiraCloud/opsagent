@@ -272,26 +272,6 @@ class StatePreparation(object):
 		for state, packages in state_mapping.items():
 			if not packages: continue
 
-			# requisity then one by one
-			# if requisities:
-			# 	for package in packages:
-
-			# 		addin['name'] = package
-			# 		addin['require'] = requisities
-
-			# 		tag = self.__get_tag(module, uid, step, package, state)
-
-			# 		pkg_state.append(
-			# 			{
-			# 				tag : {
-			# 					m_list[1] : [
-			# 						addin,
-			# 						state
-			# 					]
-			# 				}
-			# 			}
-			# 		)
-
 			addin['names'] = packages
 
 			pkg = [
@@ -418,8 +398,6 @@ class StatePreparation(object):
 		m_list = module.split('.')
 		type = m_list[1]
 
-		## file path check
-
 		addin = {}
 		filename = None
 
@@ -442,6 +420,8 @@ class StatePreparation(object):
 		state = type
 		if type == 'file':
 			state = 'managed'
+		elif type == 'dir':
+			state = 'directory'
 
 		tag = self.__get_tag(module, uid, step, filename, state)
 
@@ -529,34 +509,7 @@ class StatePreparation(object):
 			print "invalid parameters"
 			return 3
 
-		scm_states = []
-
-		# add directory state
-		scm_dir_state = 'file'
-		requisities = []
-		if addin['target'] and scm_dir_addin:
-			scm_dir_addin['recurse'] = scm_dir_addin.keys()
-			scm_dir_addin['name'] = addin['target']
-			dir_state = 'directory'
-
-			scm_dir_tag = self.__get_tag('path.dir', uid, step, addin['target'], dir_state)
-
-			dir_scm_state = {
-				scm_dir_tag : {
-					scm_dir_state : [
-						dir_state,
-						scm_dir_addin,
-					]
-				}
-			}
-
-			scm_states.append(dir_scm_state)
-
-			requisities.append({scm_dir_state:scm_dir_tag})
-
-		# add requirity
-		if requisities:
-			addin['require_in'] = requisities
+		scm_states = {}
 
 		tag = self.__get_tag(module, uid, step, repo, state)
 		scm_state =	{
@@ -568,7 +521,33 @@ class StatePreparation(object):
 			}
 		}
 
-		scm_states.append(scm_state)
+		scm_states[tag] = {
+			type : [
+				state,
+				addin
+			]
+		}
+
+		# add directory state
+		scm_dir_state = 'file'
+		dir_state = 'directory'
+		if addin['target'] and scm_dir_addin:
+			scm_dir_addin['recurse'] = scm_dir_addin.keys()
+			scm_dir_addin['name'] = addin['target']
+
+			scm_dir_tag = self.__get_tag('path.dir', uid, step, addin['target'], dir_state)
+
+			scm_states[scm_dir_tag] = {
+				scm_dir_state : [
+					dir_state,
+					scm_dir_addin,
+					{
+						'require' : [
+							{ type : tag }
+						]
+					},
+				]
+			}
 
 		return scm_states
 
@@ -591,7 +570,7 @@ class StatePreparation(object):
 		return self.__scm(module, parameter, uid, step)
 
 	## service
-	def __service(self, module, parameter, type):
+	def __service(self, module, parameter, uid=None, step=None):
 		"""
 			Transfer service to salt state.
 		"""
@@ -612,15 +591,14 @@ class StatePreparation(object):
 		if type in ['sysvinit', 'upstart']:
 			type = 'service'
 
+		srv_state = {}
 		addin = {}
-		watch = {}
-		srv_name = None
 
 		for attr, value in parameter.items():
 			if not value: continue
 
 			if attr == 'name':
-				addin['name'] = srv_name = value
+				addin['name'] = value
 
 			elif attr == 'username':
 				if type == 'supervisord':
@@ -631,20 +609,48 @@ class StatePreparation(object):
 					addin['conf_file'] = value
 				elif attr == 'watch':
 					if isinstance(value, list):
-						watch['watch'] = value
+						watch = value
 
-		if not addin or not srv_name:
+		if not addin or 'name' not in addin:
 			print "invalid parameters"
 			return 3
 
-		## add watch
+		# add watch
+		watch = []
+		if parameter['watch'] and isinstance(parameter['watch'], list):
+			for file in parameter['watch']:
+				watch_module = 'path.dir' if os.path.isdir(file) else 'path.file'
 
-		tag = self.__get_tag(module, uid, step, srv_name, state)
-		srv_state = {
-			tag : [
-				state,
-				addin
-			]
+				if watch_module == 'path.dir':
+					watch_state = 'directory'
+				else:
+					watch_state = 'managed'
+
+				watch_tag = self.__get_tag(watch_module, uid, step, file, watch_state)
+
+				srv_state[watch_tag] = {
+					'file' : [
+						watch_state,
+						{
+							'name' : file
+						},
+					]
+				}
+
+				watch.append({'file' : watch_tag})
+
+		# add service
+		tag = self.__get_tag(module, uid, step, addin['name'], state)
+
+		service = [
+			state,
+			addin,
+		]
+		if watch:
+			service.append({'watch':watch})
+
+		srv_state[tag] = {
+			type : service
 		}
 
 		return srv_state
@@ -708,7 +714,7 @@ class StatePreparation(object):
 			print "invalid parameters"
 			return 3
 
-		cmd_state = []
+		cmd_state = {}
 		# deal content
 		if 'content' in parameter and parameter['content']:
 			cmd_file_addin = {'mode':'0755'}
@@ -722,36 +728,33 @@ class StatePreparation(object):
 			cmd_file_state = 'managed'
 			cmd_file_tag = self.__get_tag('path.file', uid, step, addin['name'], cmd_file_state)
 
-			file_cmd_state = {
-				cmd_file_tag : {
-					'file' : [
-						cmd_file_state,
-						cmd_file_addin,
-					]
-				}
+			cmd_state[cmd_file_tag] = {
+				'file' : [
+					cmd_file_state,
+					cmd_file_addin,
+				]
 			}
-
-			cmd_state.append(file_cmd_state)
-
-		# add require
-		if cmd_state:
-			addin['require'] = [ { 'file' : addin['name'] } ]
 
 		# deal args
 		if 'args' in parameter and parameter['args']:
 			addin['name'] += ' ' + parameter['args']
 
+		cmd = [
+			state,
+			addin,
+		]
+
+		# add require
+		requirity = {}
+		if cmd_state:
+			cmd.append({ 'require' : [ { 'file' : addin['name'] } ] })
+
 		state = 'run'
 		tag = self.__get_tag(module, uid, step, cmd, state)
 
-		cmd_state.append({
-			tag : {
-				type : [
-					state,
-					addin
-				]
-			}
-		})
+		cmd_state[tag] ={
+				type : cmd
+		}
 
 		return cmd_state
 
@@ -778,13 +781,12 @@ class StatePreparation(object):
 
 		type = module.split('.')[1]
 		addin = {}
-		cron = None
 
 		for attr, value in parameter.items():
 			if not value: continue
 
 			if attr == 'cmd':
-				addin['name'] = cron = value
+				addin['name'] = value
 
 			elif attr in ['minute', 'hour', 'month']:
 				addin[attr] = value
@@ -801,12 +803,12 @@ class StatePreparation(object):
 			#else:
 				## invalid attributes
 
-		if not addin or not cron:
+		if not addin or 'name' not in addin:
 			print "invalid parameters"
 			return 3
 
 		state = 'present'
-		tag = self.__get_tag(module, uid, step, cron, state)
+		tag = self.__get_tag(module, uid, step, addin['name'], state)
 
 		return {
 			tag : {
@@ -833,13 +835,12 @@ class StatePreparation(object):
 
 		type = module.split('.')[1]
 		addin = {}
-		user = None
 
 		for attr, value in parameter.items():
 			if not value: continue
 
 			if attr == 'username':
-				addin['name'] = user = value
+				addin['name'] = value
 
 			elif attr == 'password':
 				addin['password'] = value
@@ -849,12 +850,12 @@ class StatePreparation(object):
 
 			##elif attr == 'nologin':
 
-		if not addin or not user:
+		if not addin or 'name' not in addin:
 			print "invalid parameters"
 			return 3
 
 		state = 'present'
-		tag = self.__get_tag(module, uid, step, user, state)
+		tag = self.__get_tag(module, uid, step, addin['name'], state)
 
 		return {
 			tag : {
@@ -881,13 +882,12 @@ class StatePreparation(object):
 
 		type = module.split('.')[1]
 		addin = {}
-		group = None
 
 		for attr, value in parameter.items():
 			if not value: continue
 
 			if attr == 'groupname':
-				addin['name'] = group = value
+				addin['name'] = value
 
 			elif attr == 'gid':
 				addin[attr] = value
@@ -898,12 +898,12 @@ class StatePreparation(object):
 			#else:
 				## invalid attributes
 
-		if not addin or not group:
+		if not addin or 'name' not in addin:
 			print "invalid parameters"
 			return 3
 
 		state = 'present'
-		tag = self.__get_tag(module, uid, step, group, state)
+		tag = self.__get_tag(module, uid, step, addin['name'], state)
 
 		return {
 			tag : {
@@ -1111,13 +1111,12 @@ class StatePreparation(object):
 
 		type = module.split('.', 1)[1].replace('.', '_')
 		addin = {}
-		authname = None
 
 		for attr, value in parameter.items():
 			if not value: continue
 
 			if attr == 'authname':
-				addin['name'] = authname = value
+				addin['name'] = value
 
 			elif attr == 'username':
 				addin['user'] = value
@@ -1134,12 +1133,12 @@ class StatePreparation(object):
 				# salt://ssh_keys/<authname>.id_rsa.pub
 				#addin['source'] = 'salt://ssh_keys/' + authname + '.id_rsa.pub'
 
-		if not addin or not authname:
+		if not addin or 'name' not in addin:
 			print "invalid parameters"
 			return 3
 
 		state = 'present'
-		tag = self.__get_tag(module, uid, step, authname, state)
+		tag = self.__get_tag(module, uid, step, addin['name'], state)
 
 		return {
 			tag : {
@@ -1166,13 +1165,12 @@ class StatePreparation(object):
 
 		type = module.split('.', 1)[1].replace('.', '_')
 		addin = {}
-		known_hosts = None
 
 		for attr, value in parameter.items():
 			if not value: continue
 
 			if attr == 'hostname':
-				addin['name'] = known_hosts = value
+				addin['name'] = value
 
 			elif attr == 'username':
 				addin['user'] = value
@@ -1187,12 +1185,12 @@ class StatePreparation(object):
 				if value in ssh_key_type:
 					addin[enc] = value
 
-		if not addin or not known_hosts:
+		if not addin or 'name' not in addin:
 			print "invalid parameters"
 			return 3
 
 		state = 'present'
-		tag = self.__get_tag(module, uid, step, known_hosts, state)
+		tag = self.__get_tag(module, uid, step, addin['name'], state)
 
 		return {
 			tag : {
