@@ -1321,9 +1321,6 @@ def main():
 		'test':              False,
 	}
 
-	import pdb
-	pdb.set_trace()
-
 	sp = StatePreparation(pre_states)
 	states = sp.transfer()
 
