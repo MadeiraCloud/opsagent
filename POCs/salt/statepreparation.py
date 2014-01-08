@@ -13,16 +13,27 @@ class StatePreparation(object):
 	ssh_key_type = ['ecdsa', 'ssh-rsa', 'ssh-dss']
 
 	requisity_map = {
-		'pkg' : {
-			'npm' 	: 'npm',
-			'pecl'	: 'php-pear',
-			'pip'	: 'python-pip',
+		'package.gem.package' : {
+			'package.pkg.package' : { 'name' : ['rubygems'] }
+		},
+
+		'package.npm.package' : {
+			'package.pkg.package' : { 'name' : ['npm'] }
+		},
+
+		'package.pecl.package' : {
+			'package.pkg.package' : { 'name' : ['php-pear'] }
+		},
+
+		'package.pip.package' : {
+			'package.pkg.package' : { 'name' : ['python-pip'] }
 		}
 	}
 
 	def __init__(self, pre_states):
 
 		self.pre_mapping = {
+			'package.pkg.package'	:	self.__package,
 			'package.apt.package'	:	self._package_apt_package,
 			'package.yum.package'	:	self._package_yum_package,
 			'package.gem.package'	:	self._package_gem_package,
@@ -53,7 +64,7 @@ class StatePreparation(object):
 			'sys.ntp'				:	self._sys_ntp,
 			'sys.selinux'			:	self._sys_selinux,
 			'system.ssh.auth'		:	self._system_ssh_auth,
-			'system.ssh.known.host' :	self._system_ssh_known_host,
+			'system.ssh.known_host' :	self._system_ssh_known_host,
 		}
 
 		self.pre_states = pre_states
@@ -230,13 +241,14 @@ class StatePreparation(object):
 
 		# add requisity
 		requisities = []
-		if m_list[1] in ['npm', 'pecl', 'pip']:
-			req_state = self.__get_requisity('pkg', m_list[1])
+		if m_list[1] in ['gem', 'npm', 'pecl', 'pip']:
+			req_state = self.__get_requisity(module)
 			if req_state:
-				req_tag = req_state.keys()[0]
-				requisities.append({'pkg':req_tag})
+				for req in req_state:
+					for req_tag, req_value in req.items():
+						pkg_state[req_tag] = req_value
 
-				pkg_state = req_state
+						requisities.append({ next(iter(req_value)) : req_tag })
 
 		if m_list[1] in ['apt', 'yum']:
 			m_list[1] = 'pkg'
@@ -246,22 +258,27 @@ class StatePreparation(object):
 			if not value: continue
 
 			if attr == 'name':
-				for name, version in value.items():
-					state = 'installed'
+				if isinstance(value, dict):
+					for name, version in value.items():
+						state = 'installed'
 
-					if version in ['latest', 'removed', 'purged']:
-						state = version
+						if version in ['latest', 'removed', 'purged']:
+							state = version
 
-					if state not in state_mapping:	state_mapping[state] = []
+						if state not in state_mapping:	state_mapping[state] = []
 
-					if state == 'installed':
-						if version:
-							state_mapping[state].append({name:version})
+						if state == 'installed':
+							if version:
+								state_mapping[state].append({name:version})
+							else:
+								state_mapping[state].append(name)
+
 						else:
 							state_mapping[state].append(name)
 
-					else:
-						state_mapping[state].append(name)
+				# support for requisity
+				elif isinstance(value, list):
+					state_mapping['installed'] = value
 
 			else:
 
@@ -316,7 +333,7 @@ class StatePreparation(object):
 		"""
 
 		# check
-		if not isinstance(module, basestring) or not isinstance(parameter, dict) or 'name' not in parameter:
+		if not isinstance(module, basestring) or not isinstance(parameter, dict):
 			print "invalid preparation states"
 			return 1
 
@@ -327,7 +344,7 @@ class StatePreparation(object):
 		m_list = module.split('.')
 		type = m_list[1]
 
-		repo_state = None
+		repo_state = {}
 		state = None
 
 		# file
@@ -362,7 +379,45 @@ class StatePreparation(object):
 				}
 			}
 
-		##elif type == 'gem':
+		elif type == 'gem':
+
+			requisities = []
+
+			# add package requisity
+			req_state = self.__get_requisity('package.gem.package')
+			if req_state:
+				for req in req_state:
+					for req_tag, req_value in req.items():
+						repo_state[req_tag] = req_value
+
+						requisities.append({ next(iter(req_value)) : req_tag })
+
+			# gem source
+			if 'url' not in parameter or not parameter['url']:
+				print "invalid parameters"
+				return 3
+
+			state = 'run'
+			tag = self.__get_tag(module, uid, step, parameter['url'])
+
+			cmd = [
+				state,
+				{
+					'name'	: 'gem source --add ' + parameter['url'],
+					'shell'	: '/bin/bash',
+					'user'	: 'root',
+					'group'	: 'root',
+				}
+			]
+
+			# add requisity
+			if requisities:
+				cmd.append({ 'require' : requisities })
+
+			repo_state[tag] = {
+				'cmd' : cmd
+			}
+
 		##elif type == 'zypper'
 
 		return repo_state
@@ -740,6 +795,7 @@ class StatePreparation(object):
 		if 'args' in parameter and parameter['args']:
 			addin['name'] += ' ' + parameter['args']
 
+		state = 'run'
 		cmd = [
 			state,
 			addin,
@@ -750,7 +806,6 @@ class StatePreparation(object):
 		if cmd_state:
 			cmd.append({ 'require' : [ { 'file' : addin['name'] } ] })
 
-		state = 'run'
 		tag = self.__get_tag(module, uid, step, cmd, state)
 
 		cmd_state[tag] ={
@@ -1110,7 +1165,7 @@ class StatePreparation(object):
 			print "invalid system SSH authorized_key state"
 			return 2
 
-		type = module.split('.', 1)[1].replace('.', '_')
+		auth = []
 		addin = {}
 
 		for attr, value in parameter.items():
@@ -1126,29 +1181,56 @@ class StatePreparation(object):
 				addin['config'] = value
 
 			elif attr == 'encrypt_algorithm':
-				if value in ssh_key_type:
+				if value in self.ssh_key_type:
 					addin['enc'] = value
 
-			#elif attr == 'content':
-				## generate the source file with content
-				# salt://ssh_keys/<authname>.id_rsa.pub
-				#addin['source'] = 'salt://ssh_keys/' + authname + '.id_rsa.pub'
+			elif attr == 'content':
+				# parse the auth file
+				for line in value.split('\n'):
+					if not line: continue
 
-		if not addin or 'name' not in addin:
+					auth.append(line)
+
+		if not addin:
 			print "invalid parameters"
 			return 3
 
 		state = 'present'
-		tag = self.__get_tag(module, uid, step, addin['name'], state)
+		type = module.split('.', 1)[1].replace('.', '_')
+		auth_state = {}
 
-		return {
-			tag : {
+		# multi auth_ssh
+		if auth:
+			name = ''.join(str(i) for i in auth)
+			tag = self.__get_tag(module, uid, step, name, state)
+
+			auth_state[tag] = {
+				type : [
+					{
+						'names' : auth
+					},
+					state,
+					addin
+				]
+			}
+
+		# one auth_ssh
+		else:
+			if 'name' not in addin:
+				print "invalid parameters"
+				return 3
+
+			tag = self.__get_tag(module, uid, step, addin['name'], state)
+
+
+			auth_state[tag] = {
 				type : [
 					state,
 					addin,
 				]
 			}
-		}
+
+		return auth_state
 
 	def _system_ssh_known_host(self, module, parameter, uid=None, step=None):
 		"""
@@ -1164,7 +1246,8 @@ class StatePreparation(object):
 			print "invalid system SSH known_hosts state"
 			return 2
 
-		type = module.split('.', 1)[1].replace('.', '_')
+		#type = module.split('.', 1)[1].replace('.', '_')
+		type = 'ssh_known_hosts'
 		addin = {}
 
 		for attr, value in parameter.items():
@@ -1183,8 +1266,8 @@ class StatePreparation(object):
 				addin[attr] = value
 
 			elif attr == 'encrypt_algorithm':
-				if value in ssh_key_type:
-					addin[enc] = value
+				if value in self.ssh_key_type:
+					addin['enc'] = value
 
 		if not addin or 'name' not in addin:
 			print "invalid parameters"
@@ -1237,31 +1320,25 @@ class StatePreparation(object):
 		#return hashlib.md5(tag).hexdigest()
 		return tag
 
-	def __get_requisity(self, module, type):
+	def __get_requisity(self, module):
 		"""
 			Generate requisity state.
 		"""
 
-		name = state = None
+		req_state = []
 
-		if module == 'pkg':
-			name = self.requisity_map[module][type]
+		if module in self.requisity_map and module in self.pre_mapping:
+			requisity = self.requisity_map[module]
 
-			state = 'installed'
+			for req_module, req_parameter in requisity.items():
+				if req_module not in self.pre_mapping: continue
 
-		if name and state:
-			tag = self.__get_tag('base.'+module, None, None, name, state)
+				state = self.pre_mapping[req_module](req_module, req_parameter)
 
-			return {
-				tag : {
-					module : [
-						{
-							'name' : name
-						},
-						state,
-					]
-				}
-			}
+				if state:
+					req_state.append(state)
+
+		return req_state
 
 	def __check_module(self, module):
 		"""
@@ -1269,8 +1346,9 @@ class StatePreparation(object):
 		"""
 
 		module_map = {
-			'package'		: ['apt', 'yum', 'gem', 'npm', 'pecl', 'pip'],
-			'repo'			: ['apt', 'yum', 'gem', 'zypper'],
+			'package'		: ['pkg', 'apt', 'yum', 'gem', 'npm', 'pecl', 'pip'],
+			'repo'			: ['apt', 'yum', 'zypper'],
+			'source'		: ['gem'],
 			'path'			: ['file', 'dir', 'symlink'],
 			'scm' 			: ['git', 'svn', 'hg'],
 			'service'		: ['supervisord', 'sysvinit', 'upstart'],
@@ -1321,10 +1399,17 @@ def main():
 		'test':              False,
 	}
 
+	import pdb
+	pdb.set_trace()
+
 	sp = StatePreparation(pre_states)
 	states = sp.transfer()
 
 	print json.dumps(states)
+
+	out_states = [salt_opts] + states
+	with open('states.json', 'w') as f:
+		json.dump(out_states, f)
 
 	runner = StateRunner(salt_opts, states)
 	print json.dumps(runner.get_opts(), sort_keys=True,
