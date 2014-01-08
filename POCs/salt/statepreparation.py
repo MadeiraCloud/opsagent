@@ -156,7 +156,8 @@ class StatePreparation(object):
 
 			## set error and output log
 			for r in ret:
-				result.append((r['result'], None, None))
+				for r_tag, r_value in r.items():
+					result.append((r_value['result'], None, None))
 
 			return result
 
@@ -1336,6 +1337,7 @@ def main():
 	if ret:
 		print json.dumps(ret, sort_keys=True,
 			  indent=4, separators=(',', ': '))
+
 	else:
 		print "wait failed"
 
