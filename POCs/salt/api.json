@@ -72,7 +72,7 @@
 					"module" 	: "sys.cmd",
 					"parameter" : {
 						"bin" 		:	"/bin/bash",
-						"cmd"		:	"sed -i -e '/^export LD_LIBRARY_PATH=/d'  ~/.bashrc; sed -i -e '/^export PYTHONPATH=/d'  ~/.bashrc; sed -i -e '/^export INSTANT_HOME=/d'  ~/.bashrc; echo >>  ~/.bashrc; echo 'export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib/' >>  ~/.bashrc; echo 'export PYTHONPATH=${SRC}/api/Source/' >> ~/.bashrc; echo 'export INSTANT_HOME=${MADEIRA}' >> ~/.bashrc; source ~/.bashrc;",
+						"cmd"		:	"sed -i -e '/^export LD_LIBRARY_PATH=/d'  ~/.bashrc; sed -i -e '/^export PYTHONPATH=/d'  ~/.bashrc; sed -i -e '/^export INSTANT_HOME=/d'  ~/.bashrc; echo >>  ~/.bashrc; echo 'export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib/' >>  ~/.bashrc; echo 'export PYTHONPATH=/madeira/source/api/Source/' >> ~/.bashrc; echo 'export INSTANT_HOME=${MADEIRA}' >> ~/.bashrc; source ~/.bashrc;",
 						"cwd"		:	"/madeira/deps/redis",
 						"user"		:	"root",
 						"group"		:	"root"
@@ -106,7 +106,7 @@
 		"boost" : {
 			"state" : [
 				{
-					"stateid"	: "1", // install pkgs
+					"stateid"	: "1",
 					"module"	: "package.yum.package",
 					"parameter" : {
 						"name" : {
@@ -123,7 +123,7 @@
 				},
 
 				{
-					"stateid"	: "2", // install boost
+					"stateid"	: "2",
 					"module"	: "sys.cmd",
 					"parameter"	: {
 						"bin"		:	"/bin/bash",
@@ -139,11 +139,7 @@
 		"thrift" : {
 			"state" : [
 				{
-					"stateid"	: "1", // check boost
-				},
-
-				{
-					"stateid"	: "2", // install pkgs
+					"stateid"	: "1",
 					"module"	: "package.yum.package",
 					"parameter" : {
 						"name" : {
@@ -163,15 +159,63 @@
 				},
 
 				{
-					"stateid"	: "3", // download thrift
+					"stateid"	: "2",
+					"module"	: "scm.git",
+					"parameter"	: {
+						"repo"		: "git - https://git-wip-us.apache.org/repos/asf/thrift.git",
+						"branch"	: "master",
+						"path"		: "/madeira/deps/thrift",
+						"user"		: "root",
+						"group"		: "root"
+					}
 				},
 
 				{
-					"stateid"	: "4", // make and install
+					"stateid"	: "3",
+					"module"	: "sys.cmd",
+					"parameter"	: {
+						"bin"		: "/bin/bash",
+						"cmd"		: "./configure; make; make install;",
+						"cwd"		: "/madeira/deps/thrift",
+						"user"		: "root",
+						"group"		: "root"
+					}
 				},
 
 				{
-					"stateid"	: "5", // config
+					"stateid"	: "4",
+					"module"	: "sys.cmd",
+					"parameter"	: {
+						"bin"		: "/bin/bash",
+						"cmd"		: "python setup.py install",
+						"cwd"		: "/madeira/deps/thrift/lib/py",
+						"user"		: "root",
+						"group"		: "root"
+					}
+				},
+
+				{
+					"stateid"	: "5",
+					"module"	: "sys.cmd",
+					"parameter"	: {
+						"bin"		: "/bin/bash",
+						"cmd"		: "./bootstrap.sh; make; make install;",
+						"cwd"		: "/madeira/deps/thrift/contrib/fb303",
+						"user"		: "root",
+						"group"		: "root"
+					}
+				},
+
+				{
+					"stateid"	: "6",
+					"module"	: "sys.cmd",
+					"parameter"	: {
+						"bin"		: "/bin/bash",
+						"cmd"		: "python setup.py install",
+						"cwd"		: "/madeira/deps/thrift/contrib/fb303/py",
+						"user"		: "root",
+						"group"		: "root"
+					}
 				}
 			]
 		},
@@ -179,24 +223,55 @@
 		"scribe" : {
 			"state" : [
 				{
-					"stateid"	: "1", // check and install thrift
-					"module"	: "",
+					"stateid"	: "1",
+					"module"	: "scm.git",
+					"parameter"	: {
+						"repo"		: "git - git://github.com/facebook/scribe.git",
+						"branch"	: "master",
+						"path"		: "/madeira/deps/scribe",
+						"user"		: "root",
+						"group"		: "root"
+					}
 				},
 
 				{
-					"stateid"	: "2"	// download scribe
+					"stateid"	: "2",
+					"module"	: "sys.cmd",
+					"parameter"	: {
+						"bin"		: "/bin/bash",
+						"cmd"		: "./bootstrap.sh --with-boost-filesystem=boost_filesystem; make; make install;",
+						"cwd"		: "/madeira/deps/scribe",
+						"user"		: "root",
+						"group"		: "root"
+					}
 				},
 
 				{
-					"stateid"	: "3"	// make and install
+					"stateid"	: "3",
+					"module"	: "sys.cmd",
+					"parameter"	: {
+						"bin"		: "/bin/bash",
+						"cmd"		: "python setup.py install",
+						"cwd"		: "/madeira/deps/scribe/py",
+						"user"		: "root",
+						"group"		: "root"
+					}
 				},
 
 				{
-					"stateid"	: "4"	// config
+					"stateid"	: "3",
+					"module"	: "sys.cmd",
+					"parameter"	: {
+						"bin" 		:	"/bin/bash",
+						"cmd"		:	"sed -i -e '/^export LD_LIBRARY_PATH=/d'  ~/.bashrc; sed -i -e '/^export PYTHONPATH=/d'  ~/.bashrc; sed -i -e '/^export INSTANT_HOME=/d'  ~/.bashrc; echo >>  ~/.bashrc; echo 'export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib/' >>  ~/.bashrc; echo 'export PYTHONPATH=/madeira/source/api/Source/' >> ~/.bashrc; echo 'export INSTANT_HOME=${MADEIRA}' >> ~/.bashrc; source ~/.bashrc;",
+						"cwd"		:	"/madeira/deps/redis",
+						"user"		:	"root",
+						"group"		:	"root"
+					}
 				},
 
 				{
-					"stateid"	: "5",
+					"stateid"	: "4",
 					"module" 	: "sys.cmd",
 					"parameter" : {
 						"bin"	:	"/bin/bash",
@@ -204,6 +279,97 @@
 						"user"	:	"root",
 						"group"	:	"root",
 						"onlyif":	"[ `cat /etc/passwd | grep ^InstantForge | wc -l` -eq 1 ]"
+					}
+				}
+			]
+		},
+
+		"karajan" : {
+			"state" : [
+				{
+					"stateid"	: "1",
+					"module"	: "scm.git",
+					"parameter"	: {
+						"repo"		: "ssh - ssh://root@211.98.26.6/opt/source/api.git",
+						"branch"	: "master",
+						"path"		: "/madeira/source/api",
+						"user"		: "root",
+						"group"		: "root"
+					}
+				},
+
+				{
+					"stateid"	: "2",
+					"module"	: "package.yum.package",
+					"parameter"	: {
+						"name" : {
+							"python-devel"		: "",
+							"python-setuptools"	: ""
+						}
+					}
+				},
+
+				{
+					"stateid"	: "3",
+					"module"	: "package.pip.package",
+					"parameter"	: {
+						"name" : {
+							"gearman"	: "",
+							"pymongo"	: ""
+						}
+					}
+				},
+
+				{
+					"stateid"	: "4",
+					"module"	: "sys.cmd",
+					"parameter"	: {
+						"bin" 		:	"/bin/bash",
+						"cmd"		:	"sed -i -e '/^export LD_LIBRARY_PATH=/d'  ~/.bashrc; sed -i -e '/^export PYTHONPATH=/d'  ~/.bashrc; sed -i -e '/^export INSTANT_HOME=/d'  ~/.bashrc; echo >>  ~/.bashrc; echo 'export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib/' >>  ~/.bashrc; echo 'export PYTHONPATH=/madeira/source/api/Source/' >> ~/.bashrc; echo 'export INSTANT_HOME=${MADEIRA}' >> ~/.bashrc; source ~/.bashrc;",
+						"cwd"		:	"/madeira/source",
+						"user"		:	"root",
+						"group"		:	"root"
+					}
+				}
+			]
+		},
+
+		"mongodb" : {
+			"state" : [
+				{
+					"stateid"	: "1",
+					"module"	: "package.yum.repo",
+					"parameter"	: {
+						"name"		: "10gen",
+						"content"	: "[10gen]\nname=10gen Repository\nbaseurl=http://downloads-distro.mongodb.org/repo/redhat/os/x86_64\ngpgcheck=0\nenabled=1"
+					}
+				},
+
+				{
+					"stateid"	: "2",
+					"module"	: "package.yum.package",
+					"parameter"	: {
+						"name"		: {
+							"mongo-10gen"			: "",
+							"mongo-10gen-server"	: ""
+						}
+					}
+				},
+
+				{
+					"stateid" : "", // ulimit
+				},
+
+				{
+					"stateid" : "", // config
+				},
+
+				{
+					"stateid"	: "1",
+					"module"	: "service.sysvinit",
+					"parameter"	: {
+						"name"		: "httpd",
+						"watch"		: ["/root/httpd.txt"]
 					}
 				}
 			]
