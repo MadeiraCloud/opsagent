@@ -9,6 +9,8 @@ Madeira OpsAgent manager
 # Native imports
 import json
 import time
+import os
+import subprocess
 # Library imports
 from ws4py.client.threadedclient import WebSocketClient
 # Custom import
@@ -88,6 +90,9 @@ class Manager(WebSocketClient):
 
         curent_version = self.__states_worker.get_version()
         if (not curent_version) or (curent_version != version):
+            utils.log("INFO", "Killing current execution ...",('__act_recipe',self))
+            self.__states_worker.kill()
+            utils.log("DEBUG", "Execution killed.",('__act_recipe',self))
             utils.log("INFO", "Loading states received ...",('__act_recipe',self))
             self.__states_worker.load(version=version,states=states)
             utils.log("INFO", "States loaded.",('__act_recipe',self))
@@ -119,9 +124,30 @@ class Manager(WebSocketClient):
 
 
     ## INIT METHODS
-    # Mount/ensure /proc FileSystem
+    # Mount proc FileSystem
+    def __mount_proc_try(self, proc, dir=False):
+        utils.log("WARNING", "procfs not present, attempting to mount...",('__mount_proc',self))
+        if not dir:
+            p = subprocess.Popen(['mkdir','-p',proc])
+            if p.wait():
+                err = "Can't create '%s' directory. FATAL."%(proc)
+                utils.log("ERROR", err,('__mount_proc',self))
+                return err
+        p = subprocess.Popen(['mount','-t','proc','proc',proc])
+        if p.wait():
+            err = "Can't mount procfs on '%s'. FATAL."%(proc)
+            utils.log("ERROR", err,('__mount_proc',self))
+            return err
+        return None
+
+    # Ensure proc FileSystem
     def __mount_proc(self):
-        # TODO
+        proc = self.__config['global']['proc']
+        if not os.path.isdir(proc):
+            return self.__mount_proc_try(proc, dir=False)
+        elif not os.path.isfile(os.path.join(proc, 'stat')):
+            return self.__mount_proc_try(proc, dir=True)
+        self.__config['runtime']['proc'] = True
         return None
 
     # Get instance id and user data from AWS
