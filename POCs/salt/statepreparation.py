@@ -13,10 +13,12 @@ class StatePreparation(object):
 	ssh_key_type = ['ecdsa', 'ssh-rsa', 'ssh-dss']
 
 	requisity_map = {
+		# only for clear enviroment
 		'package.gem.package' : {
 			'package.pkg.package' : { 'name' : ['rubygems'] }
 		},
 
+		## only for clear enviroment(not check node version and so on, use nvm to control nodejs version)
 		'package.npm.package' : {
 			'package.pkg.package' : { 'name' : ['npm'] }
 		},
