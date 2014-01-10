@@ -22,10 +22,12 @@ class AWSNotFoundException(Exception): pass
 # Manager exceptions
 class ManagerInvalidStateFormatException(Exception): pass
 class ManagerInvalidWaitFormatException(Exception): pass
+class ManagerInitDirDeniedException(Exception): pass
 
 # StatesWorker exceptions
 class SWWaitFormatException(Exception): pass
 class SWNoManagerException(Exception): pass
+class SWNoWaitFileException(Exception): pass
 
 # General Exception
 class OpsAgentException(Exception): pass

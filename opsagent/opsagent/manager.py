@@ -48,6 +48,7 @@ class Manager(WebSocketClient):
             }
 
         # init
+        self.__error_dir = self.__init_dir()
         self.__error_proc = self.__mount_proc()
         self.__config['init'] = self.__get_id()
 
@@ -63,7 +64,7 @@ class Manager(WebSocketClient):
         utils.log("INFO", "Retrying in %s seconds."%(WAIT_CONNECT),('__act_retry_hs',self))
         time.sleep(WAIT_CONNECT)
         utils.log("DEBUG", "Reconnecting ...",('__act_retry_hs',self))
-        self.send_json(send.handshake(self.__config['init'], self.__error_proc))
+        self.send_json(send.handshake(self.__config['init'], [self.__error_proc,self.__error_dir]))
 
     # Recipe object received
     def __act_recipe(self, data):
@@ -124,29 +125,59 @@ class Manager(WebSocketClient):
 
 
     ## INIT METHODS
+    # Create directories
+    def __init_dir(self):
+        dirs = [
+            self.__config['global']['watch']
+            ]
+        errors = []
+        for dir in dirs:
+            try:
+                if not os.path.isdir(dir):
+                    os.makedirs(proc,0755)
+                if not os.access(dir, os.W_OK):
+                    raise ManagerInitDirDeniedException
+            except ManagerInitDirDeniedException:
+                err = "'%s' directory not writable. FATAL."%(dir)
+                utils.log("ERROR", err,('__init_dir',self))
+                errors.append(err)
+            except Exception as e:
+                err = "Can't create '%s' directory: '%s'. FATAL."%(dir,e)
+                utils.log("ERROR", err,('__init_dir',self))
+                errors.append(err)
+        return (" ".join(errors) if errors else None)
+        #
+
     # Mount proc FileSystem
     def __mount_proc_try(self, proc, dir=False):
-        utils.log("WARNING", "procfs not present, attempting to mount...",('__mount_proc',self))
+        utils.log("WARNING", "procfs not present, attempting to mount...",('__mount_proc_try',self))
         if not dir:
-            p = subprocess.Popen(['mkdir','-p',proc])
-            if p.wait():
-                err = "Can't create '%s' directory. FATAL."%(proc)
-                utils.log("ERROR", err,('__mount_proc',self))
+            try:
+                os.makedirs(proc,0555)
+            except Exception as e:
+                err = "Can't create '%s' directory: '%s'. FATAL."%(proc,e)
+                utils.log("ERROR", err,('__mount_proc_try',self))
                 return err
         p = subprocess.Popen(['mount','-t','proc','proc',proc])
         if p.wait():
             err = "Can't mount procfs on '%s'. FATAL."%(proc)
-            utils.log("ERROR", err,('__mount_proc',self))
+            utils.log("ERROR", err,('__mount_proc_try',self))
             return err
         return None
 
     # Ensure proc FileSystem
     def __mount_proc(self):
         proc = self.__config['global']['proc']
-        if not os.path.isdir(proc):
-            return self.__mount_proc_try(proc, dir=False)
-        elif not os.path.isfile(os.path.join(proc, 'stat')):
-            return self.__mount_proc_try(proc, dir=True)
+        try:
+            if not os.path.isdir(proc):
+                return self.__mount_proc_try(proc, dir=False)
+            elif not os.path.isfile(os.path.join(proc, 'stat')):
+                return self.__mount_proc_try(proc, dir=True)
+            self.__config['runtime']['proc'] = True
+        except Exception as e:
+            err = "Unknown error: can't mount procfs on %s: '%s'. FATAL."%(e,proc)
+            utils.log("ERROR", err,('__mount_proc',self))
+            return err
         self.__config['runtime']['proc'] = True
         return None
 
@@ -227,7 +258,7 @@ class Manager(WebSocketClient):
     def opened(self):
         utils.log("INFO", "Socket opened, initiating handshake ...",('opened',self))
         self.__connected = True
-        self.send_json(send.handshake(self.__config['init'], self.__error_proc))
+        self.send_json(send.handshake(self.__config['init'], [self.__error_proc,self.__error_dir]))
         utils.log("DEBUG", "Handshake init message send",('opened',self))
 
     # On message received

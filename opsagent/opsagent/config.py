@@ -27,6 +27,7 @@ class Config():
     defaultValues = {
         'global': {
             'proc': '/proc',
+            'watch': '/tmp/madeira/opsagent/watch',
             },
         'runtime': {
             'proc': False,
