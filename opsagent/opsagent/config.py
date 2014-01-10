@@ -25,13 +25,18 @@ class Config():
         }
 
     defaultValues = {
-        'runtime': {},
+        'global': {
+            'proc': '/proc',
+            },
+        'runtime': {
+            'proc': False,
+            },
         'toto': {
             'tata': "tutu",
             },
         'network': {
             'ws_uri': "ws://localhost:8964/agent/"
-            }
+            },
         }
 
     def __init__(self, file=None):
