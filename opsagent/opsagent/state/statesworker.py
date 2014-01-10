@@ -15,6 +15,8 @@ import signal
 from opsagent import utils
 from opsagent.objects import send
 from opsagent.exception import *
+
+import StatePreparation
 ##
 
 ## DEFINES
@@ -38,6 +40,8 @@ class StatesWorker(threading.Thread):
         self.__config = config
         self.__manager = None
 
+        self.__stateprepare = StatePreparation()
+
         # events
         self.__cv = threading.Condition()
         self.__wait_event = threading.Event()
@@ -56,6 +60,7 @@ class StatesWorker(threading.Thread):
         self.__builtins = {
             'Wait' : self.__exec_wait,
             }
+
 
 
     ## NETWORK RELAY
@@ -203,12 +208,16 @@ class StatesWorker(threading.Thread):
     # Call salt library
     def __exec_salt(self, id, module, parameter):
         utils.log("INFO", "Loading state ID '%s' from module '%s' ..."%(id,module),('__exec_salt',self))
+
         # TODO dict conversion + salt call
-        import subprocess
-        p = subprocess.Popen(["sleep","5"])
-        result = (SUCCESS if p.wait() == 0 else FAIL)
-        (out_log,err_log) = p.communicate()
+        #import subprocess
+        #p = subprocess.Popen(["sleep","5"])
+        #result = (SUCCESS if p.wait() == 0 else FAIL)
+        #(out_log,err_log) = p.communicate()
         # /TODO
+
+        (result,err_log,out_log) = self.__stateprepare.exec_salt(id, module, parameter)
+
 #        (result,err_log,out_log) = (SUCCESS,"ERR SALT","OUT SALT")
         utils.log("INFO", "State ID '%s' from module '%s' done, result '%s'."%(id,module,result),('__exec_salt',self))
         utils.log("DEBUG", "State out log='%s'"%(out_log),('__exec_salt',self))
