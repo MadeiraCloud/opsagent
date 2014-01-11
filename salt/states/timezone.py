@@ -49,7 +49,8 @@ def system(name, utc=''):
     ret = {'name': name,
            'changes': {},
            'result': None,
-           'comment': ''}
+           'comment': '',
+           'state_stdout': '', 'state_stderr':	''}
     # Set up metadata
     do_utc = False
     do_zone = False
@@ -89,7 +90,7 @@ def system(name, utc=''):
     messages = []
 
     if do_zone:
-        if __salt__['timezone.set_zone'](name):
+        if __salt__['timezone.set_zone'](name, state_ret=ret):
             ret['changes']['timezone'] = name
             messages.append('Set timezone {0}'.format(name))
             ret['result'] = True
@@ -101,7 +102,7 @@ def system(name, utc=''):
         clock = 'localtime'
         if utc:
             clock = 'UTC'
-        if __salt__['timezone.set_hwclock'](clock):
+        if __salt__['timezone.set_hwclock'](clock, state_ret=ret):
             ret['changes']['utc'] = utc
             messages.append('Set UTC to {0}'.format(utc))
             ret['result'] = True

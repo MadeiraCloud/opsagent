@@ -264,7 +264,8 @@ def running(name, enable=None, sig=None, **kwargs):
     ret = {'name': name,
            'changes': {},
            'result': True,
-           'comment': ''}
+           'comment': '',
+           'state_stdout': '', 'state_stderr': ''}
 
     # Check for common error: using enabled option instead of enable
     if 'enabled' in kwargs:
@@ -290,7 +291,7 @@ def running(name, enable=None, sig=None, **kwargs):
         ret['comment'] = 'Service {0} is set to start'.format(name)
         return ret
 
-    changes = {name: __salt__['service.start'](name)}
+    changes = {name: __salt__['service.start'](name, state_ret=ret)}
 
     if not changes[name]:
         if enable is True:
@@ -303,9 +304,9 @@ def running(name, enable=None, sig=None, **kwargs):
             return ret
 
     if enable is True:
-        return _enable(name, True, **kwargs)
+        return _enable(name, True, state_ret=ret, **kwargs)
     elif enable is False:
-        return _disable(name, True, **kwargs)
+        return _disable(name, True, state_ret=ret, **kwargs)
     else:
         ret['changes'] = changes
         ret['comment'] = 'Started Service {0}'.format(name)
@@ -330,7 +331,8 @@ def dead(name, enable=None, sig=None, **kwargs):
     ret = {'name': name,
            'changes': {},
            'result': True,
-           'comment': ''}
+           'comment': '',
+           'state_stdout': '', 'state_stderr': ''}
 
     # Check for common error: using enabled option instead of enable
     if 'enabled' in kwargs:
@@ -344,9 +346,9 @@ def dead(name, enable=None, sig=None, **kwargs):
     if not __salt__['service.status'](name, sig):
         ret['comment'] = 'The service {0} is already dead'.format(name)
         if enable is True:
-            return _enable(name, None, **kwargs)
+            return _enable(name, None, state_ret=ret, **kwargs)
         elif enable is False:
-            return _disable(name, None, **kwargs)
+            return _disable(name, None, state_ret=ret, **kwargs)
         else:
             return ret
 
@@ -355,24 +357,24 @@ def dead(name, enable=None, sig=None, **kwargs):
         ret['comment'] = 'Service {0} is set to be killed'.format(name)
         return ret
 
-    ret['changes'] = {name: __salt__['service.stop'](name)}
+    ret['changes'] = {name: __salt__['service.stop'](name, state_ret=ret)}
 
     if not ret['changes'][name]:
         ret['result'] = False
         ret['comment'] = 'Service {0} failed to die'.format(name)
         if enable is True:
-            return _enable(name, True, result=False)
+            return _enable(name, True, result=False, state_ret=ret)
         elif enable is False:
-            return _disable(name, True, result=False)
+            return _disable(name, True, result=False, state_ret=ret)
         else:
             ret['result'] = False
             ret['comment'] = 'Service {0} failed to die'.format(name)
             return ret
     else:
         if enable is True:
-            return _enable(name, False)
+            return _enable(name, state_ret=ret, False)
         elif enable is False:
-            return _disable(name, False)
+            return _disable(name, state_ret=ret, False)
         else:
             ret['comment'] = 'Service {0} was killed'.format(name)
             return ret
@@ -417,7 +419,8 @@ def mod_watch(name, sig=None, reload=False, full_restart=False):
     ret = {'name': name,
            'changes': {},
            'result': True,
-           'comment': ''}
+           'comment': '',
+           'state_stdout': '', 'state_stderr': ''}
     action = ''
 
     if __salt__['service.status'](name, sig):
@@ -439,7 +442,7 @@ def mod_watch(name, sig=None, reload=False, full_restart=False):
         ret['comment'] = 'Service is set to be {0}ed'.format(action)
         return ret
 
-    result = restart_func(name)
+    result = restart_func(name, state_ret=ret)
 
     ret['changes'] = {name: result}
     ret['result'] = result

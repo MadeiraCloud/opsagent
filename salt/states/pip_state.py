@@ -195,7 +195,7 @@ def installed(name,
     elif env and not bin_env:
         bin_env = env
 
-    ret = {'name': name, 'result': None, 'comment': '', 'changes': {}}
+    ret = {'name': name, 'result': None, 'comment': '', 'changes': {}, 'state_stdout': '', 'state_stderr': ''}
 
     if use_wheel:
         min_version = '1.4'
@@ -382,12 +382,10 @@ def installed(name,
         cwd=cwd,
         activate=activate,
         pre_releases=pre_releases,
-        saltenv=__env__
+        saltenv=__env__,
+        state_ret=ret
     )
-    ret['log'] = {
-        'state_stdout'	:	pip_install_call['stdout'],
-        'state_stderr'	:	pip_install_call['stderr']
-    }
+
     if pip_install_call and (pip_install_call.get('retcode', 1) == 0):
         ret['result'] = True
 
@@ -469,7 +467,7 @@ def removed(name,
     bin_env : None
         the pip executable or virtualenenv to use
     '''
-    ret = {'name': name, 'result': None, 'comment': '', 'changes': {}}
+    ret = {'name': name, 'result': None, 'comment': '', 'changes': {}, 'state_stdout': '', 'state_stderr': ''}
 
     if runas is not None:
         # The user is using a deprecated argument, warn!
@@ -509,19 +507,15 @@ def removed(name,
         ret['comment'] = 'Package {0} is set to be removed'.format(name)
         return ret
 
-    call =  __salt__['pip.uninstall'](pkgs=name,
+    if __salt__['pip.uninstall'](pkgs=name,
                                  requirements=requirements,
                                  bin_env=bin_env,
                                  log=log,
                                  proxy=proxy,
                                  timeout=timeout,
                                  user=user,
-                                 cwd=cwd)
-    ret['log'] = {
-        'state_stdout'	:	call['stdout'],
-        'state_stderr'	:	call['stderr']
-    }
-    if call['retcode'] == 0:
+                                 cwd=cwd,
+                                 state_ret=ret):
         ret['result'] = True
         ret['changes'][name] = 'Removed'
         ret['comment'] = 'Package was successfully removed.'

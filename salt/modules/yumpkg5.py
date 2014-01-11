@@ -7,11 +7,13 @@ Support for YUM
 import copy
 import logging
 import os
-import re
 
 # Import salt libs
 import salt.utils
-from salt.exceptions import SaltInvocationError
+from salt.states import state_std
+from salt.exceptions import (
+    CommandExecutionError, MinionError, SaltInvocationError
+)
 
 log = logging.getLogger(__name__)
 
@@ -70,7 +72,7 @@ def _parse_pkginfo(line):
     )
 
     try:
-        name, version, release, arch, repoid = line.split('_|-')
+        name, pkg_version, release, arch, repoid = line.split('_|-')
     # Handle unpack errors (should never happen with the queryformat we are
     # using, but can't hurt to be careful).
     except ValueError:
@@ -79,9 +81,9 @@ def _parse_pkginfo(line):
     if arch != 'noarch' and arch != __grains__['osarch']:
         name += '.{0}'.format(arch)
     if release:
-        version += '-{0}'.format(release)
+        pkg_version += '-{0}'.format(release)
 
-    return pkginfo(name, version, arch, repoid)
+    return pkginfo(name, pkg_version, arch, repoid)
 
 
 def _repoquery(repoquery_args):
@@ -157,23 +159,21 @@ def latest_version(*names, **kwargs):
     if len(names) == 0:
         return ''
 
-    '''
-    Initialize the return dict with empty strings, and populate namearch_map.
-    namearch_map will provide a means of distinguishing between multiple
-    matches for the same package name, for example a target of 'glibc' on an
-    x86_64 arch would return both x86_64 and i686 versions when searched
-    using repoquery:
-
-    $ repoquery --all --pkgnarrow=available glibc
-    glibc-0:2.12-1.132.el6.i686
-    glibc-0:2.12-1.132.el6.x86_64
-
-    Note that the logic in the for loop below would place the osarch into the
-    map for noarch packages, but those cases are accounted for when iterating
-    through the repoquery results later on. If the repoquery match for that
-    package is a noarch, then the package is assumed to be noarch, and the
-    namearch_map is ignored.
-    '''
+    # Initialize the return dict with empty strings, and populate namearch_map.
+    # namearch_map will provide a means of distinguishing between multiple
+    # matches for the same package name, for example a target of 'glibc' on an
+    # x86_64 arch would return both x86_64 and i686 versions when searched
+    # using repoquery:
+    #
+    # $ repoquery --all --pkgnarrow=available glibc
+    # glibc-0:2.12-1.132.el6.i686
+    # glibc-0:2.12-1.132.el6.x86_64
+    #
+    # Note that the logic in the for loop below would place the osarch into the
+    # map for noarch packages, but those cases are accounted for when iterating
+    # through the repoquery results later on. If the repoquery match for that
+    # package is a noarch, then the package is assumed to be noarch, and the
+    # namearch_map is ignored.
     ret = {}
     namearch_map = {}
     for name in names:
@@ -188,7 +188,7 @@ def latest_version(*names, **kwargs):
 
     # Refresh before looking for the latest version available
     if refresh:
-        refresh_db()
+        refresh_db(**kwargs)
 
     # Get updates for specified package(s)
     repo_arg = _get_repo_options(**kwargs)
@@ -398,7 +398,7 @@ def check_db(*names, **kwargs):
     return ret
 
 
-def refresh_db():
+def refresh_db(**kwargs):
     '''
     Since yum refreshes the database automatically, this runs a yum clean,
     so that the next yum operation will have a clean database
@@ -410,7 +410,8 @@ def refresh_db():
         salt '*' pkg.refresh_db
     '''
     cmd = 'yum -q clean dbcache'
-    __salt__['cmd.retcode'](cmd)
+    result = __salt__['cmd.run_all'](cmd)
+    state_std(kwargs, result)
     return True
 
 
@@ -501,12 +502,15 @@ def install(name=None,
                        'new': '<new-version>'}}
     '''
     if salt.utils.is_true(refresh):
-        refresh_db()
+        refresh_db(**kwargs)
 
-    pkg_params, pkg_type = __salt__['pkg_resource.parse_targets'](name,
-                                                                  pkgs,
-                                                                  sources,
-                                                                  **kwargs)
+    try:
+        pkg_params, pkg_type = __salt__['pkg_resource.parse_targets'](
+            name, pkgs, sources, **kwargs
+        )
+    except MinionError as exc:
+        raise CommandExecutionError(exc)
+
     if pkg_params is None or len(pkg_params) == 0:
         return {}
 
@@ -550,28 +554,29 @@ def install(name=None,
     else:
         targets = pkg_params
 
-	log = {}
     if targets:
         cmd = 'yum -y {repo} {gpgcheck} install {pkg}'.format(
             repo=repo_arg,
             gpgcheck='--nogpgcheck' if skip_verify else '',
             pkg=' '.join(targets),
         )
-        log['install'] = dict(('state_%s' % k,v) for k,v in __salt__['cmd.run_all'](cmd, output_loglevel='debug').iteritems() if k in ['stdout', 'stderr'])
+        __salt__['cmd.run'](cmd, output_loglevel='debug')
+
     if downgrade:
         cmd = 'yum -y {repo} {gpgcheck} downgrade {pkg}'.format(
             repo=repo_arg,
             gpgcheck='--nogpgcheck' if skip_verify else '',
             pkg=' '.join(downgrade),
         )
-        log['downgrade'] = dict(('state_%s' % k,v) for k,v in __salt__['cmd.run_all'](cmd, output_loglevel='debug').iteritems() if k in ['stdout', 'stderr'])
+        result = __salt__['cmd.run_all'](cmd, output_loglevel='debug')
+        state_std(kwargs, result)
 
     __context__.pop('pkg.list_pkgs', None)
     new = list_pkgs()
-    return (salt.utils.compare_dicts(old, new), l)
+    return salt.utils.compare_dicts(old, new)
 
 
-def upgrade(refresh=True):
+def upgrade(refresh=True, **kwargs):
     '''
     Run a full system upgrade, a yum upgrade
 
@@ -587,13 +592,14 @@ def upgrade(refresh=True):
         salt '*' pkg.upgrade
     '''
     if salt.utils.is_true(refresh):
-        refresh_db()
+        refresh_db(**kwargs)
     old = list_pkgs()
     cmd = 'yum -q -y upgrade'
-    log = dict(('state_%s' % k,v) for k,v in __salt__['cmd.run_all'](cmd, output_loglevel='debug').iteritems() if k in ['stdout', 'stderr'])
+    result = __salt__['cmd.run_all'](cmd, output_loglevel='debug')
+    state_std(kwargs, result)
     __context__.pop('pkg.list_pkgs', None)
     new = list_pkgs()
-    return (salt.utils.compare_dicts(old, new), log)
+    return salt.utils.compare_dicts(old, new)
 
 
 def remove(name=None, pkgs=None, **kwargs):
@@ -623,16 +629,21 @@ def remove(name=None, pkgs=None, **kwargs):
         salt '*' pkg.remove <package1>,<package2>,<package3>
         salt '*' pkg.remove pkgs='["foo", "bar"]'
     '''
-    pkg_params = __salt__['pkg_resource.parse_targets'](name, pkgs)[0]
+    try:
+        pkg_params = __salt__['pkg_resource.parse_targets'](name, pkgs)[0]
+    except MinionError as exc:
+        raise CommandExecutionError(exc)
+
     old = list_pkgs()
     targets = [x for x in pkg_params if x in old]
     if not targets:
         return {}
     cmd = 'yum -q -y remove "{0}"'.format('" "'.join(targets))
-    log = dict(('state_%s' % k,v) for k,v in __salt__['cmd.run_all'](cmd, output_loglevel='debug').iteritems() if k in ['stdout', 'stderr'])
+    result = __salt__['cmd.run'](cmd, output_loglevel='debug')
+    state_std(kwargs, result)
     __context__.pop('pkg.list_pkgs', None)
     new = list_pkgs()
-    return (salt.utils.compare_dicts(old, new), log)
+    return salt.utils.compare_dicts(old, new)
 
 
 def purge(name=None, pkgs=None, **kwargs):
@@ -663,7 +674,7 @@ def purge(name=None, pkgs=None, **kwargs):
         salt '*' pkg.purge <package1>,<package2>,<package3>
         salt '*' pkg.purge pkgs='["foo", "bar"]'
     '''
-    return remove(name=name, pkgs=pkgs)
+    return remove(name=name, pkgs=pkgs, **kwargs)
 
 
 def list_repos(basedir='/etc/yum.repos.d'):

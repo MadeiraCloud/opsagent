@@ -63,7 +63,8 @@ def installed(name,
     ret = {'name': name,
            'result': None,
            'comment': '',
-           'changes': {}}
+           'changes': {}，
+           'state_stdout': '', 'state_stderr': ''}
 
     installed_pecls = __salt__['pecl.list']()
 
@@ -84,9 +85,8 @@ def installed(name,
         ret['comment'] = ('Pecl extension {0} would have been installed'
                           .format(name))
         return ret
-    err, ret['log'] = __salt__['pecl.install'](name, defaults=defaults, force=force,
-                                preferred_state=preferred_state)
-    if err:
+    if __salt__['pecl.install'](name, defaults=defaults, force=force,
+                                preferred_state=preferred_state, state_ret):
         ret['result'] = True
         ret['changes'][name] = 'Installed'
         ret['comment'] = ('Pecl extension {0} was successfully installed'
@@ -105,7 +105,7 @@ def removed(name):
     name
         The pecl extension name to uninstall
     '''
-    ret = {'name': name, 'result': None, 'comment': '', 'changes': {}}
+    ret = {'name': name, 'result': None, 'comment': '', 'changes': {}, 'state_stdout': '', 'state_stderr': ''}
     if name not in __salt__['pecl.list']():
         ret['result'] = True
         ret['comment'] = 'Pecl extension {0} is not installed.'.format(name)
@@ -115,12 +115,11 @@ def removed(name):
         ret['comment'] = ('Pecl extension {0} would have been removed'
                           .format(name))
         return ret
-    err, ret['log'] = __salt__['pecl.uninstall'](name)
-    if err:
+    if __salt__['pecl.uninstall'](name):
         ret['result'] = True
         ret['changes'][name] = 'Removed'
         ret['comment'] = ('Pecl extension {0} was successfully removed.'
-                          .format(name))
+                          .format(name), state_ret=ret)
     else:
         ret['result'] = False
         ret['comment'] = 'Could not remove pecl extension {0}.'.format(name)

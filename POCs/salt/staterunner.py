@@ -115,57 +115,21 @@ def main():
 		'test':              False,
 		}
 
-	#predefine_states = {
-	#    'mypackages' : {
-	#        '__env__': 'base',
-	#        '__sls__': 'madeira',
-	#        'pip_state' : [
-	#            {
-	#                'name': [
-	#                    'yaml',
-	#                ],
-	#                #'refresh': False,
-	#            },
-	#            'installed',
-	#            #{
-	#            #    'order': 10000
-	#            #}
-	#        ]
-	#    },
-	#}
-
 	predefine_states = {
-		'pip_package'	:	{
-			'__env__': 'base',
-			'__sls__': 'madeira',
-
-			'pip' : [
-				'removed',
+		'_scribe_1_scm_git_git://github.com/facebook/scribe.git_latest'	: {
+			"git": [
+				"latest",
 				{
-					'name'	:	'Flask'
-				}
-			]
-		}
-	}
-	clean_up_states = {
-		'cleanpkgs' : {
-			'__env__': 'base',
-			'__sls__': 'madeira',
-			'pkg' : [
-				{
-					'pkgs': [
-						'nginx',
-					],
-				},
-				'purged',
-				{
-					'order': 10000
+					"name": "git://github.com/facebook/scribe.gits",
+					"rev": "master",
+					"target": "/madeira/deps/scribe",
+					"user": "root"
 				}
 			]
 		}
 	}
 
-	runner = StateRunner(salt_opts, [predefine_states, clean_up_states])
+	runner = StateRunner(salt_opts, [predefine_states])
 	print json.dumps(runner.get_opts(), sort_keys=True,
 		  indent=4, separators=(',', ': '))
 

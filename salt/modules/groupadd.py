@@ -9,6 +9,8 @@ try:
 except ImportError:
     pass
 
+from salt.states import state_std
+
 # Define the module's virtual name
 __virtualname__ = 'group'
 
@@ -22,7 +24,7 @@ def __virtual__():
     return False
 
 
-def add(name, gid=None, system=False):
+def add(name, gid=None, system=False, **kwargs):
     '''
     Add the specified group
 
@@ -40,11 +42,12 @@ def add(name, gid=None, system=False):
     cmd += name
 
     ret = __salt__['cmd.run_all'](cmd)
+    state_std(kwargs, ret)
 
     return not ret['retcode']
 
 
-def delete(name):
+def delete(name, **kwargs):
     '''
     Remove the named group
 
@@ -55,6 +58,7 @@ def delete(name):
         salt '*' group.delete foo
     '''
     ret = __salt__['cmd.run_all']('groupdel {0}'.format(name))
+    state_std(kwargs, ret)
 
     return not ret['retcode']
 
@@ -107,7 +111,7 @@ def getent(refresh=False):
     return ret
 
 
-def chgid(name, gid):
+def chgid(name, gid, **kwargs):
     '''
     Change the gid for a named group
 
@@ -121,7 +125,8 @@ def chgid(name, gid):
     if gid == pre_gid:
         return True
     cmd = 'groupmod -g {0} {1}'.format(gid, name)
-    __salt__['cmd.run'](cmd)
+    result = __salt__['cmd.run_all'](cmd)
+    state_std(kwargs, result)
     post_gid = __salt__['file.group_to_gid'](name)
     if post_gid != pre_gid:
         return post_gid == gid

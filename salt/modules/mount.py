@@ -10,6 +10,7 @@ import logging
 
 # Import salt libs
 import salt.utils
+from salt.states import state_std
 from salt._compat import string_types
 from salt.utils import which as _which
 from salt.exceptions import CommandNotFoundError, CommandExecutionError
@@ -130,7 +131,7 @@ def fstab(config='/etc/fstab'):
     return ret
 
 
-def rm_fstab(name, config='/etc/fstab'):
+def rm_fstab(name, config='/etc/fstab', **kwargs):
     '''
     Remove the mount point from the fstab
 
@@ -300,7 +301,7 @@ def set_fstab(
     return 'new'
 
 
-def mount(name, device, mkmnt=False, fstype='', opts='defaults'):
+def mount(name, device, mkmnt=False, fstype='', opts='defaults', **kwargs):
     '''
     Mount a device
 
@@ -320,12 +321,13 @@ def mount(name, device, mkmnt=False, fstype='', opts='defaults'):
         args += ' -t {0}'.format(fstype)
     cmd = 'mount {0} {1} {2} '.format(args, device, name)
     out = __salt__['cmd.run_all'](cmd)
+    state_std(kwargs, out)
     if out['retcode']:
         return out['stderr']
     return True
 
 
-def remount(name, device, mkmnt=False, fstype='', opts='defaults'):
+def remount(name, device, mkmnt=False, fstype='', opts='defaults', **kwargs):
     '''
     Attempt to remount a device, if the device is not already mounted, mount
     is called
@@ -349,6 +351,7 @@ def remount(name, device, mkmnt=False, fstype='', opts='defaults'):
             args += ' -t {0}'.format(fstype)
         cmd = 'mount {0} {1} {2} '.format(args, device, name)
         out = __salt__['cmd.run_all'](cmd)
+        state_std(kwargs, out)
         if out['retcode']:
             return out['stderr']
         return True
@@ -356,7 +359,7 @@ def remount(name, device, mkmnt=False, fstype='', opts='defaults'):
     return mount(name, device, mkmnt, fstype, opts)
 
 
-def umount(name):
+def umount(name, **kwargs):
     '''
     Attempt to unmount a device by specifying the directory it is mounted on
 
@@ -372,6 +375,7 @@ def umount(name):
 
     cmd = 'umount {0}'.format(name)
     out = __salt__['cmd.run_all'](cmd)
+    state_std(kwargs, out)
     if out['retcode']:
         return out['stderr']
     return True
@@ -423,7 +427,7 @@ def swaps():
     return ret
 
 
-def swapon(name, priority=None):
+def swapon(name, priority=None, **kwargs):
     '''
     Activate a swap disk
 
@@ -442,7 +446,8 @@ def swapon(name, priority=None):
     cmd = 'swapon {0}'.format(name)
     if priority:
         cmd += ' -p {0}'.format(priority)
-    __salt__['cmd.run'](cmd)
+    result = __salt__['cmd.run_all'](cmd)
+    state_std(kwargs, result)
     on_ = swaps()
     if name in on_:
         ret['stats'] = on_[name]
@@ -451,7 +456,7 @@ def swapon(name, priority=None):
     return ret
 
 
-def swapoff(name):
+def swapoff(name, **kwargs):
     '''
     Deactivate a named swap mount
 
@@ -463,7 +468,8 @@ def swapoff(name):
     '''
     on_ = swaps()
     if name in on_:
-        __salt__['cmd.run']('swapoff {0}'.format(name))
+        result = __salt__['cmd.run_all']('swapoff {0}'.format(name))
+        state_std(kwargs, result)
         on_ = swaps()
         if name in on_:
             return False

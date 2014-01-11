@@ -47,7 +47,8 @@ def pv_present(name, **kwargs):
     ret = {'changes': {},
            'comment': '',
            'name': name,
-           'result': True}
+           'result': True,
+           'state_std': '', 'state_stderr': ''}
 
     if __salt__['lvm.pvdisplay'](name):
         ret['comment'] = 'Physical Volume {0} already present'.format(name)
@@ -56,7 +57,7 @@ def pv_present(name, **kwargs):
         ret['result'] = None
         return ret
     else:
-        changes = __salt__['lvm.pvcreate'](name, **kwargs)
+        changes = __salt__['lvm.pvcreate'](name, state_ret=ret)
 
         if __salt__['lvm.pvdisplay'](name):
             ret['comment'] = 'Created Physical Volume {0}'.format(name)
@@ -84,7 +85,8 @@ def vg_present(name, devices=None, **kwargs):
     ret = {'changes': {},
            'comment': '',
            'name': name,
-           'result': True}
+           'result': True,
+           'state_std': '', 'state_stderr': ''}
 
     if __salt__['lvm.vgdisplay'](name):
         ret['comment'] = 'Volume Group {0} already present'.format(name)
@@ -93,7 +95,7 @@ def vg_present(name, devices=None, **kwargs):
         ret['result'] = None
         return ret
     else:
-        changes = __salt__['lvm.vgcreate'](name, devices, **kwargs)
+        changes = __salt__['lvm.vgcreate'](name, devices, state_ret=ret, **kwargs)
 
         if __salt__['lvm.vgdisplay'](name):
             ret['comment'] = 'Created Volume Group {0}'.format(name)
@@ -114,7 +116,8 @@ def vg_absent(name):
     ret = {'changes': {},
            'comment': '',
            'name': name,
-           'result': True}
+           'result': True,
+           'state_std': '', 'state_stderr': ''}
 
     if not __salt__['lvm.vgdisplay'](name):
         ret['comment'] = 'Volume Group {0} already absent'.format(name)
@@ -123,7 +126,7 @@ def vg_absent(name):
         ret['result'] = None
         return ret
     else:
-        changes = __salt__['lvm.vgremove'](name)
+        changes = __salt__['lvm.vgremove'](name, state_ret=ret)
 
         if not __salt__['lvm.vgdisplay'](name):
             ret['comment'] = 'Removed Volume Group {0}'.format(name)
@@ -156,7 +159,8 @@ def lv_present(name, vgname=None, size=None, extents=None, pv=''):
     ret = {'changes': {},
            'comment': '',
            'name': name,
-           'result': True}
+           'result': True,
+           'state_std': '', 'state_stderr': ''}
 
     lvpath = '/dev/{0}/{1}'.format(vgname, name)
     if __salt__['lvm.lvdisplay'](lvpath):
@@ -170,7 +174,8 @@ def lv_present(name, vgname=None, size=None, extents=None, pv=''):
                                            vgname,
                                            size=size,
                                            extents=extents,
-                                           pv=pv)
+                                           pv=pv, 
+                                           state_ret=ret)
 
         if __salt__['lvm.lvdisplay'](lvpath):
             ret['comment'] = 'Created Logical Volume {0}'.format(name)
@@ -194,7 +199,8 @@ def lv_absent(name, vgname=None):
     ret = {'changes': {},
            'comment': '',
            'name': name,
-           'result': True}
+           'result': True,
+           'state_std': '', 'state_stderr': ''}
 
     lvpath = '/dev/{0}/{1}'.format(vgname, name)
     if not __salt__['lvm.lvdisplay'](lvpath):
@@ -204,7 +210,7 @@ def lv_absent(name, vgname=None):
         ret['result'] = None
         return ret
     else:
-        changes = __salt__['lvm.lvremove'](name, vgname)
+        changes = __salt__['lvm.lvremove'](name, vgname, state_ret=ret)
 
         if not __salt__['lvm.lvdisplay'](lvpath):
             ret['comment'] = 'Removed Logical Volume {0}'.format(name)

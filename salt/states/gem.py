@@ -62,7 +62,7 @@ def installed(name,          # pylint: disable=C0103
     ri : False
         Generate RI documentation for the gem(s).
     '''
-    ret = {'name': name, 'result': None, 'comment': '', 'changes': {}}
+    ret = {'name': name, 'result': None, 'comment': '', 'changes': {}, 'state_stdout': '', 'state_stderr': ''}
 
     salt.utils.warn_until(
         'Hydrogen',
@@ -106,7 +106,8 @@ def installed(name,          # pylint: disable=C0103
                                runas=user,
                                version=version,
                                rdoc=rdoc,
-                               ri=ri)
+                               ri=ri,
+                               state_ret=ret)
     ret['log'] = dict(('state_%s' % k,v) for k,v in r.iteritems() if k in ['stdout', 'stderr'])
     if r['retcode'] == 0:
         ret['result'] = True
@@ -139,7 +140,7 @@ def removed(name, ruby=None, runas=None, user=None):
 
         .. versionadded:: 0.17.0
     '''
-    ret = {'name': name, 'result': None, 'comment': '', 'changes': {}}
+    ret = {'name': name, 'result': None, 'comment': '', 'changes': {}, 'state_stdout': '', 'state_stderr': ''}
 
     salt.utils.warn_until(
         'Hydrogen',
@@ -173,7 +174,7 @@ def removed(name, ruby=None, runas=None, user=None):
     if __opts__['test']:
         ret['comment'] = 'The gem {0} would have been removed'.format(name)
         return ret
-    r = __salt__['gem.uninstall'](name, ruby, runas=user)
+    r = __salt__['gem.uninstall'](name, ruby, runas=user, state_ret=ret)
     ret['log'] = dict(('state_%s' % k,v) for k,v in r.iteritems() if k in ['stdout', 'stderr'])
     if r['retcode'] == 0:
         ret['result'] = True

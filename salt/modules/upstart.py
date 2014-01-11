@@ -45,6 +45,7 @@ import os
 
 # Import salt libs
 import salt.utils
+from salt.states import state_std
 
 __func_alias__ = {
     'reload_': 'reload'
@@ -307,7 +308,7 @@ def get_all():
     return sorted(get_enabled() + get_disabled())
 
 
-def start(name):
+def start(name, **kwargs):
     '''
     Start the specified service
 
@@ -318,10 +319,12 @@ def start(name):
         salt '*' service.start <service name>
     '''
     cmd = 'service {0} start'.format(name)
-    return not __salt__['cmd.retcode'](cmd)
+    result = __salt__['cmd.run_all'](cmd)
+    state_std(kwargs, result)
+    return not result['retcode']
 
 
-def stop(name):
+def stop(name, **kwargs):
     '''
     Stop the specified service
 
@@ -332,10 +335,12 @@ def stop(name):
         salt '*' service.stop <service name>
     '''
     cmd = 'service {0} stop'.format(name)
-    return not __salt__['cmd.retcode'](cmd)
+    result = __salt__['cmd.run_all'](cmd)
+    state_std(kwargs, result)
+    return not result['retcode']
 
 
-def restart(name):
+def restart(name, **kwargs):
     '''
     Restart the named service
 
@@ -346,10 +351,12 @@ def restart(name):
         salt '*' service.restart <service name>
     '''
     cmd = 'service {0} restart'.format(name)
-    return not __salt__['cmd.retcode'](cmd)
+    result = __salt__['cmd.run_all'](cmd)
+    state_std(kwargs, result)
+    return not result['retcode']
 
 
-def full_restart(name):
+def full_restart(name, **kwargs):
     '''
     Do a full restart (stop/start) of the named service
 
@@ -360,10 +367,12 @@ def full_restart(name):
         salt '*' service.full_restart <service name>
     '''
     cmd = 'service {0} --full-restart'.format(name)
-    return not __salt__['cmd.retcode'](cmd)
+    result = __salt__['cmd.run_all'](cmd)
+    state_std(kwargs, result)
+    return not result['retcode']
 
 
-def reload_(name):
+def reload_(name, **kwargs):
     '''
     Reload the named service
 
@@ -374,10 +383,12 @@ def reload_(name):
         salt '*' service.reload <service name>
     '''
     cmd = 'service {0} reload'.format(name)
-    return not __salt__['cmd.retcode'](cmd)
+    result = __salt__['cmd.run_all'](cmd)
+    state_std(kwargs, result)
+    return not result['retcode']
 
 
-def force_reload(name):
+def force_reload(name, **kwargs):
     '''
     Force-reload the named service
 
@@ -388,10 +399,12 @@ def force_reload(name):
         salt '*' service.force_reload <service name>
     '''
     cmd = 'service {0} force-reload'.format(name)
-    return not __salt__['cmd.retcode'](cmd)
+    result = __salt__['cmd.run_all'](cmd)
+    state_std(kwargs, result)
+    return not result['retcode']
 
 
-def status(name, sig=None):
+def status(name, sig=None, **kwargs):
     '''
     Return the status for a service, returns a bool whether the service is
     running.
@@ -407,7 +420,9 @@ def status(name, sig=None):
     cmd = 'service {0} status'.format(name)
     if _service_is_upstart(name):
         return 'start/running' in __salt__['cmd.run'](cmd)
-    return not bool(__salt__['cmd.retcode'](cmd))
+    result = __salt__['cmd.run_all'](cmd)
+    state_std(kwargs, result)
+    return not bool(result['retcode'])
 
 
 def _get_service_exec():
@@ -454,7 +469,9 @@ def enable(name, **kwargs):
         return _upstart_enable(name)
     executable = _get_service_exec()
     cmd = '{0} -f {1} defaults'.format(executable, name)
-    return not __salt__['cmd.retcode'](cmd)
+    result = __salt__['cmd.run_all'](cmd)
+    state_std(kwargs, result)
+    return not result['retcode']
 
 
 def disable(name, **kwargs):
@@ -471,7 +488,9 @@ def disable(name, **kwargs):
         return _upstart_disable(name)
     executable = _get_service_exec()
     cmd = '{0} -f {1} remove'.format(executable, name)
-    return not __salt__['cmd.retcode'](cmd)
+    result = __salt__['cmd.run_all'](cmd)
+    state_std(kwargs, result)
+    return not result['retcode']
 
 
 def enabled(name):

@@ -10,6 +10,7 @@ import logging
 
 # Import salt libs
 import salt.utils
+from salt.states import state_std
 
 log = logging.getLogger(__name__)
 
@@ -87,7 +88,7 @@ def get_offset():
     return out
 
 
-def set_zone(timezone):
+def set_zone(timezone, **kwargs):
     '''
     Unlinks, then symlinks /etc/localtime to the set timezone.
 
@@ -217,7 +218,7 @@ def get_hwclock():
             return 'UTC'
 
 
-def set_hwclock(clock):
+def set_hwclock(clock, **kwargs):
     '''
     Sets the hardware clock to be either UTC or localtime
 
@@ -234,11 +235,13 @@ def set_hwclock(clock):
             return 'UTC is the only choice for SPARC architecture'
         if clock == 'localtime':
             cmd = 'rtc -z {0}'.format(timezone)
-            __salt__['cmd.run'](cmd)
+            result = __salt__['cmd.run_all'](cmd)
+            state_std(kwargs, result)
             return True
         elif clock == 'UTC':
             cmd = 'rtc -z GMT'
-            __salt__['cmd.run'](cmd)
+            result = __salt__['cmd.run_all'](cmd)
+            state_std(kwargs, result)
             return True
     else:
         zonepath = '/usr/share/zoneinfo/{0}'.format(timezone)

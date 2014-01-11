@@ -16,8 +16,11 @@ import yaml
 
 # Import salt libs
 import salt.utils
+from salt.states import state_std
 from salt._compat import string_types
-from salt.exceptions import CommandExecutionError, SaltInvocationError
+from salt.exceptions import (
+    CommandExecutionError, MinionError, SaltInvocationError
+)
 
 
 log = logging.getLogger(__name__)
@@ -114,12 +117,13 @@ def _get_virtual():
     Return a dict of virtual package information
     '''
     if 'pkg._get_virtual' not in __context__:
-        cmd = 'grep-available -F Provides -s Package,Provides -e "^.+$"'
-        out = __salt__['cmd.run_stdout'](cmd, output_loglevel='debug')
-        virtpkg_re = re.compile(r'Package: (\S+)\nProvides: ([\S, ]+)')
         __context__['pkg._get_virtual'] = {}
-        for realpkg, provides in virtpkg_re.findall(out):
-            __context__['pkg._get_virtual'][realpkg] = provides.split(', ')
+        if __salt__['cmd.has_exec']('grep-available'):
+            cmd = 'grep-available -F Provides -s Package,Provides -e "^.+$"'
+            out = __salt__['cmd.run_stdout'](cmd, output_loglevel='debug')
+            virtpkg_re = re.compile(r'Package: (\S+)\nProvides: ([\S, ]+)')
+            for realpkg, provides in virtpkg_re.findall(out):
+                __context__['pkg._get_virtual'][realpkg] = provides.split(', ')
     return __context__['pkg._get_virtual']
 
 
@@ -165,7 +169,7 @@ def latest_version(*names, **kwargs):
 
     if len(names) == 0:
         return ''
-    ret = {}
+    ret = {'state_stdout': '', 'state_stderr': ''}
     # Initialize the dict with empty strings
     for name in names:
         ret[name] = ''
@@ -175,7 +179,7 @@ def latest_version(*names, **kwargs):
 
     # Refresh before looking for the latest version available
     if refresh:
-        refresh_db()
+        refresh_db(**kwargs)
 
     virtpkgs = _get_virtual()
     all_virt = set()
@@ -245,7 +249,7 @@ def version(*names, **kwargs):
     return __salt__['pkg_resource.version'](*names, **kwargs)
 
 
-def refresh_db():
+def refresh_db(**kwargs):
     '''
     Updates the APT database to latest packages based upon repositories
 
@@ -264,7 +268,9 @@ def refresh_db():
     '''
     ret = {}
     cmd = 'apt-get -q update'
-    out = __salt__['cmd.run_stdout'](cmd, output_loglevel='debug')
+    result = __salt__['cmd.run_all'](cmd, output_loglevel='debug')
+    state_std(kwargs, result)
+    out = result['stdout']
     for line in out.splitlines():
         cols = line.split()
         if not cols:
@@ -361,6 +367,7 @@ def install(name=None,
         Passes ``--force-yes`` to the apt-get command.  Don't use this unless
         you know what you're doing.
 
+        .. versionadded:: 0.17.4
 
     Returns a dict containing the new package names and versions::
 
@@ -368,15 +375,17 @@ def install(name=None,
                        'new': '<new-version>'}}
     '''
     if salt.utils.is_true(refresh):
-        refresh_db()
+        refresh_db(kwargs)
 
     if debconf:
         __salt__['debconf.set_file'](debconf)
 
-    pkg_params, pkg_type = __salt__['pkg_resource.parse_targets'](name,
-                                                                  pkgs,
-                                                                  sources,
-                                                                  **kwargs)
+    try:
+        pkg_params, pkg_type = __salt__['pkg_resource.parse_targets'](
+            name, pkgs, sources, **kwargs
+        )
+    except MinionError as exc:
+        raise CommandExecutionError(exc)
 
     # Support old "repo" argument
     repo = kwargs.get('repo', '')
@@ -425,10 +434,12 @@ def install(name=None,
         cmd.append('install')
         cmd.extend(targets)
 
-	log = dict(('state_%s' % k,v) for k,v in __salt__['cmd.run_all'](cmd, env=kwargs.get('env'), python_shell=False, output_loglevel='debug').iteritems() if k in ['stdout', 'stderr'])
+    result = __salt__['cmd.run_all'](cmd, env=kwargs.get('env'), python_shell=False,
+                        output_loglevel='debug')
+    state_std(kwargs, result)
     __context__.pop('pkg.list_pkgs', None)
     new = list_pkgs()
-    return (salt.utils.compare_dicts(old, new), log)
+    return salt.utils.compare_dicts(old, new)
 
 
 def _uninstall(action='remove', name=None, pkgs=None, **kwargs):
@@ -436,8 +447,11 @@ def _uninstall(action='remove', name=None, pkgs=None, **kwargs):
     remove and purge do identical things but with different apt-get commands,
     this function performs the common logic.
     '''
+    try:
+        pkg_params = __salt__['pkg_resource.parse_targets'](name, pkgs)[0]
+    except MinionError as exc:
+        raise CommandExecutionError(exc)
 
-    pkg_params = __salt__['pkg_resource.parse_targets'](name, pkgs)[0]
     old = list_pkgs()
     old_removed = list_pkgs(removed=True)
     targets = [x for x in pkg_params if x in old]
@@ -447,17 +461,23 @@ def _uninstall(action='remove', name=None, pkgs=None, **kwargs):
         return {}
     cmd = ['apt-get', '-q', '-y', action]
     cmd.extend(targets)
-    log = dict(('state_%s' % k,v) for k,v in __salt__['cmd.run_all'](cmd, env=kwargs.get('env'), python_shell=False, output_loglevel='debug').iteritems() if k in ['stdout', 'stderr'])
+    result = __salt__['cmd.run_all'](
+        cmd,
+        env=kwargs.get('env'),
+        python_shell=False,
+        output_loglevel='debug'
+    )
+    state_std(kwargs, result)
     __context__.pop('pkg.list_pkgs', None)
     new = list_pkgs()
     new_removed = list_pkgs(removed=True)
 
-    ret = {'installed': salt.utils.compare_dicts(old, new), 'log': log}
+    ret = {'installed': salt.utils.compare_dicts(old, new)}
     if action == 'purge':
         ret['removed'] = salt.utils.compare_dicts(old_removed, new_removed)
-    return ret
-    #else:
-    #    return ret['installed']
+        return ret
+    else:
+        return ret['installed']
 
 
 def remove(name=None, pkgs=None, **kwargs):
@@ -537,15 +557,16 @@ def upgrade(refresh=True, **kwargs):
         salt '*' pkg.upgrade
     '''
     if salt.utils.is_true(refresh):
-        refresh_db()
+        refresh_db(kwargs)
 
     old = list_pkgs()
     cmd = ['apt-get', '-q', '-y', '-o', 'DPkg::Options::=--force-confold',
            '-o', 'DPkg::Options::=--force-confdef', 'dist-upgrade']
-    log = dict(('state_%s' % k,v) for k,v in __salt__['cmd.run_all'](cmd, python_shell=False, output_loglevel='debug').iteritems() if k in ['stdout', 'stderr'])
+    result = __salt__['cmd.run_all'](cmd, python_shell=False, output_loglevel='debug')
+    state_std(kwargs, result)
     __context__.pop('pkg.list_pkgs', None)
     new = list_pkgs()
-    return (salt.utils.compare_dicts(old, new), log)
+    return salt.utils.compare_dicts(old, new)
 
 
 def _clean_pkglist(pkgs):
@@ -812,7 +833,7 @@ def get_repo(repo, **kwargs):
     '''
     Display a repo from the sources.list / sources.list.d
 
-    The repo passwd in needs to be a complete repo entry.
+    The repo passed in needs to be a complete repo entry.
 
     CLI Examples:
 
@@ -974,7 +995,7 @@ def del_repo(repo, **kwargs):
                             pass
                 ret += msg.format(repo, repo_file)
             # explicit refresh after a repo is deleted
-            refresh_db()
+            refresh_db(**kwargs)
             return ret
 
     return "Repo {0} doesn't exist in the sources.list(s)".format(repo)
@@ -1027,11 +1048,13 @@ def mod_repo(repo, saltenv='base', **kwargs):
                         cmd = 'apt-add-repository {0}'.format(repo)
                     else:
                         cmd = 'apt-add-repository -y {0}'.format(repo)
-                    out = __salt__['cmd.run_stdout'](
+                    result = __salt__['cmd.run_all'](
                         cmd, output_loglevel='debug', **kwargs
                     )
+                    state_std(kwargs, result)
+                    out = result['stdout']
                     # explicit refresh when a repo is modified.
-                    refresh_db()
+                    refresh_db(**kwargs)
                     return {repo: out}
             else:
                 if not ppa_format_support:
@@ -1139,9 +1162,11 @@ def mod_repo(repo, saltenv='base', **kwargs):
             error_str = 'both keyserver and keyid options required.'
             raise NameError(error_str)
         cmd = 'apt-key export {0}'.format(keyid)
-        output = __salt__['cmd.run_stdout'](
+        result = __salt__['cmd.run_all'](
             cmd, output_loglevel='debug', **kwargs
         )
+        state_std(kwargs, result)
+        output = result['stdout']
         imported = output.startswith('-----BEGIN PGP')
         if ks:
             if not imported:
@@ -1150,6 +1175,7 @@ def mod_repo(repo, saltenv='base', **kwargs):
                 ret = __salt__['cmd.run_all'](
                     cmd.format(ks, keyid), output_loglevel='debug', **kwargs
                 )
+                state_std(kwargs, ret)
                 if ret['retcode'] != 0:
                     raise CommandExecutionError(
                         'Error: key retrieval failed: {0}'
@@ -1160,9 +1186,11 @@ def mod_repo(repo, saltenv='base', **kwargs):
         key_url = kwargs['key_url']
         fn_ = __salt__['cp.cache_file'](key_url, saltenv)
         cmd = 'apt-key add {0}'.format(fn_)
-        out = __salt__['cmd.run_stdout'](
+        result = __salt__['cmd.run_all'](
             cmd, output_loglevel='debug', **kwargs
         )
+        state_std(kwargs, result)
+        out = result['stdout']
         if not out.upper().startswith('OK'):
             raise CommandExecutionError(
                 'Error: key retrieval failed: {0}'.format(cmd.format(key_url))
@@ -1231,7 +1259,7 @@ def mod_repo(repo, saltenv='base', **kwargs):
             setattr(mod_source, key, kwargs[key])
     sources.save()
     # on changes, explicitly refresh
-    refresh_db()
+    refresh_db(**kwargs)
     return {
         repo: {
             'architectures': getattr(mod_source, 'architectures', []),

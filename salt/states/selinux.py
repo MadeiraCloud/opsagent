@@ -68,7 +68,8 @@ def mode(name):
     ret = {'name': name,
            'result': False,
            'comment': '',
-           'changes': {}}
+           'changes': {},
+           'state_stdout': '', 'state_stderr': ''}
     tmode = _refine_mode(name)
     if tmode == 'unknown':
         ret['comment'] = '{0} is not an accepted mode'.format(name)
@@ -85,7 +86,7 @@ def mode(name):
         ret['result'] = None
         return ret
 
-    mode = __salt__['selinux.setenforce'](tmode)
+    mode = __salt__['selinux.setenforce'](tmode, state_ret=ret)
     if mode == tmode:
         ret['result'] = True
         ret['comment'] = 'SELinux has been set to {0} mode'.format(tmode)
@@ -111,7 +112,8 @@ def boolean(name, value, persist=False):
     ret = {'name': name,
            'result': True,
            'comment': '',
-           'changes': {}}
+           'changes': {},
+           'state_stdout': '', 'state_stderr': ''}
     bools = __salt__['selinux.list_sebool']()
     if name not in bools:
         ret['comment'] = 'Boolean {0} is not available'.format(name)
@@ -139,7 +141,7 @@ def boolean(name, value, persist=False):
                 name, rvalue)
         return ret
 
-    if __salt__['selinux.setsebool'](name, rvalue, persist):
+    if __salt__['selinux.setsebool'](name, rvalue, persist, state_ret=ret):
         ret['comment'] = 'Boolean {0} has been set to {1}'.format(name, rvalue)
         return ret
     ret['comment'] = 'Failed to set the boolean {0} to {1}'.format(name, rvalue)

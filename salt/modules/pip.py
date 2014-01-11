@@ -11,6 +11,7 @@ import shutil
 
 # Import salt libs
 import salt.utils
+from salt.states import state_std
 from salt._compat import string_types
 from salt.exceptions import CommandExecutionError, CommandNotFoundError
 
@@ -121,7 +122,8 @@ def install(pkgs=None,
             activate=False,
             pre_releases=False,
             __env__=None,
-            saltenv='base'):
+            saltenv='base',
+            **kwargs):
     '''
     Install packages with pip
 
@@ -442,6 +444,7 @@ def install(pkgs=None,
         # Check the locally installed pip version
         pip_version_cmd = '{0} --version'.format(_get_pip_bin(bin_env))
         output = __salt__['cmd.run_all'](pip_version_cmd).get('stdout', '')
+        state_std(kwargs, output)
         pip_version = output.split()[1]
 
         # From pip v1.4 the --pre flag is available
@@ -495,7 +498,9 @@ def install(pkgs=None,
         cmd_kwargs = dict(runas=user, cwd=cwd, saltenv=saltenv)
         if bin_env and os.path.isdir(bin_env):
             cmd_kwargs['env'] = {'VIRTUAL_ENV': bin_env}
-        return __salt__['cmd.run_all'](' '.join(cmd), **cmd_kwargs)
+        result = __salt__['cmd.run_all'](' '.join(cmd), **cmd_kwargs)
+        state_std(kwargs, result)
+        return result
     finally:
         for requirement in cleanup_requirements:
             try:
@@ -515,7 +520,8 @@ def uninstall(pkgs=None,
               no_chown=False,
               cwd=None,
               __env__=None,
-              saltenv='base'):
+              saltenv='base',
+              **kwargs):
     '''
     Uninstall packages with pip
 
@@ -663,7 +669,8 @@ def uninstall(pkgs=None,
         cmd_kwargs['env'] = {'VIRTUAL_ENV': bin_env}
 
     try:
-        return __salt__['cmd.run_all'](' '.join(cmd), **cmd_kwargs)
+        result = __salt__['cmd.run_all'](' '.join(cmd), **cmd_kwargs)
+        state_std(kwargs, result)
     finally:
         for requirement in cleanup_requirements:
             try:
@@ -675,7 +682,8 @@ def uninstall(pkgs=None,
 def freeze(bin_env=None,
            user=None,
            runas=None,
-           cwd=None):
+           cwd=None,
+           **kwargs):
     '''
     Return a list of installed packages either globally or in the specified
     virtualenv
@@ -726,6 +734,7 @@ def freeze(bin_env=None,
     if bin_env and os.path.isdir(bin_env):
         cmd_kwargs['env'] = {'VIRTUAL_ENV': bin_env}
     result = __salt__['cmd.run_all'](' '.join(cmd), **cmd_kwargs)
+    state_std(kwargs, result)
 
     if result['retcode'] > 0:
         raise CommandExecutionError(result['stderr'])

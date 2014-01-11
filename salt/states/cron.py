@@ -181,7 +181,8 @@ def present(name,
     ret = {'changes': {},
            'comment': '',
            'name': name,
-           'result': True}
+           'result': True,
+           'state_stdout': '', 'state_stderr': ''}
     if __opts__['test']:
         status = _check_cron(user,
                              name,
@@ -208,7 +209,8 @@ def present(name,
                                     month=month,
                                     dayweek=dayweek,
                                     cmd=name,
-                                    comment=comment)
+                                    comment=comment,
+                                    state_ret=ret)
     if data == 'present':
         ret['comment'] = 'Cron {0} already present'.format(name)
         return ret
@@ -250,7 +252,8 @@ def absent(name,
     ret = {'name': name,
            'result': True,
            'changes': {},
-           'comment': ''}
+           'comment': '',
+           'state_stdout': '', 'state_stderr': ''}
 
     if __opts__['test']:
         status = _check_cron(user, name)
@@ -262,7 +265,7 @@ def absent(name,
             ret['comment'] = 'Cron {0} is set to be removed'.format(name)
         return ret
 
-    data = __salt__['cron.rm_job'](user, name)
+    data = __salt__['cron.rm_job'](user, name, state_ret=ret)
     if data == 'absent':
         ret['comment'] = "Cron {0} already absent".format(name)
         return ret
@@ -340,7 +343,8 @@ def file(name,
     ret = {'changes': {},
            'comment': '',
            'name': name,
-           'result': True}
+           'result': True,
+           'state_stdout': '', 'state_stderr': ''}
 
     # Avoid variable naming confusion in below module calls, since ID
     # declaration for this state will be a source URI.
@@ -414,7 +418,8 @@ def file(name,
                                        group,
                                        mode,
                                        env,
-                                       backup)
+                                       backup,
+                                       state_ret=ret)
     if ret['changes']:
         ret['changes'] = {'diff': ret['changes']['diff']}
         ret['comment'] = 'Crontab for user {0} was updated'.format(user)
@@ -422,7 +427,7 @@ def file(name,
         ret['comment'] = 'Crontab for user {0} is in the correct ' \
                          'state'.format(user)
 
-    cron_ret = __salt__['cron.write_cron_file_verbose'](user, cron_path)
+    cron_ret = __salt__['cron.write_cron_file_verbose'](user, cron_path, state_ret=ret)
     if cron_ret['retcode']:
         ret['comment'] = 'Unable to update user {0} crontab {1}.' \
                          ' Error: {2}'.format(user, cron_path, cron_ret['stderr'])

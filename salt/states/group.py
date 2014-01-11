@@ -37,7 +37,7 @@ def present(name, gid=None, system=False):
     ret = {'name': name,
            'changes': {},
            'result': True,
-           'comment': ''}
+           'comment': '', 'state_stdout': '', 'state_stderr': ''}
     grps = __salt__['group.getent']()
     for lgrp in grps:
         # Scan over the groups
@@ -55,7 +55,7 @@ def present(name, gid=None, system=False):
                             'Group {0} exists but the gid will '
                             'be changed to {1}').format(name, gid)
                         return ret
-                    ret['result'] = __salt__['group.chgid'](name, gid)
+                    ret['result'] = __salt__['group.chgid'](name, gid, state_ret=ret)
                     # Clear cached group data
                     sys.modules[
                         __salt__['test.ping'].__module__
@@ -95,7 +95,7 @@ def present(name, gid=None, system=False):
                 ).format(name)
         return ret
 
-    ret['result'] = __salt__['group.add'](name, gid, system=system)
+    ret['result'], reet['log'] = __salt__['group.add'](name, gid, system=system, state_ret=ret)
     # Clear cached group data
     sys.modules[
         __salt__['test.ping'].__module__
@@ -120,7 +120,7 @@ def absent(name):
     ret = {'name': name,
            'changes': {},
            'result': True,
-           'comment': ''}
+           'comment': '', 'state_stdout': '', 'state_stderr': ''}
     for lgrp in __salt__['group.getent']():
         # Scan over the groups
         if lgrp['name'] == name:
@@ -129,7 +129,7 @@ def absent(name):
                 ret['result'] = None
                 ret['comment'] = 'Group {0} is set for removal'.format(name)
                 return ret
-            ret['result'] = __salt__['group.delete'](name)
+            ret['result'], ret['log'] = __salt__['group.delete'](name, state_ret=ret)
             if ret['result']:
                 ret['changes'] = {name: ''}
                 ret['comment'] = 'Removed group {0}'.format(name)

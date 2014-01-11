@@ -37,7 +37,8 @@ def mode(name, mode, quotatype):
     ret = {'name': name,
            'changes': {},
            'result': None,
-           'comment': ''}
+           'comment': '',
+           'state_stdout': '', 'state_stderr': ''}
     fun = 'off'
     if mode is True:
         fun = 'on'
@@ -49,7 +50,7 @@ def mode(name, mode, quotatype):
         ret['comment'] = 'Quota for {0} needs to be set to {1}'.format(name,
                                                                        fun)
         return ret
-    if __salt__['quota.{0}'.format(fun)](name):
+    if __salt__['quota.{0}'.format(fun)](name, state_ret=ret):
         ret['changes'] = {'quota': name}
         ret['result'] = True
         ret['comment'] = 'Set quota for {0} to {1}'.format(name, fun)

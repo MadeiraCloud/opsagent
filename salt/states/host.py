@@ -41,7 +41,8 @@ def present(name, ip):  # pylint: disable=C0103
     ret = {'name': name,
            'changes': {},
            'result': None,
-           'comment': ''}
+           'comment': '',
+           'state_stdout': '', 'state_stderr': ''}
     if __salt__['hosts.has_pair'](ip, name):
         ret['result'] = True
         ret['comment'] = 'Host {0} already present'.format(name)
@@ -76,7 +77,8 @@ def absent(name, ip):  # pylint: disable=C0103
     ret = {'name': name,
            'changes': {},
            'result': None,
-           'comment': ''}
+           'comment': '',
+           'state_stdout': '', 'state_stderr': ''}
     if not __salt__['hosts.has_pair'](ip, name):
         ret['result'] = True
         ret['comment'] = 'Host {0} already absent'.format(name)

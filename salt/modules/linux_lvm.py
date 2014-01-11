@@ -5,6 +5,7 @@ Support for Linux LVM2
 
 # Import salt libs
 import salt.utils
+from salt.states import state_std
 
 # Define the module's virtual name
 __virtualname__ = 'lvm'
@@ -198,7 +199,9 @@ def pvcreate(devices, **kwargs):
     for var in kwargs.keys():
         if kwargs[var] and var in valid:
             cmd += ' --{0} {1}'.format(var, kwargs[var])
-    out = __salt__['cmd.run'](cmd).splitlines()
+    result = __salt__['cmd.run_all'](cmd)
+    state_std(kwargs, result)
+    out = result['stdout'].splitlines()
     return out[0]
 
 
@@ -224,13 +227,15 @@ def vgcreate(vgname, devices, **kwargs):
     for var in kwargs.keys():
         if kwargs[var] and var in valid:
             cmd += ' --{0} {1}'.format(var, kwargs[var])
-    out = __salt__['cmd.run'](cmd).splitlines()
+    result = __salt__['cmd.run_all'](cmd)
+    state_std(kwargs, result)
+    out = result['stdout'].splitlines()
     vgdata = vgdisplay(vgname)
     vgdata['Output from vgcreate'] = out[0].strip()
     return vgdata
 
 
-def lvcreate(lvname, vgname, size=None, extents=None, pv=''):
+def lvcreate(lvname, vgname, size=None, extents=None, pv='', **kwargs):
     '''
     Create a new logical volume, with option for which physical volume to be used
 
@@ -250,14 +255,16 @@ def lvcreate(lvname, vgname, size=None, extents=None, pv=''):
         cmd = 'lvcreate -n {0} {1} -l {2} {3}'.format(lvname, vgname, extents, pv)
     else:
         return 'Error: Either size or extents must be specified'
-    out = __salt__['cmd.run'](cmd).splitlines()
+    result = __salt__['cmd.run_all'](cmd)
+    state_std(kwargs, result)
+    out = result['stdout'].splitlines()
     lvdev = '/dev/{0}/{1}'.format(vgname, lvname)
     lvdata = lvdisplay(lvdev)
     lvdata['Output from lvcreate'] = out[0].strip()
     return lvdata
 
 
-def vgremove(vgname):
+def vgremove(vgname, **kwargs):
     '''
     Remove an LVM volume group
 
@@ -269,11 +276,13 @@ def vgremove(vgname):
         salt mymachine lvm.vgremove vgname force=True
     '''
     cmd = 'vgremove -f {0}'.format(vgname)
-    out = __salt__['cmd.run'](cmd)
+    result = __salt__['cmd.run_all'](cmd)
+    state_std(kwargs, result)
+    out = result['stdout'].splitlines()
     return out.strip()
 
 
-def lvremove(lvname, vgname):
+def lvremove(lvname, vgname, **kwargs):
     '''
     Remove a given existing logical volume from a named existing volume group
 
@@ -284,5 +293,7 @@ def lvremove(lvname, vgname):
         salt '*' lvm.lvremove lvname vgname force=True
     '''
     cmd = 'lvremove -f {0}/{1}'.format(vgname, lvname)
-    out = __salt__['cmd.run'](cmd)
+    result = __salt__['cmd.run_all'](cmd)
+    state_std(kwargs, result)
+    out = result['stdout'].splitlines()
     return out.strip()

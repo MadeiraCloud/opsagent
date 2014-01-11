@@ -8,7 +8,7 @@ import copy
 
 # Import salt libs
 import salt.utils
-
+from salt.states import state_std
 
 def __virtual__():
     '''
@@ -19,7 +19,7 @@ def __virtual__():
     return False
 
 
-def refresh_db():
+def refresh_db(**kwargs):
     '''
     Updates the pkgutil repo database (pkgutil -U)
 
@@ -29,10 +29,13 @@ def refresh_db():
 
         salt '*' pkgutil.refresh_db
     '''
-    return __salt__['cmd.retcode']('/opt/csw/bin/pkgutil -U > /dev/null 2>&1') == 0
+    result =  __salt__['cmd.run_all']('/opt/csw/bin/pkgutil -U > /dev/null 2>&1')
+    state_std(kwargs, result)
+    return result['retcode'] == 0
+    
 
 
-def upgrade_available(name):
+def upgrade_available(name, **kwargs):
     '''
     Check if there is an upgrade available for a certain package
 
@@ -45,7 +48,9 @@ def upgrade_available(name):
     version_num = None
     cmd = '/opt/csw/bin/pkgutil -c --parse --single {0} 2>/dev/null'.format(
         name)
-    out = __salt__['cmd.run_stdout'](cmd)
+    result = __salt__['cmd.run_all'](cmd)
+    state_std(kwargs, result)
+    out = result['stdout']
     if out:
         version_num = out.split()[2].strip()
     if version_num:
@@ -97,14 +102,15 @@ def upgrade(refresh=True, **kwargs):
         salt '*' pkgutil.upgrade
     '''
     if salt.utils.is_true(refresh):
-        refresh_db()
+        refresh_db(**kwargs)
 
     old = list_pkgs()
 
     # Install or upgrade the package
     # If package is already installed
     cmd = '/opt/csw/bin/pkgutil -yu'
-    __salt__['cmd.run_all'](cmd)
+    result = __salt__['cmd.run_all'](cmd)
+    state_std(kwargs, result)
     __context__.pop('pkg.list_pkgs', None)
     new = list_pkgs()
     return salt.utils.compare_dicts(old, new)
@@ -197,11 +203,13 @@ def latest_version(*names, **kwargs):
 
     # Refresh before looking for the latest version available
     if refresh:
-        refresh_db()
+        refresh_db(**kwargs)
 
     pkgs = list_pkgs()
     cmd = '/opt/csw/bin/pkgutil -a --parse {0}'.format(' '.join(names))
-    output = __salt__['cmd.run_all'](cmd).get('stdout', '').splitlines()
+    result = __salt__['cmd.run_all'](cmd).get('stdout', '')
+    state_std(kwargs, result)
+    output = result['stdout'].splitlines()
     for line in output:
         try:
             name, version_rev = line.split()[1:3]
@@ -258,7 +266,7 @@ def install(name=None, refresh=False, version=None, pkgs=None, **kwargs):
                        'new': '<new-version>'}}
     '''
     if refresh:
-        refresh_db()
+        refresh_db(**kwargs)
 
     # Ignore 'sources' argument
     pkg_params = __salt__['pkg_resource.parse_targets'](name,
@@ -279,7 +287,8 @@ def install(name=None, refresh=False, version=None, pkgs=None, **kwargs):
 
     cmd = '/opt/csw/bin/pkgutil -yu {0}'.format(' '.join(targets))
     old = list_pkgs()
-    __salt__['cmd.run_all'](cmd)
+    result = __salt__['cmd.run_all'](cmd)
+    state_std(kwargs, result)
     __context__.pop('pkg.list_pkgs', None)
     new = list_pkgs()
     return salt.utils.compare_dicts(old, new)
@@ -319,7 +328,8 @@ def remove(name=None, pkgs=None, **kwargs):
     if not targets:
         return {}
     cmd = '/opt/csw/bin/pkgutil -yr {0}'.format(' '.join(targets))
-    __salt__['cmd.run_all'](cmd)
+    result = __salt__['cmd.run_all'](cmd)
+    state_std(kwargs, result)
     __context__.pop('pkg.list_pkgs', None)
     new = list_pkgs()
     return salt.utils.compare_dicts(old, new)
@@ -353,4 +363,4 @@ def purge(name=None, pkgs=None, **kwargs):
         salt '*' pkg.purge <package1>,<package2>,<package3>
         salt '*' pkg.purge pkgs='["foo", "bar"]'
     '''
-    return remove(name=name, pkgs=pkgs)
+    return remove(name=name, pkgs=pkgs, **kwargs)

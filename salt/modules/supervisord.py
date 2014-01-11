@@ -7,6 +7,8 @@ virtualenv
 # Import python libs
 import os
 
+from salt.states import state_std
+
 # Import salt libs
 from salt.exceptions import CommandNotFoundError
 
@@ -52,7 +54,7 @@ def _get_return(ret):
         return ''
 
 
-def start(name='all', user=None, conf_file=None, bin_env=None):
+def start(name='all', user=None, conf_file=None, bin_env=None, **kwargs):
     '''
     Start the named service.
     Process group names should not include a trailing asterisk.
@@ -75,10 +77,11 @@ def start(name='all', user=None, conf_file=None, bin_env=None):
     ret = __salt__['cmd.run_all'](
         _ctl_cmd('start', name, conf_file, bin_env), runas=user
     )
+    state_std(kwargs, ret)
     return _get_return(ret)
 
 
-def restart(name='all', user=None, conf_file=None, bin_env=None):
+def restart(name='all', user=None, conf_file=None, bin_env=None, **kwargs):
     '''
     Restart the named service.
     Process group names should not include a trailing asterisk.
@@ -101,10 +104,11 @@ def restart(name='all', user=None, conf_file=None, bin_env=None):
     ret = __salt__['cmd.run_all'](
         _ctl_cmd('restart', name, conf_file, bin_env), runas=user
     )
+    state_std(kwargs, ret)
     return _get_return(ret)
 
 
-def stop(name='all', user=None, conf_file=None, bin_env=None):
+def stop(name='all', user=None, conf_file=None, bin_env=None, **kwargs):
     '''
     Stop the named service.
     Process group names should not include a trailing asterisk.
@@ -127,10 +131,11 @@ def stop(name='all', user=None, conf_file=None, bin_env=None):
     ret = __salt__['cmd.run_all'](
         _ctl_cmd('stop', name, conf_file, bin_env), runas=user
     )
+    state_std(kwargs, ret)
     return _get_return(ret)
 
 
-def add(name, user=None, conf_file=None, bin_env=None):
+def add(name, user=None, conf_file=None, bin_env=None, **kwargs):
     '''
     Activates any updates in config for process/group.
 
@@ -153,10 +158,11 @@ def add(name, user=None, conf_file=None, bin_env=None):
     ret = __salt__['cmd.run_all'](
         _ctl_cmd('add', name, conf_file, bin_env), runas=user
     )
+    state_std(kwargs, ret)
     return _get_return(ret)
 
 
-def remove(name, user=None, conf_file=None, bin_env=None):
+def remove(name, user=None, conf_file=None, bin_env=None, **kwargs):
     '''
     Removes process/group from active config
 
@@ -179,10 +185,11 @@ def remove(name, user=None, conf_file=None, bin_env=None):
     ret = __salt__['cmd.run_all'](
         _ctl_cmd('remove', name, conf_file, bin_env), runas=user
     )
+    state_std(kwargs, ret)
     return _get_return(ret)
 
 
-def reread(user=None, conf_file=None, bin_env=None):
+def reread(user=None, conf_file=None, bin_env=None, **kwargs):
     '''
     Reload the daemon's configuration files
 
@@ -203,10 +210,11 @@ def reread(user=None, conf_file=None, bin_env=None):
     ret = __salt__['cmd.run_all'](
         _ctl_cmd('reread', None, conf_file, bin_env), runas=user
     )
+    state_std(kwargs, ret)
     return _get_return(ret)
 
 
-def update(user=None, conf_file=None, bin_env=None):
+def update(user=None, conf_file=None, bin_env=None, **kwargs):
     '''
     Reload config and add/remove as necessary
 
@@ -227,6 +235,7 @@ def update(user=None, conf_file=None, bin_env=None):
     ret = __salt__['cmd.run_all'](
         _ctl_cmd('update', None, conf_file, bin_env), runas=user
     )
+    state_std(kwargs, ret)
     return _get_return(ret)
 
 
@@ -282,7 +291,7 @@ def status_raw(name=None, user=None, conf_file=None, bin_env=None):
     return _get_return(ret)
 
 
-def custom(command, user=None, conf_file=None, bin_env=None):
+def custom(command, user=None, conf_file=None, bin_env=None, **kwargs):
     '''
     Run any custom supervisord command
 
@@ -303,4 +312,5 @@ def custom(command, user=None, conf_file=None, bin_env=None):
     ret = __salt__['cmd.run_all'](
         _ctl_cmd(command, None, conf_file, bin_env), runas=user
     )
+    state_std(kwargs, ret)
     return _get_return(ret)

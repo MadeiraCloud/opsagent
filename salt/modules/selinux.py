@@ -17,6 +17,7 @@ import os
 # Import salt libs
 import salt.utils
 import salt.utils.decorators as decorators
+from salt.states import state_std
 from salt._compat import string_types
 from salt.exceptions import CommandExecutionError
 
@@ -82,7 +83,7 @@ def getenforce():
         raise CommandExecutionError(msg.format(str(exc)))
 
 
-def setenforce(mode):
+def setenforce(mode, **kwargs):
     '''
     Set the SELinux enforcing mode
 
@@ -125,7 +126,7 @@ def getsebool(boolean):
     return list_sebool().get(boolean, {})
 
 
-def setsebool(boolean, value, persist=False):
+def setsebool(boolean, value, persist=False, **kwargs):
     '''
     Set the value for a boolean
 
@@ -139,7 +140,9 @@ def setsebool(boolean, value, persist=False):
         cmd = 'setsebool -P {0} {1}'.format(boolean, value)
     else:
         cmd = 'setsebool {0} {1}'.format(boolean, value)
-    return not __salt__['cmd.retcode'](cmd)
+    result = __salt__['cmd.run_all'](cmd)
+    state_std(kwargs, result)
+    return not result['retcode']
 
 
 def setsebools(pairs, persist=False):
@@ -160,7 +163,9 @@ def setsebools(pairs, persist=False):
         cmd = 'setsebool '
     for boolean, value in pairs.items():
         cmd = '{0} {1}={2}'.format(cmd, boolean, value)
-    return not __salt__['cmd.retcode'](cmd)
+    result = __salt__['cmd.run_all'](cmd)
+    state_std(kwargs, result)
+    return not result['retcode']
 
 
 def list_sebool():

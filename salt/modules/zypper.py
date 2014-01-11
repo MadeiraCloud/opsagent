@@ -10,6 +10,8 @@ import re
 
 # Import salt libs
 import salt.utils
+from salt.states import state_std
+from salt.exceptions import CommandExecutionError, MinionError
 
 log = logging.getLogger(__name__)
 
@@ -90,14 +92,16 @@ def latest_version(*names, **kwargs):
 
     # Refresh before looking for the latest version available
     if refresh:
-        refresh_db()
+        refresh_db(**kwargs)
 
     restpackages = names
     outputs = []
     # Split call to zypper into batches of 500 packages
     while restpackages:
         cmd = 'zypper info -t package {0}'.format(' '.join(restpackages[:500]))
-        output = __salt__['cmd.run_stdout'](cmd, output_loglevel='debug')
+        result = __salt__['cmd.run_all'](cmd, output_loglevel='debug')
+        state_std(kwargs, result)
+        output = result['stdout']
         outputs.extend(re.split('Information for package \\S+:\n', output))
         restpackages = restpackages[500:]
     for package in outputs:
@@ -129,7 +133,7 @@ def latest_version(*names, **kwargs):
 available_version = latest_version
 
 
-def upgrade_available(name):
+def upgrade_available(name, **kwargs):
     '''
     Check whether or not an upgrade is available for a given package
 
@@ -139,7 +143,7 @@ def upgrade_available(name):
 
         salt '*' pkg.upgrade_available <package name>
     '''
-    return latest_version(name) != ''
+    return latest_version(name, **kwargs) != ''
 
 
 def version(*names, **kwargs):
@@ -199,7 +203,7 @@ def list_pkgs(versions_as_list=False, **kwargs):
     return ret
 
 
-def refresh_db():
+def refresh_db(**kwargs):
     '''
     Just run a ``zypper refresh``, return a dict::
 
@@ -213,7 +217,9 @@ def refresh_db():
     '''
     cmd = 'zypper refresh'
     ret = {}
-    out = __salt__['cmd.run'](cmd, output_loglevel='debug')
+    result = __salt__['cmd.run_all'](cmd, output_loglevel='debug')
+    state_std(kwargs, result)
+    out = result['stdout']
     for line in out.splitlines():
         if not line:
             continue
@@ -298,12 +304,15 @@ def install(name=None,
                        'new': '<new-version>'}}
     '''
     if salt.utils.is_true(refresh):
-        refresh_db()
+        refresh_db(**kwargs)
 
-    pkg_params, pkg_type = __salt__['pkg_resource.parse_targets'](name,
-                                                                  pkgs,
-                                                                  sources,
-                                                                  **kwargs)
+    try:
+        pkg_params, pkg_type = __salt__['pkg_resource.parse_targets'](
+            name, pkgs, sources, **kwargs
+        )
+    except MinionError as exc:
+        raise CommandExecutionError(exc)
+
     if pkg_params is None or len(pkg_params) == 0:
         return {}
 
@@ -361,7 +370,9 @@ def install(name=None,
             .format(fromrepoopt, '" "'.join(targets[:500]))
         )
         targets = targets[500:]
-        out = __salt__['cmd.run'](cmd, output_loglevel='debug')
+        result = __salt__['cmd.run_all'](cmd, output_loglevel='debug')
+        state_std(kwargs, result)
+        out = result['stdout']
         for line in out.splitlines():
             match = re.match(
                 "^The selected package '([^']+)'.+has lower version",
@@ -376,14 +387,15 @@ def install(name=None,
             '--auto-agree-with-licenses --force {0}{1}'
             .format(fromrepoopt, ' '.join(downgrades[:500]))
         )
-        __salt__['cmd.run'](cmd, output_loglevel='debug')
+        result = __salt__['cmd.run_all'](cmd, output_loglevel='debug')
+        state_std(kwargs, result)
         downgrades = downgrades[500:]
     __context__.pop('pkg.list_pkgs', None)
     new = list_pkgs()
     return salt.utils.compare_dicts(old, new)
 
 
-def upgrade(refresh=True):
+def upgrade(refresh=True, **kwargs):
     '''
     Run a full system upgrade, a zypper upgrade
 
@@ -399,22 +411,27 @@ def upgrade(refresh=True):
         salt '*' pkg.upgrade
     '''
     if salt.utils.is_true(refresh):
-        refresh_db()
+        refresh_db(**kwargs)
     old = list_pkgs()
     cmd = 'zypper --non-interactive update --auto-agree-with-licenses'
-    __salt__['cmd.run'](cmd, output_loglevel='debug')
+    result = __salt__['cmd.run_all'](cmd, output_loglevel='debug')
+    state_std(kwargs, result)
     __context__.pop('pkg.list_pkgs', None)
     new = list_pkgs()
     return salt.utils.compare_dicts(old, new)
 
 
-def _uninstall(action='remove', name=None, pkgs=None):
+def _uninstall(action='remove', name=None, pkgs=None, **kwargs):
     '''
     remove and purge do identical things but with different zypper commands,
     this function performs the common logic.
     '''
+    try:
+        pkg_params = __salt__['pkg_resource.parse_targets'](name, pkgs)[0]
+    except MinionError as exc:
+        raise CommandExecutionError(exc)
+
     purge_arg = '-u' if action == 'purge' else ''
-    pkg_params = __salt__['pkg_resource.parse_targets'](name, pkgs)[0]
     old = list_pkgs()
     targets = [x for x in pkg_params if x in old]
     if not targets:
@@ -424,7 +441,8 @@ def _uninstall(action='remove', name=None, pkgs=None):
             'zypper --non-interactive remove {0} {1}'
             .format(purge_arg, ' '.join(targets[:500]))
         )
-        __salt__['cmd.run'](cmd, output_loglevel='debug')
+        result = __salt__['cmd.run_all'](cmd, output_loglevel='debug')
+        state_std(kwargs, result)
         targets = targets[500:]
     __context__.pop('pkg.list_pkgs', None)
     new = list_pkgs()
@@ -458,7 +476,7 @@ def remove(name=None, pkgs=None, **kwargs):
         salt '*' pkg.remove <package1>,<package2>,<package3>
         salt '*' pkg.remove pkgs='["foo", "bar"]'
     '''
-    return _uninstall(action='remove', name=name, pkgs=pkgs)
+    return _uninstall(action='remove', name=name, pkgs=pkgs, **kwargs)
 
 
 def purge(name=None, pkgs=None, **kwargs):
@@ -489,4 +507,4 @@ def purge(name=None, pkgs=None, **kwargs):
         salt '*' pkg.purge <package1>,<package2>,<package3>
         salt '*' pkg.purge pkgs='["foo", "bar"]'
     '''
-    return _uninstall(action='purge', name=name, pkgs=pkgs)
+    return _uninstall(action='purge', name=name, pkgs=pkgs, **kwargs)

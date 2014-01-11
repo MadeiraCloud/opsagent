@@ -188,7 +188,8 @@ def managed(name, **kwargs):
     ret = {'name': name,
            'changes': {},
            'result': None,
-           'comment': ''}
+           'comment': '',
+           'state_stdout': '', 'state_stderr': ''}
     repo = {}
 
     # pkg.mod_repo has conflicting kwargs, so move 'em around
@@ -264,7 +265,7 @@ def managed(name, **kwargs):
                           .format(name))
         return ret
     try:
-        __salt__['pkg.mod_repo'](**kwargs)
+        __salt__['pkg.mod_repo'](state_ret=ret, **kwargs)
     except Exception as e:
         # This is another way to pass information back from the mod_repo
         # function.
@@ -330,7 +331,8 @@ def absent(name, **kwargs):
     ret = {'name': name,
            'changes': {},
            'result': None,
-           'comment': ''}
+           'comment': '',
+           'state_std': '', 'state_stderr': ''}
     repo = {}
     if 'ppa' in kwargs and __grains__['os'] == 'Ubuntu':
         kwargs['name'] = kwargs.pop('ppa')
@@ -351,7 +353,7 @@ def absent(name, **kwargs):
                           'to the differences in the configured repositories.'
                           .format(name))
         return ret
-    __salt__['pkg.del_repo'](repo=name, **kwargs)
+    __salt__['pkg.del_repo'](repo=name, state_ret=ret, **kwargs)
     repos = __salt__['pkg.list_repos']()
     if name not in repos.keys():
         ret['changes'] = {'repo': name}

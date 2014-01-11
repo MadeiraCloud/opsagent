@@ -40,13 +40,8 @@ import re
 
 # Import salt libs
 import salt.utils
-from salt.exceptions import CommandExecutionError
+from salt.exceptions import CommandExecutionError, MinionError
 from salt.modules.pkg_resource import _repack_pkgs
-
-__opts__ = {
-	'cachedir'	:	'/var/cache/madeira/'
-}
-__salt__ = {} 
 
 if salt.utils.is_windows():
     from salt.utils import namespaced_function as _namespaced_function
@@ -337,6 +332,10 @@ def installed(
         :mod:`yumpkg5 <salt.modules.yumpkg5>`, and
         :mod:`zypper <salt.modules.zypper>`.
 
+    refresh
+        Update the repo database of available packages prior to installing the
+        requested package.
+
     Usage::
 
         httpd:
@@ -344,7 +343,7 @@ def installed(
             - fromrepo: mycustomrepo
             - skip_verify: True
             - version: 2.0.6~ubuntu3
-
+            - refresh: True
 
     Multiple Package Installation Options: (not supported in Windows or pkgng)
 
@@ -420,14 +419,11 @@ def installed(
               - qux: /minion/path/to/qux.rpm
     '''
     rtag = __gen_rtag()
+    refresh = bool(salt.utils.is_true(refresh) or os.path.isfile(rtag))
+    ret = {'state_stdout': '', 'state_stderr': ''}
 
     if not isinstance(version, basestring) and version is not None:
         version = str(version)
-
-    if salt.utils.is_true(refresh) or os.path.isfile(rtag):
-        __salt__['pkg.refresh_db']()
-        if os.path.isfile(rtag):
-            os.remove(rtag)
 
     result = _find_install_targets(name, version, pkgs, sources,
                                    fromrepo=fromrepo, **kwargs)
@@ -454,20 +450,32 @@ def installed(
                       'installed/updated: {0}.'.format(summary)
         else:
             comment = ''
-        return {'name': name,
+        return ret.update({'name': name,
                 'changes': {},
                 'result': None,
-                'comment': comment}
+                'comment': comment})
 
     comment = []
-    pkg_ret, log_ret = __salt__['pkg.install'](name,
-                                      refresh=refresh,
-                                      version=version,
-                                      fromrepo=fromrepo,
-                                      skip_verify=skip_verify,
-                                      pkgs=pkgs,
-                                      sources=sources,
-                                      **kwargs)
+    try:
+        pkg_ret = __salt__['pkg.install'](name,
+                                          refresh=refresh,
+                                          version=version,
+                                          fromrepo=fromrepo,
+                                          skip_verify=skip_verify,
+                                          pkgs=pkgs,
+                                          sources=sources,
+                                          state_ret=ret,
+                                          **kwargs)
+
+        if os.path.isfile(rtag):
+            os.remove(rtag)
+    except CommandExecutionError as exc:
+        return ret.update({'name': name,
+                'changes': {},
+                'result': False,
+                'comment': 'An error was encountered while installing '
+                           'package(s): {0}'.format(exc)})
+
     if isinstance(pkg_ret, dict):
         changes = pkg_ret
     elif isinstance(pkg_ret, basestring):
@@ -534,17 +542,15 @@ def installed(
                                  for x in failed])
         comment.insert(0, 'The following packages failed to '
                           'install/update: {0}.'.format(summary))
-        return {'name': name,
+        return ret.update({'name': name,
                 'changes': changes,
                 'result': False,
-                'comment': ' '.join(comment),
-                'log': log_ret}
+                'comment': ' '.join(comment)})
     else:
-        return {'name': name,
+        return ret.update({'name': name,
                 'changes': changes,
                 'result': True,
-                'comment': ' '.join(comment),
-                'log': log_ret}
+                'comment': ' '.join(comment)})
 
 
 def latest(
@@ -591,21 +597,22 @@ def latest(
               - baz
     '''
     rtag = __gen_rtag()
+    ret = {'state_stdout': '', 'state_stderr': ''}
 
     if kwargs.get('sources'):
-        return {'name': name,
+        return ret.update({'name': name,
                 'changes': {},
                 'result': False,
-                'comment': 'The "sources" parameter is not supported.'}
+                'comment': 'The "sources" parameter is not supported.'})
     elif pkgs:
         desired_pkgs = _repack_pkgs(pkgs).keys()
         if not desired_pkgs:
             # Badly-formatted SLS
-            return {'name': name,
+            return ret.update({'name': name,
                     'changes': {},
                     'result': False,
                     'comment': 'Invalidly formatted "pkgs" parameter. See '
-                               'minion log.'}
+                               'minion log.'})
     else:
         desired_pkgs = [name]
 
@@ -618,6 +625,7 @@ def latest(
     avail = __salt__['pkg.latest_version'](*desired_pkgs,
                                            fromrepo=fromrepo,
                                            refresh=refresh,
+                                           state_ret=ret,
                                            **kwargs)
     # Remove the rtag if it exists, ensuring only one refresh per salt run
     # (unless overridden with refresh=True)
@@ -647,10 +655,10 @@ def latest(
             targets[pkg] = avail[pkg]
 
     if problems:
-        return {'name': name,
+        return ret.update({'name': name,
                 'changes': {},
                 'result': False,
-                'comment': ' '.join(problems)}
+                'comment': ' '.join(problems)})
 
     if targets:
         # Find up-to-date packages
@@ -675,22 +683,30 @@ def latest(
                     comment += ' {0} packages are already up-to-date.'.format(
                         len(up_to_date))
 
-            return {'name': name,
+            return ret.update({'name': name,
                     'changes': {},
                     'result': None,
-                    'comment': comment}
+                    'comment': comment})
 
         # Build updated list of pkgs to exclude non-targeted ones
         targeted_pkgs = targets.keys() if pkgs else None
 
-        # No need to refresh, if a refresh was necessary it would have been
-        # performed above when pkg.latest_version was run.
-        changes, log = __salt__['pkg.install'](name,
-                                          refresh=False,
-                                          fromrepo=fromrepo,
-                                          skip_verify=skip_verify,
-                                          pkgs=targeted_pkgs,
-                                          **kwargs)
+        try:
+            # No need to refresh, if a refresh was necessary it would have been
+            # performed above when pkg.latest_version was run.
+            changes = __salt__['pkg.install'](name,
+                                              refresh=False,
+                                              fromrepo=fromrepo,
+                                              skip_verify=skip_verify,
+                                              pkgs=targeted_pkgs,
+                                              state_ret=ret,
+                                              **kwargs)
+        except CommandExecutionError as exc:
+            return ret.update({'name': name,
+                    'changes': {},
+                    'result': False,
+                    'comment': 'An error was encountered while installing '
+                               'package(s): {0}'.format(exc)})
 
         if changes:
             # Find failed and successful updates
@@ -717,18 +733,18 @@ def latest(
                         len(up_to_date))
                 comments.append(msg)
 
-            return {'name': name,
+            return ret.update({'name': name,
                     'changes': changes,
                     'result': False if failed else True,
-                    'comment': ' '.join(comments),
-                    'log': log}
+                    'comment': ' '.join(comments)})
         else:
             if len(targets) > 10:
-                comment = 'All targeted {0} packages failed to update.'\
-                    .format(len(targets))
+                comment = ('{0} targeted packages failed to update. '
+                           'See debug log for details.'.format(len(targets)))
             elif len(targets) > 1:
-                comment = 'All targeted packages failed to update: ' \
-                          '({0}).'.format(', '.join(sorted(targets.keys())))
+                comment = ('The following targeted packages failed to update. '
+                           'See debug log for details: ({0}).'
+                           .format(', '.join(sorted(targets.keys()))))
             else:
                 comment = 'Package {0} failed to ' \
                           'update.'.format(targets.keys()[0])
@@ -741,11 +757,10 @@ def latest(
                     comment += '{0} packages were already ' \
                         'up-to-date.'.format(len(up_to_date))
 
-            return {'name': name,
+            return ret.update({'name': name,
                     'changes': changes,
                     'result': False,
-                    'comment': comment,
-                    'log': log}
+                    'comment': comment})
     else:
         if len(desired_pkgs) > 10:
             comment = 'All {0} packages are up-to-date.'.format(
@@ -757,10 +772,10 @@ def latest(
             comment = 'Package {0} is already ' \
                 'up-to-date.'.format(desired_pkgs[0])
 
-        return {'name': name,
+        return ret.update({'name': name,
                 'changes': {},
                 'result': True,
-                'comment': comment}
+                'comment': comment})
 
 
 def _uninstall(action='remove', name=None, pkgs=None, **kwargs):
@@ -774,7 +789,14 @@ def _uninstall(action='remove', name=None, pkgs=None, **kwargs):
                 'comment': 'Invalid action {0!r}. '
                            'This is probably a bug.'.format(action)}
 
-    pkg_params = __salt__['pkg_resource.parse_targets'](name, pkgs)[0]
+    try:
+        pkg_params = __salt__['pkg_resource.parse_targets'](name, pkgs)[0]
+    except MinionError as exc:
+        return kwargs['state_ret'].update({'name': name,
+                'changes': {},
+                'result': False,
+                'comment': 'An error was encountered while parsing targets: '
+                           '{0}'.format(exc)})
     old = __salt__['pkg.list_pkgs'](versions_as_list=True, **kwargs)
     targets = [x for x in pkg_params if x in old]
     if action == 'purge':
@@ -785,21 +807,21 @@ def _uninstall(action='remove', name=None, pkgs=None, **kwargs):
     targets.sort()
 
     if not targets:
-        return {'name': name,
+        return kwargs['state_ret'].update({'name': name,
                 'changes': {},
                 'result': True,
                 'comment': 'None of the targeted packages are installed'
                            '{0}'.format(' or partially installed'
-                                        if action == 'purge' else '')}
+                                        if action == 'purge' else '')})
 
     if __opts__['test']:
-        return {'name': name,
+        return kwargs['state_ret'].update({'name': name,
                 'changes': {},
                 'result': None,
                 'comment': 'The following packages will be {0}d: '
-                           '{1}.'.format(action, ', '.join(targets))}
+                           '{1}.'.format(action, ', '.join(targets))})
 
-    changes, log = __salt__['pkg.{0}'.format(action)](name, pkgs=pkgs, **kwargs)
+    changes = __salt__['pkg.{0}'.format(action)](name, pkgs=pkgs, **kwargs)
     new = __salt__['pkg.list_pkgs'](versions_as_list=True, **kwargs)
     failed = [x for x in pkg_params if x in new]
     if action == 'purge':
@@ -810,12 +832,11 @@ def _uninstall(action='remove', name=None, pkgs=None, **kwargs):
     failed.sort()
 
     if failed:
-        return {'name': name,
+        return kwargs['state_ret'].update({'name': name,
                 'changes': changes,
                 'result': False,
                 'comment': 'The following packages failed to {0}: '
-                           '{1}.'.format(action, ', '.join(failed)),
-                'log': log}
+                           '{1}.'.format(action, ', '.join(failed))})
 
     comments = []
     not_installed = sorted([x for x in pkg_params if x not in targets])
@@ -827,11 +848,10 @@ def _uninstall(action='remove', name=None, pkgs=None, **kwargs):
     else:
         comments.append('All targeted packages were {0}d.'.format(action))
 
-    return {'name': name,
+    return kwargs['state_ret'].update({'name': name,
             'changes': changes,
             'result': True,
-            'comment': ' '.join(comments),
-            'log': log}
+            'comment': ' '.join(comments)})
 
 
 def removed(name, pkgs=None, **kwargs):
@@ -851,13 +871,14 @@ def removed(name, pkgs=None, **kwargs):
 
     .. versionadded:: 0.16.0
     '''
+    ret = {'state_stdout': '', 'state_stderr': ''}
     try:
-        return _uninstall(action='remove', name=name, pkgs=pkgs, **kwargs)
+        return _uninstall(action='remove', name=name, pkgs=pkgs, state_ret=ret, **kwargs)
     except CommandExecutionError as exc:
-        return {'name': name,
+        return ret.update({'name': name,
                 'changes': {},
                 'result': False,
-                'comment': str(exc)}
+                'comment': str(exc)})
 
 
 def purged(name, pkgs=None, **kwargs):
@@ -877,8 +898,9 @@ def purged(name, pkgs=None, **kwargs):
 
     .. versionadded:: 0.16.0
     '''
+    ret = {'state_stdout': '', 'state_stderr': ''}
     try:
-        return _uninstall(action='purge', name=name, pkgs=pkgs, **kwargs)
+        return _uninstall(action='purge', name=name, pkgs=pkgs, state_ret=ret, **kwargs)
     except CommandExecutionError as exc:
         return {'name': name,
                 'changes': {},

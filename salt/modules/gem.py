@@ -6,29 +6,30 @@ Manage ruby gems.
 # Import python libs
 import re
 
+from salt.states import state_std
+
 __func_alias__ = {
     'list_': 'list'
 }
 
 
-def _gem(command, ruby=None, runas=None):
+def _gem(command, ruby=None, runas=None, **kwargs):
     cmdline = 'gem {command}'.format(command=command)
     if __salt__['rvm.is_installed'](runas=runas):
-        return __salt__['rvm.do'](ruby, cmdline, runas=runas)
+        return __salt__['rvm.do'](ruby, cmdline, runas=runas, **kwargs)
 
     if __salt__['rbenv.is_installed'](runas=runas):
-        return __salt__['rbenv.do'](cmdline, runas=runas)
+        return __salt__['rbenv.do'](cmdline, runas=runas, **kwargs)
 
     ret = __salt__['cmd.run_all'](
         cmdline,
         runas=runas
         )
-
-    return ret
-    #if ret['retcode'] == 0:
-    #    #return ret['stdout']
-    #else:
-    #    return False
+	state_std(kwargs, result)
+    if ret['retcode'] == 0:
+        return ret['stdout']
+    else:
+        return False
 
 
 def install(gems,           # pylint: disable=C0103
@@ -36,7 +37,8 @@ def install(gems,           # pylint: disable=C0103
             runas=None,
             version=None,
             rdoc=False,
-            ri=False):      # pylint: disable=C0103
+            ri=False,
+            **kwargs):      # pylint: disable=C0103
     '''
     Installs one or several gems.
 
@@ -70,10 +72,10 @@ def install(gems,           # pylint: disable=C0103
 
     return _gem('install {gems} {options}'.format(gems=gems, options=options),
                 ruby,
-                runas=runas)
+                runas=runas, **kwargs)
 
 
-def uninstall(gems, ruby=None, runas=None):
+def uninstall(gems, ruby=None, runas=None, **kwargs):
     '''
     Uninstall one or several gems.
 
@@ -90,10 +92,10 @@ def uninstall(gems, ruby=None, runas=None):
 
         salt '*' gem.uninstall vagrant
     '''
-    return _gem('uninstall {gems}'.format(gems=gems), ruby, runas=runas)
+    return _gem('uninstall {gems}'.format(gems=gems), ruby, runas=runas, **kwargs)
 
 
-def update(gems, ruby=None, runas=None):
+def update(gems, ruby=None, runas=None, **kwargs):
     '''
     Update one or several gems.
 
@@ -110,10 +112,10 @@ def update(gems, ruby=None, runas=None):
 
         salt '*' gem.update vagrant
     '''
-    return _gem('update {gems}'.format(gems=gems), ruby, runas=runas)
+    return _gem('update {gems}'.format(gems=gems), ruby, runas=runas, **kwargs)
 
 
-def update_system(version='', ruby=None, runas=None):
+def update_system(version='', ruby=None, runas=None, **kwargs):
     '''
     Update rubygems.
 
@@ -131,10 +133,10 @@ def update_system(version='', ruby=None, runas=None):
         salt '*' gem.update_system
     '''
     return _gem('update --system {version}'.
-                format(version=version), ruby, runas=runas)
+                format(version=version), ruby, runas=runas, **kwargs)
 
 
-def list_(prefix='', ruby=None, runas=None):
+def list_(prefix='', ruby=None, runas=None, **kwargs):
     '''
     List locally installed gems.
 
@@ -153,7 +155,7 @@ def list_(prefix='', ruby=None, runas=None):
     '''
     gems = {}
     stdout = _gem('list {prefix}'.format(prefix=prefix),
-                     ruby, runas=runas)
+                     ruby, runas=runas, **kwargs)
     lines = []
     if isinstance(stdout, str):
         lines = stdout.splitlines()
@@ -166,7 +168,7 @@ def list_(prefix='', ruby=None, runas=None):
     return gems
 
 
-def sources_add(source_uri, ruby=None, runas=None):
+def sources_add(source_uri, ruby=None, runas=None, **kwargs):
     '''
     Add a gem source.
 
@@ -184,10 +186,10 @@ def sources_add(source_uri, ruby=None, runas=None):
         salt '*' gem.sources_add http://rubygems.org/
     '''
     return _gem('sources --add {source_uri}'.
-                format(source_uri=source_uri), ruby, runas=runas)
+                format(source_uri=source_uri), ruby, runas=runas, **kwargs)
 
 
-def sources_remove(source_uri, ruby=None, runas=None):
+def sources_remove(source_uri, ruby=None, runas=None, **kwargs):
     '''
     Remove a gem source.
 
@@ -205,10 +207,10 @@ def sources_remove(source_uri, ruby=None, runas=None):
         salt '*' gem.sources_remove http://rubygems.org/
     '''
     return _gem('sources --remove {source_uri}'.
-                format(source_uri=source_uri), ruby, runas=runas)
+                format(source_uri=source_uri), ruby, runas=runas, **kwargs)
 
 
-def sources_list(ruby=None, runas=None):
+def sources_list(ruby=None, runas=None, **kwargs):
     '''
     List the configured gem sources.
 
@@ -223,5 +225,5 @@ def sources_list(ruby=None, runas=None):
 
         salt '*' gem.sources_list
     '''
-    ret = _gem('sources', ruby, runas=runas)
+    ret = _gem('sources', ruby, runas=runas, **kwargs)
     return [] if ret is False else ret.splitlines()[2:]

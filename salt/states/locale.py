@@ -29,7 +29,8 @@ def system(name):
     ret = {'name': name,
            'changes': {},
            'result': None,
-           'comment': ''}
+           'comment': '',
+           'state_stdout': '', 'state_stderr': ''}
     if __salt__['locale.get_locale']() == name:
         ret['result'] = True
         ret['comment'] = 'System locale {0} already set'.format(name)
@@ -37,7 +38,7 @@ def system(name):
     if __opts__['test']:
         ret['comment'] = 'System locale {0} needs to be set'.format(name)
         return ret
-    if __salt__['locale.set_locale'](name):
+    if __salt__['locale.set_locale'](name, state_ret=ret):
         ret['changes'] = {'locale': name}
         ret['result'] = True
         ret['comment'] = 'Set system locale {0}'.format(name)

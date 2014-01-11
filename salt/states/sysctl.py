@@ -42,7 +42,8 @@ def present(name, value, config=None):
     ret = {'name': name,
            'result': True,
            'changes': {},
-           'comment': ''}
+           'comment': '',
+           'state_stdout': '', 'state_stderr':	''}
 
     if config is None:
         # Certain linux systems will ignore /etc/sysctl.conf, get the right
@@ -69,7 +70,7 @@ def present(name, value, config=None):
             ret['comment'] = 'Invalid sysctl option {0} = {1}'.format(name, value)
             return ret
 
-    update = __salt__['sysctl.persist'](name, value, config)
+    update = __salt__['sysctl.persist'](name, value, config, state_ret=ret)
 
     if update == 'Updated':
         ret['changes'] = {name: value}

@@ -10,6 +10,7 @@ import re
 
 # Import salt libs
 import salt.utils
+from salt.states import state_std
 from salt._compat import string_types
 from salt.exceptions import CommandExecutionError
 from salt.modules.systemd import _sd_booted
@@ -101,7 +102,7 @@ def get(name):
     return out
 
 
-def assign(name, value):
+def assign(name, value, **kwargs):
     '''
     Assign a single sysctl parameter for this minion
 
@@ -119,6 +120,7 @@ def assign(name, value):
     ret = {}
     cmd = 'sysctl -w {0}="{1}"'.format(name, value)
     data = __salt__['cmd.run_all'](cmd)
+    state_std(kwargs, data)
     out = data['stdout']
 
     # Example:
@@ -137,7 +139,7 @@ def assign(name, value):
     return ret
 
 
-def persist(name, value, config=None):
+def persist(name, value, config=None, **kwargs):
     '''
     Assign and persist a simple sysctl parameter for this minion. If ``config``
     is not specified, a sensible default will be chosen using

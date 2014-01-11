@@ -9,6 +9,7 @@ import logging
 
 # Import salt libs
 import salt.utils
+from salt.states import state_std
 
 __func_alias__ = {
     'list_': 'list'
@@ -21,7 +22,7 @@ def __virtual__():
     return True if salt.utils.which('pecl') else False
 
 
-def _pecl(command, defaults=False):
+def _pecl(command, defaults=False, **kwargs):
     '''
     Execute the command passed with pecl
     '''
@@ -30,15 +31,16 @@ def _pecl(command, defaults=False):
         cmdline = "printf '\n' | " + cmdline
 
     ret = __salt__['cmd.run_all'](cmdline)
+    state_std(kwargs, ret)
 
-    if ret['retcode']:
-        log.error('Problem running pecl. Is php-pear installed?')
-        return (False, ret)
+    if ret['retcode'] == 0:
+        return ret['stdout']
     else:
-    	return (True, ret)
+        log.error('Problem running pecl. Is php-pear installed?')
+        return ''
 
 
-def install(pecls, defaults=False, force=False, preferred_state='stable'):
+def install(pecls, defaults=False, force=False, preferred_state='stable', **kwargs):
     '''
     Installs one or several pecl extensions.
 
@@ -67,18 +69,18 @@ def install(pecls, defaults=False, force=False, preferred_state='stable'):
         return _pecl('{0} install -f {1}'.format(preferred_state, pecls),
                      defaults=defaults)
     else:
-        err, log = _pecl('{0} install {1}'.format(preferred_state, pecls),
-                     defaults=defaults)
+        _pecl('{0} install {1}'.format(preferred_state, pecls),
+                     defaults=defaults, **kwargs)
         installed_pecls = list_()
         for pecl in installed_pecls:
             installed_pecl_with_version = '{0}-{1}'.format(pecl,
                                                   installed_pecls.get(pecl)[0])
             if pecls in installed_pecl_with_version:
-                return True, log
-        return False, log
+                return True
+        return False
 
 
-def uninstall(pecls):
+def uninstall(pecls, **kwargs):
     '''
     Uninstall one or several pecl extensions.
 
@@ -91,10 +93,10 @@ def uninstall(pecls):
 
         salt '*' pecl.uninstall fuse
     '''
-    return _pecl('uninstall {0}'.format(pecls))
+    return _pecl('uninstall {0}'.format(pecls), **kwargs)
 
 
-def update(pecls):
+def update(pecls, **kwargs):
     '''
     Update one or several pecl extensions.
 
@@ -107,7 +109,7 @@ def update(pecls):
 
         salt '*' pecl.update fuse
     '''
-    return _pecl('install -U {0}'.format(pecls))
+    return _pecl('install -U {0}'.format(pecls), **kwargs)
 
 
 def list_():
@@ -121,7 +123,7 @@ def list_():
         salt '*' pecl.list
     '''
     pecls = {}
-    err, lines = _pecl('list').splitlines()
+    lines = _pecl('list').splitlines()
     lines.pop(0)
     # Only one line if no package installed:
     # (no packages installed from channel pecl.php.net)

@@ -5,6 +5,7 @@ Support for the Mercurial SCM
 
 # Import salt libs
 from salt import utils
+from salt.states import state_std
 
 if utils.is_windows():
     hg_binary = "hg.exe"
@@ -16,7 +17,7 @@ def _check_hg():
     utils.check_or_die(hg_binary)
 
 
-def revision(cwd, rev='tip', short=False, user=None):
+def revision(cwd, rev='tip', short=False, user=None, **kwargs):
     '''
     Returns the long hash of a given identifier (hash, branch, tag, HEAD, etc)
 
@@ -45,11 +46,12 @@ def revision(cwd, rev='tip', short=False, user=None):
         rev=' -r {0}'.format(rev))
 
     result = __salt__['cmd.run_all'](cmd, cwd=cwd, runas=user)
-
+    state_std(kwargs, result)
+	
     if result['retcode'] == 0:
-        return result['stdout']
+        result
     else:
-        return ''
+        return '', result
 
 
 def describe(cwd, rev='tip', user=None):
@@ -80,7 +82,7 @@ def describe(cwd, rev='tip', user=None):
     return desc or revision(cwd, rev, short=True)
 
 
-def archive(cwd, output, rev='tip', fmt=None, prefix=None, user=None):
+def archive(cwd, output, rev='tip', fmt=None, prefix=None, user=None, **kwargs):
     '''
     Export a tarball from the repository
 
@@ -120,10 +122,12 @@ def archive(cwd, output, rev='tip', fmt=None, prefix=None, user=None):
         fmt=' --type {0}'.format(fmt) if fmt else '',
         prefix=' --prefix "{0}"'.format(prefix if prefix else ''))
 
-    return __salt__['cmd.run'](cmd, cwd=cwd, runas=user)
+    result = __salt__['cmd.run_all'](cmd, cwd=cwd, runas=user)
+    state_std(kwargs, result)
+	return result['stdout']
 
 
-def pull(cwd, opts=None, user=None):
+def pull(cwd, opts=None, user=None, **kwargs):
     '''
     Perform a pull on the given repository
 
@@ -146,10 +150,12 @@ def pull(cwd, opts=None, user=None):
 
     if not opts:
         opts = ''
-    return __salt__['cmd.run']('hg pull {0}'.format(opts), cwd=cwd, runas=user)
+    result = __salt__['cmd.run_all']('hg pull {0}'.format(opts), cwd=cwd, runas=user)
+	state_std(kwargs, result)
+    return result['stdout']
 
 
-def update(cwd, rev, force=False, user=None):
+def update(cwd, rev, force=False, user=None, **kwargs):
     '''
     Update to a given revision
 
@@ -174,10 +180,11 @@ def update(cwd, rev, force=False, user=None):
     _check_hg()
 
     cmd = 'hg update {0}{1}'.format(rev, ' -C' if force else '')
-    return __salt__['cmd.run'](cmd, cwd=cwd, runas=user)
+    state_std(kwargs, result)
+    return result['stdout']
 
 
-def clone(cwd, repository, opts=None, user=None):
+def clone(cwd, repository, opts=None, user=None, **kwargs):
     '''
     Clone a new repository
 
@@ -204,4 +211,6 @@ def clone(cwd, repository, opts=None, user=None):
     if not opts:
         opts = ''
     cmd = 'hg clone {0} {1} {2}'.format(repository, cwd, opts)
-    return __salt__['cmd.run'](cmd, runas=user)
+    result = __salt__['cmd.run_all'](cmd, runas=user)
+	state_std(kwargs, result)
+	return result['stdout']

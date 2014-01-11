@@ -77,7 +77,7 @@ def latest(name,
     opts
         Include additional arguments and options to the hg command line
     '''
-    ret = {'name': name, 'result': True, 'comment': '', 'changes': {}}
+    ret = {'name': name, 'result': True, 'comment': '', 'changes': {}, 'state_stdout': '', 'state_stderr': ''}
 
     salt.utils.warn_until(
         'Hydrogen',
@@ -139,7 +139,7 @@ def _update_repo(ret, target, clean, user, rev, opts):
             '"hg pull && hg up is probably required"'.format(target)
     )
 
-    current_rev = __salt__['hg.revision'](target, user=user)
+    current_rev = __salt__['hg.revision'](target, user=user, state_ret=ret)
     if not current_rev:
         return _fail(
                 ret,
@@ -153,14 +153,14 @@ def _update_repo(ret, target, clean, user, rev, opts):
                 ret,
                 test_result)
 
-    pull_out = __salt__['hg.pull'](target, user=user, opts=opts)
+    pull_out = __salt__['hg.pull'](target, user=user, opts=opts, state_ret=ret)
 
     if rev:
-        __salt__['hg.update'](target, rev, force=clean, user=user)
+        __salt__['hg.update'](target, rev, force=clean, user=user, state_ret=ret)
     else:
-        __salt__['hg.update'](target, 'tip', force=clean, user=user)
+        __salt__['hg.update'](target, 'tip', force=clean, user=user, state_ret=ret)
 
-    new_rev = __salt__['hg.revision'](cwd=target, user=user)
+    new_rev = __salt__['hg.revision'](cwd=target, user=user, state_ret=ret)
 
     if current_rev != new_rev:
         revision_text = '{0} => {1}'.format(current_rev, new_rev)
@@ -201,9 +201,9 @@ def _clone_repo(ret, target, name, user, rev, opts):
         return _fail(ret, result)
 
     if rev:
-        __salt__['hg.update'](target, rev, user=user)
+        __salt__['hg.update'](target, rev, user=user, state_ret=ret)
 
-    new_rev = __salt__['hg.revision'](cwd=target, user=user)
+    new_rev = __salt__['hg.revision'](cwd=target, user=user, state_ret=ret)
     message = 'Repository {0} cloned to {1}'.format(name, target)
     log.info(message)
     ret['comment'] = message

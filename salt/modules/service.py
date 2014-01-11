@@ -7,6 +7,8 @@ to this basic module
 # Import python libs
 import os
 
+from salt.states import state_std
+
 __func_alias__ = {
     'reload_': 'reload'
 }
@@ -56,7 +58,7 @@ def __virtual__():
     return 'service'
 
 
-def start(name):
+def start(name, **kwargs):
     '''
     Start the specified service
 
@@ -70,7 +72,9 @@ def start(name):
         _GRAINMAP.get(__grains__.get('os'), '/etc/init.d'),
         name + ' start'
     )
-    return not __salt__['cmd.retcode'](cmd)
+    result = __salt__['cmd.run_all'](cmd)
+    state_std(kwargs, result)
+    return not result['retcode']
 
 
 def stop(name):
@@ -87,7 +91,9 @@ def stop(name):
         _GRAINMAP.get(__grains__.get('os'), '/etc/init.d'),
         name + ' stop'
     )
-    return not __salt__['cmd.retcode'](cmd)
+    result = __salt__['cmd.run_all'](cmd)
+    state_std(kwargs, result)
+    return not result['retcode']
 
 
 def restart(name):
@@ -104,7 +110,9 @@ def restart(name):
         _GRAINMAP.get(__grains__.get('os'), '/etc/init.d'),
         name + ' restart'
     )
-    return not __salt__['cmd.retcode'](cmd)
+    result = __salt__['cmd.run_all'](cmd)
+    state_std(kwargs, result)
+    return not result['retcode']
 
 
 def status(name, sig=None):
@@ -136,7 +144,9 @@ def reload_(name):
         _GRAINMAP.get(__grains__.get('os'), '/etc/init.d'),
         name + ' reload'
     )
-    return not __salt__['cmd.retcode'](cmd)
+    result = __salt__['cmd.run_all'](cmd)
+    state_std(kwargs, result)
+    return not result['retcode']
 
 
 def available(name):

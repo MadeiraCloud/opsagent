@@ -8,6 +8,7 @@ import logging
 
 # Import salt libs
 import salt.utils
+from salt.states import state_std
 from salt.exceptions import CommandExecutionError, SaltInvocationError
 
 log = logging.getLogger(__name__)
@@ -142,6 +143,7 @@ def set_(device, **kwargs):
                                         device)
 
     result = __salt__['cmd.run_all'](cmd)
+    state_std(kwargs, result)
     if result['retcode'] != 0:
         raise CommandExecutionError(
             'Unable to set desired quota. Error follows: \n{0}'
@@ -150,7 +152,7 @@ def set_(device, **kwargs):
     return {ret: current}
 
 
-def warn():
+def warn(**kwargs):
     '''
     Runs the warnquota command, to send warning emails to users who
     are over their quota limit.
@@ -161,10 +163,11 @@ def warn():
 
         salt '*' quota.warn
     '''
-    __salt__['cmd.run']('quotawarn')
+    result = __salt__['cmd.run_all']('quotawarn')
+    state_std(kwargs, result)
 
 
-def stats():
+def stats(**kwargs):
     '''
     Runs the quotastats command, and returns the parsed output
 
@@ -185,7 +188,7 @@ def stats():
     return ret
 
 
-def on(device):
+def on(device, **kwargs):
     '''
     Turns on the quota system
 
@@ -196,7 +199,8 @@ def on(device):
         salt '*' quota.on
     '''
     cmd = 'quotaon {0}'.format(device)
-    __salt__['cmd.run'](cmd)
+    result = __salt__['cmd.run_all'](cmd)
+    state_std(kwargs, result)
     return True
 
 
@@ -211,7 +215,8 @@ def off(device):
         salt '*' quota.off
     '''
     cmd = 'quotaoff {0}'.format(device)
-    __salt__['cmd.run'](cmd)
+    result = __salt__['cmd.run_all'](cmd)
+    state_std(kwargs, result)
     return True
 
 

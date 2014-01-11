@@ -62,16 +62,17 @@ def chain_present(name, table='filter'):
     ret = {'name': name,
            'changes': {},
            'result': None,
-           'comment': ''}
+           'comment': '',
+           'state_stdout': '', 'state_stderr': ''}
 
-    chain_check = __salt__['iptables.check_chain'](table, name)
+    chain_check = __salt__['iptables.check_chain'](table, name, state_ret=ret)
     if chain_check is True:
         ret['result'] = True
         ret['comment'] = ('iptables {0} chain is already exist in {1} table'
                           .format(name, table))
         return ret
 
-    command = __salt__['iptables.new_chain'](table, name)
+    command = __salt__['iptables.new_chain'](table, name, state_ret=ret)
     if command is True:
         ret['changes'] = {'locale': name}
         ret['result'] = True
@@ -96,18 +97,19 @@ def chain_absent(name, table='filter'):
     ret = {'name': name,
            'changes': {},
            'result': None,
-           'comment': ''}
+           'comment': '',
+           'state_stdout': '', 'state_stderr': ''}
 
-    chain_check = __salt__['iptables.check_chain'](table, name)
+    chain_check = __salt__['iptables.check_chain'](table, name, state_ret=ret)
     if not chain_check:
         ret['result'] = True
         ret['comment'] = ('iptables {0} chain is already absent in {1} table'
                           .format(name, table))
         return ret
 
-    flush_chain = __salt__['iptables.flush'](table, name)
+    flush_chain = __salt__['iptables.flush'](table, name, state_ret=ret)
     if not flush_chain:
-        command = __salt__['iptables.delete_chain'](table, name)
+        command = __salt__['iptables.delete_chain'](table, name, state_ret=ret)
         if command is True:
             ret['changes'] = {'locale': name}
             ret['result'] = True
@@ -143,7 +145,8 @@ def append(name, **kwargs):
     ret = {'name': name,
            'changes': {},
            'result': None,
-           'comment': ''}
+           'comment': '',
+           'state_stdout': '', 'state_stderr': ''}
 
     for ignore in _STATE_INTERNAL_KEYWORDS:
         if ignore in kwargs:
@@ -152,7 +155,7 @@ def append(name, **kwargs):
     command = __salt__['iptables.build_rule'](full=True, command='A', **kwargs)
     if __salt__['iptables.check'](kwargs['table'],
                                   kwargs['chain'],
-                                  rule) is True:
+                                  rule, state_ret=ret) is True:
         ret['result'] = True
         ret['comment'] = 'iptables rule for {0} already set ({1})'.format(
             name,
@@ -163,7 +166,7 @@ def append(name, **kwargs):
             name,
             command.strip())
         return ret
-    if not __salt__['iptables.append'](kwargs['table'], kwargs['chain'], rule):
+    if not __salt__['iptables.append'](kwargs['table'], kwargs['chain'], rule, state_ret=ret):
         ret['changes'] = {'locale': name}
         ret['result'] = True
         ret['comment'] = 'Set iptables rule for {0} to: {1}'.format(
@@ -171,7 +174,7 @@ def append(name, **kwargs):
             command.strip())
         if 'save' in kwargs:
             if kwargs['save']:
-                __salt__['iptables.save'](filename=None)
+                __salt__['iptables.save'](filename=None, state_ret=ret)
                 ret['comment'] = ('Set and Saved iptables rule for {0} to: '
                                   '{1}'.format(name, command.strip()))
         return ret
@@ -200,7 +203,8 @@ def insert(name, **kwargs):
     ret = {'name': name,
            'changes': {},
            'result': None,
-           'comment': ''}
+           'comment': '',
+           'state_stdout': '', 'state_stderr': ''}
 
     for ignore in _STATE_INTERNAL_KEYWORDS:
         if ignore in kwargs:
@@ -209,7 +213,7 @@ def insert(name, **kwargs):
     command = __salt__['iptables.build_rule'](full=True, command='I', **kwargs)
     if __salt__['iptables.check'](kwargs['table'],
                                   kwargs['chain'],
-                                  rule) is True:
+                                  rule, state_ret=ret) is True:
         ret['result'] = True
         ret['comment'] = 'iptables rule for {0} already set ({1})'.format(
             name,
@@ -220,7 +224,7 @@ def insert(name, **kwargs):
             name,
             command.strip())
         return ret
-    if not __salt__['iptables.insert'](kwargs['table'], kwargs['chain'], kwargs['position'], rule):
+    if not __salt__['iptables.insert'](kwargs['table'], kwargs['chain'], kwargs['position'], rule, state_ret=ret):
         ret['changes'] = {'locale': name}
         ret['result'] = True
         ret['comment'] = 'Set iptables rule for {0} to: {1}'.format(
@@ -228,7 +232,7 @@ def insert(name, **kwargs):
             command.strip())
         if 'save' in kwargs:
             if kwargs['save']:
-                __salt__['iptables.save'](filename=None)
+                __salt__['iptables.save'](filename=None, state_ret=ret)
                 ret['comment'] = ('Set and Saved iptables rule for {0} to: '
                                   '{1}'.format(name, command.strip()))
         return ret
@@ -248,7 +252,8 @@ def set_policy(name, **kwargs):
     ret = {'name': name,
         'changes': {},
         'result': None,
-        'comment': ''}
+        'comment': '',
+        'state_stdout': '', 'state_stderr': ''}
 
     for ignore in _STATE_INTERNAL_KEYWORDS:
         if ignore in kwargs:
@@ -265,7 +270,7 @@ def set_policy(name, **kwargs):
     if not __salt__['iptables.set_policy'](
             kwargs['table'],
             kwargs['chain'],
-            kwargs['policy']):
+            kwargs['policy'], state_ret=ret):
         ret['changes'] = {'locale': name}
         ret['result'] = True
         ret['comment'] = 'Set default policy for {0} to {1}'.format(
@@ -286,7 +291,8 @@ def flush(name, **kwargs):
     ret = {'name': name,
            'changes': {},
            'result': None,
-           'comment': ''}
+           'comment': '',
+           'state_stdout': '', 'state_stderr': ''}
 
     for ignore in _STATE_INTERNAL_KEYWORDS:
         if ignore in kwargs:
@@ -295,7 +301,7 @@ def flush(name, **kwargs):
     if not 'chain' in kwargs:
         kwargs['chain'] = ''
 
-    if not __salt__['iptables.flush'](kwargs['table'], kwargs['chain']):
+    if not __salt__['iptables.flush'](kwargs['table'], kwargs['chain'], state_ret=ret):
         ret['changes'] = {'locale': name}
         ret['result'] = True
         ret['comment'] = 'Flush iptables rules in {0} table {1} chain'.format(

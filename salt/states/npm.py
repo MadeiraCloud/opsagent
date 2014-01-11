@@ -41,6 +41,17 @@ def installed(name,
     Verify that the given package is installed and is at the correct version
     (if specified).
 
+    .. code-block:: yaml
+
+        coffee-script:
+          npm:
+            - installed
+            - user: someuser
+
+        coffee-script@1.0.1:
+          npm:
+            - installed
+
     dir
         The target directory in which to install the package, or None for
         global installation
@@ -58,7 +69,7 @@ def installed(name,
     force_reinstall
         Install the package even if it is already installed
     '''
-    ret = {'name': name, 'result': None, 'comment': '', 'changes': {}}
+    ret = {'name': name, 'result': None, 'comment': '', 'changes': {}, 'state_stdout': '', 'state_stderr': ''}
 
     salt.utils.warn_until(
         'Hydrogen',
@@ -108,14 +119,13 @@ def installed(name,
         return ret
 
     try:
-        call, log = __salt__['npm.install'](
+        call = __salt__['npm.install'](
             pkg=name,
             dir=dir,
-            runas=user
+            runas=user,
+            state_ret=ret
         )
-        ret['log'] = log
     except (CommandNotFoundError, CommandExecutionError) as err:
-    	ret['log'] = {'state_stdout':None, 'state_stderr':str(err)}
         ret['result'] = False
         ret['comment'] = 'Error installing \'{0}\': {1}'.format(name, err)
         return ret
@@ -155,7 +165,7 @@ def removed(name,
 
         .. versionadded:: 0.17.0
     '''
-    ret = {'name': name, 'result': None, 'comment': '', 'changes': {}}
+    ret = {'name': name, 'result': None, 'comment': '', 'changes': {}, 'state_stdout': '', 'state_stderr': ''}
 
     salt.utils.warn_until(
         'Hydrogen',
@@ -198,8 +208,7 @@ def removed(name,
         ret['comment'] = 'Package {0} is set to be removed'.format(name)
         return ret
 
-    err, ret['log'] = __salt__['npm.uninstall'](pkg=name, dir=dir, runas=user)
-    if err:
+    if __salt__['npm.uninstall'](pkg=name, dir=dir, runas=user, state_ret=ret):
         ret['result'] = True
         ret['changes'][name] = 'Removed'
         ret['comment'] = 'Package was successfully removed.'
@@ -231,7 +240,7 @@ def bootstrap(name,
 
 
     '''
-    ret = {'name': name, 'result': None, 'comment': '', 'changes': {}}
+    ret = {'name': name, 'result': None, 'comment': '', 'changes': {}, 'state_stdout': '', 'state_stderr': ''}
     salt.utils.warn_until(
         'Hydrogen',
         'Please remove \'runas\' support at this stage. \'user\' support was '
@@ -257,7 +266,7 @@ def bootstrap(name,
         runas = None
 
     try:
-        call = __salt__['npm.install'](dir=name, runas=user, pkg=None)
+        call = __salt__['npm.install'](dir=name, runas=user, pkg=None, state_ret=ret)
     except (CommandNotFoundError, CommandExecutionError) as err:
         ret['result'] = False
         ret['comment'] = 'Error Bootstrapping \'{0}\': {1}'.format(name, err)

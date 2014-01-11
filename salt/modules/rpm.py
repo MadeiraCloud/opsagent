@@ -8,6 +8,7 @@ import logging
 
 # Import Salt libs
 import salt.utils
+from salt.states import state_std
 
 log = logging.getLogger(__name__)
 

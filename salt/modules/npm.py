@@ -10,6 +10,7 @@ import distutils.version  # pylint: disable=E0611
 
 # Import salt libs
 import salt.utils
+from salt.states import state_std
 from salt.exceptions import CommandExecutionError
 
 
@@ -43,7 +44,8 @@ def _valid_version():
 
 def install(pkg=None,
             dir=None,
-            runas=None):
+            runas=None,
+            **kwargs):
     '''
     Install an NPM package.
 
@@ -52,7 +54,8 @@ def install(pkg=None,
     package in the given directory will be installed.
 
     pkg
-        A package name in any format accepted by NPM
+        A package name in any format accepted by NPM, including a version
+        identifier
 
     dir
         The target directory in which to install the package, or None for
@@ -67,6 +70,8 @@ def install(pkg=None,
 
         salt '*' npm.install coffee-script
 
+        salt '*' npm.install coffee-script@1.0.1
+
     '''
     if not _valid_version():
         return '{0!r} is not available.'.format('npm.install')
@@ -80,17 +85,14 @@ def install(pkg=None,
         cmd += ' "{0}"'.format(pkg)
 
     result = __salt__['cmd.run_all'](cmd, cwd=dir, runas=runas)
+	state_std(kwargs, result)
     if result['retcode'] != 0:
         raise CommandExecutionError(result['stderr'])
 
     # npm >1.2.21 is putting the output to stderr even though retcode is 0
-    ret = {
-    	'state_stdout'	:	result['stdout'],
-    	'state_stderr'	:	result['stderr']
-    }
     npm_output = result['stdout'] or result['stderr']
     try:
-        return (json.loads(npm_output), ret)
+        return json.loads(npm_output)
     except ValueError:
         # Not JSON! Try to coax the json out of it!
         pass
@@ -103,15 +105,16 @@ def install(pkg=None,
         lines = lines[1:]
 
     try:
-        return (json.loads(''.join(lines)), ret)
+        return json.loads(''.join(lines))
     except ValueError:
         # Still no JSON!! Return the stdout as a string
-        return (npm_output, ret)
+        return npm_output
 
 
 def uninstall(pkg,
               dir=None,
-              runas=None):
+              runas=None,
+              **kwargs):
     '''
     Uninstall an NPM package.
 
@@ -146,15 +149,11 @@ def uninstall(pkg,
     cmd += ' "{0}"'.format(pkg)
 
     result = __salt__['cmd.run_all'](cmd, cwd=dir, runas=runas)
-
-    ret = {
-        'state_stdout'	:	result['stdout'],
-        'state_stderr'	:	result['stderr']
-    }
+    state_std(kwargs, result)
     if result['retcode'] != 0:
         log.error(result['stderr'])
-        return (False, ret)
-    return (True, ret)
+        return False
+    return True
 
 
 def list_(pkg=None, dir=None):

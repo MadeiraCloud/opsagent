@@ -77,7 +77,7 @@ def latest(name,
     trust : False
         Automatically trust the remote server. SVN's --trust-server-cert
     '''
-    ret = {'name': name, 'result': True, 'comment': '', 'changes': {}}
+    ret = {'name': name, 'result': None, 'comment': '', 'changes': {}, 'state_stdout': '', 'state_stderr': ''}
     if not target:
         return _fail(ret, 'Target option is required')
 
@@ -97,7 +97,7 @@ def latest(name,
                     ('{0} doesn\'t exist and is set to be checked out.').format(target))
         svn_cmd = 'svn.diff'
         opts += ('-r', 'HEAD')
-        out = __salt__[svn_cmd](cwd, target, user, username, password, *opts)
+        out = __salt__[svn_cmd](cwd, target, user, username, password, *opts, state_ret=ret)
         return _neutral_test(
                 ret,
                 ('{0}').format(out))
@@ -120,7 +120,7 @@ def latest(name,
         opts += ('--trust-server-cert',)
 
     if svn_cmd == 'svn.update':
-        out = __salt__[svn_cmd](cwd, basename, user, username, password, *opts)
+        out = __salt__[svn_cmd](cwd, basename, user, username, password, *opts, state_ret=ret)
 
         current_rev = current_info[0]['Revision']
         new_rev = __salt__['svn.info'](cwd=target,
@@ -133,7 +133,7 @@ def latest(name,
             ret['changes']['revision'] = "{0} => {1}".format(current_rev, new_rev)
 
     else:
-        out = __salt__[svn_cmd](cwd, name, basename, user, username, password, *opts)
+        out = __salt__[svn_cmd](cwd, name, basename, user, username, password, *opts, state_ret=ret)
 
         ret['changes']['new'] = name
         ret['changes']['revision'] = __salt__['svn.info'](cwd=target,
@@ -191,7 +191,7 @@ def export(name,
     trust : False
         Automatically trust the remote server. SVN's --trust-server-cert
     '''
-    ret = {'name': name, 'result': True, 'comment': '', 'changes': {}}
+    ret = {'name': name, 'result': None, 'comment': '', 'changes': {}, 'state_stdout': '', 'state_stderr': ''}
     if not target:
         return _fail(ret, 'Target option is required')
 
@@ -211,7 +211,7 @@ def export(name,
                     ('{0} doesn\'t exist and is set to be checked out.').format(target))
         svn_cmd = 'svn.list'
         opts += ('-r', 'HEAD')
-        out = __salt__[svn_cmd](cwd, target, user, username, password, *opts)
+        out = __salt__[svn_cmd](cwd, target, user, username, password, *opts, state_ret=ret)
         return _neutral_test(
                 ret,
                 ('{0}').format(out))
@@ -228,7 +228,7 @@ def export(name,
     if trust:
         opts += ('--trust-server-cert',)
 
-    out = __salt__[svn_cmd](cwd, name, basename, user, username, password, *opts)
+    out = __salt__[svn_cmd](cwd, name, basename, user, username, password, *opts, state_ret=ret)
     ret['changes'] = name + ' was Exported to ' + target
 
     return ret
@@ -243,5 +243,5 @@ def dirty(name,
     '''
     Determine if the working directory has been changed.
     '''
-    ret = {'name': name, 'result': True, 'comment': '', 'changes': {}}
+    ret = {'name': name, 'result': None, 'comment': '', 'changes': {}, 'state_stdout': '', 'state_stderr': ''}
     return _fail(ret, 'This function is not implemented yet.')

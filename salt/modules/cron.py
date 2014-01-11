@@ -9,7 +9,7 @@ import random
 
 # Import salt libs
 import salt.utils
-
+from salt.states import state_std
 
 TAG = '# Lines below here are managed by Salt, do not edit\n'
 
@@ -70,7 +70,7 @@ def _get_cron_cmdstr(user, path):
         return 'crontab -u {0} {1}'.format(user, path)
 
 
-def write_cron_file(user, path):
+def write_cron_file(user, path, **kwargs):
     '''
     Writes the contents of a file to a user's crontab
 
@@ -80,10 +80,12 @@ def write_cron_file(user, path):
 
         salt '*' cron.write_cron_file root /tmp/new_cron
     '''
-    return __salt__['cmd.retcode'](_get_cron_cmdstr(user, path)) == 0
+    result = __salt__['cmd.retcode'](_get_cron_cmdstr(user, path))
+    state_std(kwargs, result)
+    return result['retcode'] == 0
 
 
-def write_cron_file_verbose(user, path):
+def write_cron_file_verbose(user, path, **kwargs):
     '''
     Writes the contents of a file to a user's crontab and return error message on error
 
@@ -93,10 +95,11 @@ def write_cron_file_verbose(user, path):
 
         salt '*' cron.write_cron_file_verbose root /tmp/new_cron
     '''
-    return __salt__['cmd.run_all'](_get_cron_cmdstr(user, path))
+    result = __salt__['cmd.run_all'](_get_cron_cmdstr(user, path))
+    state_std(kwargs, result)
+    return result
 
-
-def _write_cron_lines(user, lines):
+def _write_cron_lines(user, lines, **kwargs):
     '''
     Takes a list of lines to be committed to a user's crontab and writes it
     '''
@@ -106,6 +109,7 @@ def _write_cron_lines(user, lines):
     if __grains__['os'] == 'Solaris' and user != "root":
         __salt__['cmd.run']('chown {0} {1}'.format(user, path))
     ret = __salt__['cmd.run_all'](_get_cron_cmdstr(user, path))
+    state_std(kwargs, ret)
     os.remove(path)
     return ret
 
@@ -120,7 +124,7 @@ def _date_time_match(cron, **kwargs):
                 for x in ('minute', 'hour', 'daymonth', 'month', 'dayweek')])
 
 
-def raw_cron(user):
+def raw_cron(user, **kwargs):
     '''
     Return the contents of the user's crontab
 
@@ -134,8 +138,9 @@ def raw_cron(user):
         cmd = 'crontab -l {0}'.format(user)
     else:
         cmd = 'crontab -l -u {0}'.format(user)
-    return __salt__['cmd.run_stdout'](cmd, rstrip=False)
-
+    result = __salt__['cmd.run_stdout'](cmd, rstrip=False)
+    state_std(kwargs, result)
+	return result
 
 def list_tab(user):
     '''
@@ -199,7 +204,7 @@ def list_tab(user):
 ls = list_tab  # pylint: disable=C0103
 
 
-def set_special(user, special, cmd):
+def set_special(user, special, cmd, **kwargs):
     '''
     Set up a special command in the crontab.
 
@@ -216,7 +221,7 @@ def set_special(user, special, cmd):
     spec = {'spec': special,
             'cmd': cmd}
     lst['special'].append(spec)
-    comdat = _write_cron_lines(user, _render_tab(lst))
+    comdat = _write_cron_lines(user, _render_tab(lst), **kwargs)
     if comdat['retcode']:
         # Failed to commit, return the error
         return comdat['stderr']
@@ -261,7 +266,7 @@ def _get_cron_date_time(**kwargs):
     return ret
 
 
-def set_job(user, minute, hour, daymonth, month, dayweek, cmd, comment):
+def set_job(user, minute, hour, daymonth, month, dayweek, cmd, comment, **kwargs):
     '''
     Sets a cron job up for a specified user.
 
@@ -314,7 +319,7 @@ def set_job(user, minute, hour, daymonth, month, dayweek, cmd, comment):
                                     daymonth=daymonth, month=month,
                                     dayweek=dayweek))
     lst['crons'].append(cron)
-    comdat = _write_cron_lines(user, _render_tab(lst))
+    comdat = _write_cron_lines(user, _render_tab(lst), **kwargs)
     if comdat['retcode']:
         # Failed to commit, return the error
         return comdat['stderr']
@@ -327,7 +332,7 @@ def rm_job(user,
            hour=None,
            daymonth=None,
            month=None,
-           dayweek=None):
+           dayweek=None, **kwargs):
     '''
     Remove a cron job for a specified user. If any of the day/time params are
     specified, the job will only be removed if the specified params match.
@@ -361,7 +366,7 @@ def rm_job(user,
     if rm_ is not None:
         lst['crons'].pop(rm_)
         ret = 'removed'
-    comdat = _write_cron_lines(user, _render_tab(lst))
+    comdat = _write_cron_lines(user, _render_tab(lst), **kwargs)
     if comdat['retcode']:
         # Failed to commit, return the error
         return comdat['stderr']
@@ -370,7 +375,7 @@ def rm_job(user,
 rm = rm_job  # pylint: disable=C0103
 
 
-def set_env(user, name, value=None):
+def set_env(user, name, value=None, **kwargs):
     '''
     Set up an environment variable in the crontab.
 
@@ -394,14 +399,14 @@ def set_env(user, name, value=None):
     print(value)
     env = {'name': name, 'value': value}
     lst['env'].append(env)
-    comdat = _write_cron_lines(user, _render_tab(lst))
+    comdat = _write_cron_lines(user, _render_tab(lst), **kwargs)
     if comdat['retcode']:
         # Failed to commit, return the error
         return comdat['stderr']
     return 'new'
 
 
-def rm_env(user, name):
+def rm_env(user, name, **kwargs):
     '''
     Remove cron environment variable for a specified user.
 
@@ -420,7 +425,7 @@ def rm_env(user, name):
     if rm_ is not None:
         lst['env'].pop(rm_)
         ret = 'removed'
-    comdat = _write_cron_lines(user, _render_tab(lst))
+    comdat = _write_cron_lines(user, _render_tab(lst), **kwargs)
     if comdat['retcode']:
         # Failed to commit, return the error
         return comdat['stderr']

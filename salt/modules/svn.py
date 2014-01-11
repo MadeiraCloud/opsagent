@@ -10,7 +10,7 @@ import subprocess
 
 # Import salt libs
 from salt import utils, exceptions
-
+from salt.states import state_std
 _INI_RE = re.compile(r"^([^:]+):\s+(\S.*)$", re.M)
 
 
@@ -67,6 +67,7 @@ def _run_svn(cmd, cwd, user, username, password, opts, **kwargs):
         cmd += subprocess.list2cmdline(opts)
 
     result = __salt__['cmd.run_all'](cmd, cwd=cwd, runas=user, **kwargs)
+    state_std(kwargs, result)
 
     retcode = result['retcode']
 
@@ -138,7 +139,7 @@ def checkout(cwd,
              user=None,
              username=None,
              password=None,
-             *opts):
+             *opts, **kwargs):
     '''
     Download a working copy of the remote Subversion repository
     directory or file
@@ -173,11 +174,11 @@ def checkout(cwd,
     opts += (remote,)
     if target:
         opts += (target,)
-    return _run_svn('checkout', cwd, user, username, password, opts)
+    return _run_svn('checkout', cwd, user, username, password, opts, **kwargs)
 
 
 def switch(cwd, remote, target=None, user=None, username=None,
-           password=None, *opts):
+           password=None, *opts, **kwargs):
     '''
     .. versionadded:: Hydrogen
 
@@ -210,10 +211,10 @@ def switch(cwd, remote, target=None, user=None, username=None,
     opts += (remote,)
     if target:
         opts += (target,)
-    return _run_svn('switch', cwd, user, username, password, opts)
+    return _run_svn('switch', cwd, user, username, password, opts, **kwargs)
 
 
-def update(cwd, targets=None, user=None, username=None, password=None, *opts):
+def update(cwd, targets=None, user=None, username=None, password=None, *opts, **kwargs):
     '''
     Update the current directory, files, or directories from
     the remote Subversion repository
@@ -244,10 +245,10 @@ def update(cwd, targets=None, user=None, username=None, password=None, *opts):
     '''
     if targets:
         opts += tuple(shlex.split(targets))
-    return _run_svn('update', cwd, user, username, password, opts)
+    return _run_svn('update', cwd, user, username, password, opts, **kwargs)
 
 
-def diff(cwd, targets=None, user=None, username=None, password=None, *opts):
+def diff(cwd, targets=None, user=None, username=None, password=None, *opts, **kwargs):
     '''
     Return the diff of the current directory, files, or directories from
     the remote Subversion repository
@@ -278,7 +279,7 @@ def diff(cwd, targets=None, user=None, username=None, password=None, *opts):
     '''
     if targets:
         opts += tuple(shlex.split(targets))
-    return _run_svn('diff', cwd, user, username, password, opts)
+    return _run_svn('diff', cwd, user, username, password, opts, **kwargs)
 
 
 def commit(cwd,
@@ -287,7 +288,7 @@ def commit(cwd,
            user=None,
            username=None,
            password=None,
-           *opts):
+           *opts, **kwargs):
     '''
     Commit the current directory, files, or directories to
     the remote Subversion repository
@@ -323,10 +324,10 @@ def commit(cwd,
         opts += ('-m', msg)
     if targets:
         opts += tuple(shlex.split(targets))
-    return _run_svn('commit', cwd, user, username, password, opts)
+    return _run_svn('commit', cwd, user, username, password, opts, **kwargs)
 
 
-def add(cwd, targets, user=None, username=None, password=None, *opts):
+def add(cwd, targets, user=None, username=None, password=None, *opts, **kwargs):
     '''
     Add files to be tracked by the Subversion working-copy checkout
 
@@ -355,7 +356,7 @@ def add(cwd, targets, user=None, username=None, password=None, *opts):
     '''
     if targets:
         opts += tuple(shlex.split(targets))
-    return _run_svn('add', cwd, user, username, password, opts)
+    return _run_svn('add', cwd, user, username, password, opts, **kwargs)
 
 
 def remove(cwd,
@@ -364,7 +365,7 @@ def remove(cwd,
            user=None,
            username=None,
            password=None,
-           *opts):
+           *opts, **kwargs):
     '''
     Remove files and directories from the Subversion repository
 
@@ -398,10 +399,10 @@ def remove(cwd,
         opts += ('-m', msg)
     if targets:
         opts += tuple(shlex.split(targets))
-    return _run_svn('remove', cwd, user, username, password, opts)
+    return _run_svn('remove', cwd, user, username, password, opts, **kwargs)
 
 
-def status(cwd, targets=None, user=None, username=None, password=None, *opts):
+def status(cwd, targets=None, user=None, username=None, password=None, *opts, **kwargs):
     '''
     Display the status of the current directory, files, or
     directories in the Subversion repository
@@ -432,7 +433,7 @@ def status(cwd, targets=None, user=None, username=None, password=None, *opts):
     '''
     if targets:
         opts += tuple(shlex.split(targets))
-    return _run_svn('status', cwd, user, username, password, opts)
+    return _run_svn('status', cwd, user, username, password, opts, **kwargs)
 
 
 def export(cwd,
@@ -441,7 +442,7 @@ def export(cwd,
              user=None,
              username=None,
              password=None,
-             *opts):
+             *opts, **kwargs):
     '''
     Create an unversioned copy of a tree.
 
@@ -475,4 +476,4 @@ def export(cwd,
     opts += (remote,)
     if target:
         opts += (target,)
-    return _run_svn('export', cwd, user, username, password, opts)
+    return _run_svn('export', cwd, user, username, password, opts, **kwargs)

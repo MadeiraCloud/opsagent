@@ -110,7 +110,7 @@ def latest(name,
         A command to run as a check, only run the named command if the command
         passed to the ``unless`` option returns false
     '''
-    ret = {'name': name, 'result': True, 'comment': '', 'changes': {}}
+    ret = {'name': name, 'result': True, 'comment': '', 'changes': {}, 'state_stdout': '', 'state_stderr': ''}
 
     # Check to make sure rev and mirror/bare are not both in use
     if rev and (mirror or bare):
@@ -163,7 +163,7 @@ def latest(name,
         log.debug(('target {0} is found, "git pull" '
                    'is probably required'.format(target)))
         try:
-            current_rev = __salt__['git.revision'](target, user=user)
+            current_rev = __salt__['git.revision'](target, user=user, state_ret=ret)
 
             # handle the case where a branch was provided for rev
             remote_rev = None
@@ -202,7 +202,8 @@ def latest(name,
                     __salt__['git.remote_set'](target,
                                                name=remote_name,
                                                url=name,
-                                               user=user)
+                                               user=user,
+                                               state_ret=ret)
                     ret['changes']['remote/{0}'.format(remote_name)] = "{0} => {1}".format(str(remote), name)
 
                 # check if rev is already present in repo, git-fetch otherwise
@@ -210,7 +211,8 @@ def latest(name,
                     __salt__['git.fetch'](target,
                                           opts=fetch_opts,
                                           user=user,
-                                          identity=identity)
+                                          identity=identity,
+                                          state_ret=ret)
                 elif rev:
 
                     cmd = "git rev-parse " + rev + '^{commit}'
@@ -222,18 +224,20 @@ def latest(name,
                         __salt__['git.fetch'](target,
                                               opts=fetch_opts,
                                               user=user,
-                                              identity=identity)
+                                              identity=identity,
+                                              state_ret=ret)
 
                     __salt__['git.checkout'](target,
                                              rev,
                                              force=force_checkout,
-                                             user=user)
+                                             user=user,
+                                             state_ret=ret)
 
                 # check if we are on a branch to merge changes
                 cmd = "git symbolic-ref -q HEAD > /dev/null"
                 retcode = __salt__['cmd.retcode'](cmd, cwd=target, runas=user)
                 if 0 == retcode:
-                    __salt__['git.fetch' if bare else 'git.pull'](target,
+                    __salt__['git.fetch' if bare else 'git.pull'](ret, target,
                                                                   opts=fetch_opts,
                                                                   user=user,
                                                                   identity=identity)
@@ -242,9 +246,10 @@ def latest(name,
                     __salt__['git.submodule'](target,
                                               user=user,
                                               identity=identity,
-                                              opts='--recursive')
+                                              opts='--recursive',
+                                              state_ret=ret)
 
-                new_rev = __salt__['git.revision'](cwd=target, user=user)
+                new_rev = __salt__['git.revision'](cwd=target, user=user, state_ret=ret)
         except Exception as exc:
             return _fail(
                     ret,
@@ -293,19 +298,21 @@ def latest(name,
                                   name,
                                   user=user,
                                   opts=opts,
-                                  identity=identity)
+                                  identity=identity,
+                                  state_ret=ret)
 
             if rev and not bare:
-                __salt__['git.checkout'](target, rev, user=user)
+                __salt__['git.checkout'](target, rev, user=user, state_ret=ret)
 
             if submodules:
                 __salt__['git.submodule'](target,
                                           user=user,
                                           identity=identity,
-                                          opts='--recursive')
+                                          opts='--recursive',
+                                          state_ret=ret)
 
             new_rev = None if bare else (
-                __salt__['git.revision'](cwd=target, user=user))
+                __salt__['git.revision'](cwd=target, user=user, state_ret=ret))
 
         except Exception as exc:
             return _fail(
@@ -399,7 +406,7 @@ def present(name, bare=True, runas=None, user=None, force=False):
             shutil.rmtree(name)
 
     opts = '--bare' if bare else ''
-    __salt__['git.init'](cwd=name, user=user, opts=opts)
+    __salt__['git.init'](cwd=name, user=user, opts=opts, state_ret=ret)
 
     message = 'Initialized repository {0}'.format(name)
     log.info(message)

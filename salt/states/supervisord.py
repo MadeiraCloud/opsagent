@@ -76,7 +76,7 @@ def running(name,
         installed
 
     '''
-    ret = {'name': name, 'result': True, 'comment': '', 'changes': {}}
+    ret = {'name': name, 'result': True, 'comment': '', 'changes': {}, 'state_stdout': '', 'state_stderr': ''}
 
     salt.utils.warn_until(
         'Hydrogen',
@@ -140,7 +140,8 @@ def running(name,
             name,
             user=user,
             conf_file=conf_file,
-            bin_env=bin_env
+            bin_env=bin_env,
+            state_ret=ret
         )
 
         ret.update(_check_error(result, comment))
@@ -152,7 +153,8 @@ def running(name,
         result = __salt__['supervisord.update'](
             user=user,
             conf_file=conf_file,
-            bin_env=bin_env
+            bin_env=bin_env,
+            state_ret=ret
         )
         ret.update(_check_error(result, comment))
         changes.append(comment)
@@ -194,7 +196,8 @@ def running(name,
                 name,
                 user=user,
                 conf_file=conf_file,
-                bin_env=bin_env
+                bin_env=bin_env,
+                state_ret=ret
             )
             ret.update(_check_error(result, comment))
             changes.append(comment)
@@ -224,7 +227,8 @@ def running(name,
             name,
             user=runas,
             conf_file=conf_file,
-            bin_env=bin_env
+            bin_env=bin_env,
+            state_ret=ret
         )
 
         ret.update(_check_error(result, comment))
@@ -264,7 +268,7 @@ def dead(name,
         installed
 
     '''
-    ret = {'name': name, 'result': True, 'comment': '', 'changes': {}}
+    ret = {'name': name, 'result': True, 'comment': '', 'changes': {}, 'state_stdout': '', 'state_stderr': ''}
 
     salt.utils.warn_until(
         'Hydrogen',
@@ -338,7 +342,8 @@ def dead(name,
                 name,
                 user=user,
                 conf_file=conf_file,
-                bin_env=bin_env
+                bin_env=bin_env,
+                state_ret=ret
             )}
             ret.update(_check_error(result, comment))
             log.debug(unicode(result))
