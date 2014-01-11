@@ -354,22 +354,28 @@
 							"mongo-10gen-server"	: ""
 						}
 					}
+				}
+			]
+		},
+
+		////////////////////////////////////////////////////////////
+		"test" : {
+			"state" : [
+				{
+					"stateid" 	: "1",
+					"module" 	:  "package.gem.package",
+					"parameter" : {
+						"name"	:	{
+							"zool"	: ""
+						}
+					}
 				},
 
 				{
-					"stateid" : "", // ulimit
-				},
-
-				{
-					"stateid" : "", // config
-				},
-
-				{
-					"stateid"	: "1",
-					"module"	: "service.sysvinit",
-					"parameter"	: {
-						"name"		: "httpd",
-						"watch"		: ["/root/httpd.txt"]
+					"stateid" 	: "2",
+					"module" 	:  "package.gem.source",
+					"parameter" : {
+						"url"	: "http://ruby.taobao.org/"
 					}
 				}
 			]

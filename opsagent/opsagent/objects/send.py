@@ -10,7 +10,7 @@ import codes
 
 
 # Handshake request
-def handshake(init, error_proc):
+def handshake(init, errors):
     if type(init) is not dict: init={}
     return ({
             "code"             :   codes.HANDSHAKE,
@@ -18,7 +18,7 @@ def handshake(init, error_proc):
             "app_id"           :   init.get('app_id'),
             "protocol_version" :   codes.PROTOCOL_VERSION,
             "instance_token"   :   init.get('instance_token'),
-#            "error_proc"       :   "%s"%error_proc,
+            "init_errors"      :   (" ".join(errors) if errors else None),
             })
 
 

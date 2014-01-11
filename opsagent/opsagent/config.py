@@ -25,13 +25,22 @@ class Config():
         }
 
     defaultValues = {
-        'runtime': {},
+        'global': {
+            'proc': '/proc',
+            'watch': '/tmp/madeira/opsagent/watch',
+            },
+        'runtime': {
+            'proc': False,
+            },
         'toto': {
             'tata': "tutu",
             },
         'network': {
-            'ws_uri': "ws://localhost:8964/agent/"
-            }
+            'ws_uri': "ws://localhost:8964/agent/",
+            'instance_id': "http://169.254.169.254/latest/meta-data/instance-id",
+            'app_id': "http://169.254.169.254/latest/user-data/app-id",
+            'token': "http://169.254.169.254/latest/user-data/token",
+            },
         }
 
     def __init__(self, file=None):

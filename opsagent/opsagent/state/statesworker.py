@@ -9,10 +9,14 @@ Madeira OpsAgent States worker object
 # System imports
 import threading
 import time
+import os
+import signal
 # Custom imports
 from opsagent import utils
 from opsagent.objects import send
 from opsagent.exception import *
+
+import StatePreparation
 ##
 
 ## DEFINES
@@ -36,6 +40,8 @@ class StatesWorker(threading.Thread):
         self.__config = config
         self.__manager = None
 
+        self.__stateprepare = StatePreparation(config['salt'])
+
         # events
         self.__cv = threading.Condition()
         self.__wait_event = threading.Event()
@@ -54,6 +60,7 @@ class StatesWorker(threading.Thread):
         self.__builtins = {
             'Wait' : self.__exec_wait,
             }
+
 
 
     ## NETWORK RELAY
@@ -102,8 +109,28 @@ class StatesWorker(threading.Thread):
     ## KILL PROCESS
     # Kill child process
     def __kill_childs(self):
-        # TODO
-        pass
+        utils.log("DEBUG", "Killing states execution...",('__kill_childs',self))
+        if not self.__config['runtime']['proc']:
+            utils.log("WARNING", "/!\ procfs is disabled, and you shouldn't do this. Potential hazardous behaviour can happen ...",('__kill_childs',self))
+            return
+        proc = self.__config['global']['proc']
+        Flag = False
+        cur_pid = os.getpid()
+        pids = [pid for pid in os.listdir(proc) if pid.isdigit()]
+        for pid in pids:
+            try:
+                filename = os.path.join(proc, pid, 'status')
+                file = open(filename, "r")
+                for line in file:
+                    if re.search(r'PPid.*%s'%(cur_pid), line):
+                        utils.log("INFO", "State execution process found #%s. Killing ..."%(pid),('kill',self))
+                        os.kill(int(pid),signal.SIGKILL)
+                        utils.log("DEBUG", "Process killed.",('kill',self))
+                        flag = True
+            except Exception as e:
+                utils.log("DEBUG", "Kill child error on pid #%s: '%s'."(pid,e),('__kill_childs',self))
+        if not Flag:
+            utils.log("INFO", "No state execution found.",('__kill_childs',self))
 
     # Halt wait
     def __kill_wait(self):
@@ -113,11 +140,11 @@ class StatesWorker(threading.Thread):
     # Kill the current execution
     def kill(self):
         if self.__run:
+            utils.log("DEBUG", "Sending stop execution signal.",('kill',self))
+            self.__run = False
             if self.__waiting:
                 self.__kill_wait()
             self.__kill_childs()
-            utils.log("DEBUG", "Sending stop execution signal.",('kill',self))
-            self.__run = False
             utils.log("INFO", "Execution killed.",('kill',self))
         else:
             utils.log("DEBUG", "Execution not running, nothing to do.",('kill',self))
@@ -181,10 +208,18 @@ class StatesWorker(threading.Thread):
     # Call salt library
     def __exec_salt(self, id, module, parameter):
         utils.log("INFO", "Loading state ID '%s' from module '%s' ..."%(id,module),('__exec_salt',self))
+
         # TODO dict conversion + salt call
-        time.sleep(5)
+        #import subprocess
+        #p = subprocess.Popen(["sleep","5"])
+        #result = (SUCCESS if p.wait() == 0 else FAIL)
+        #(out_log,err_log) = p.communicate()
         # /TODO
-        (result,err_log,out_log) = (SUCCESS,"ERR SALT","OUT SALT")
+
+        # transfer json to salt state and exec salt state
+        (result, err_log, out_log) = self.__stateprepare.exec_salt(id, module, parameter)
+
+#        (result,err_log,out_log) = (SUCCESS,"ERR SALT","OUT SALT")
         utils.log("INFO", "State ID '%s' from module '%s' done, result '%s'."%(id,module,result),('__exec_salt',self))
         utils.log("DEBUG", "State out log='%s'"%(out_log),('__exec_salt',self))
         utils.log("DEBUG", "State error log='%s'"%(err_log),('__exec_salt',self))
