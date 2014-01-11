@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 
 import os
+import json
 import hashlib
 
-from staterunner import StateRunner
+#from staterunner import StateRunner
+from salt.state  import State
 
 class StatePrepareExcepton(Exception):
 	pass
@@ -32,7 +34,7 @@ class StatePreparation(object):
 		}
 	}
 
-	def __init__(self, pre_states):
+	def __init__(self, config, pre_states=None):
 
 		self.pre_mapping = {
 			'package.pkg.package'	:	self.__package,
@@ -69,116 +71,148 @@ class StatePreparation(object):
 			'system.ssh.known_host' :	self._system_ssh_known_host,
 		}
 
-		self.pre_states = pre_states
-		self.states = []
+		# init salt opts
+		self._init_opts(config)
 
-	def transfer(self):
-		"""
-			Transfer the agent_data to salt states.
-		"""
+		# init state
+		self._init_state()
 
-		for uid, com in self.pre_states['component'].items():
-				states = {}
+		self.states = None
 
-				for p_state in com['state']:
+	def _init_opts(self, config):
 
-					step = p_state['stateid']
-
-					if p_state['module'] in self.pre_mapping:
-
-						state = self.pre_mapping[p_state['module']](p_state['module'], p_state['parameter'], uid, step)
-
-						if state:
-							if isinstance(state, dict) or isinstance(state, list):
-								states[step] = state
-
-							else:
-								print "invalid state"
-								continue
-
-				# order the states
-				for i in range(len(states.keys())):
-					step = str(i+1)
-
-					if isinstance(states[step], dict):
-						self.states.append(states[step])
-
-					elif isinstance(states[step], list):
-						self.states += states[step]
-
-		return self.states
-
-	def transfer_module(self, module, parameter, step=None):
-		"""
-			Transfer module to salt state.
-		"""
-		state = None
-		if module and module in self.pre_mapping:
-
-			state = self.pre_mapping[module](module, parameter, None, step)
-
-		return state
-
-	def exec_salt(self, step, module, parameter):
-		"""
-			Transfer the module json to salt state and execute it.
-			return result format: (result,err_log,out_log), result:True/False
-		"""
-
-		salt_opts = {
+		self._salt_opts = {
 			'file_client':       'local',
 			'renderer':          'yaml_jinja',
 			'failhard':          False,
 			'state_top':         'salt://top.sls',
 			'nodegroups':        {},
-			'file_roots':        {'base': ['/srv/salt']},
+			'file_roots':        {'base': [ ]},
 			'state_auto_order':  False,
-			'extension_modules': '/var/cache/salt/minion/extmods',
+			'extension_modules': None,
 			'id':                '',
 			'pillar_roots':      '',
-			'cachedir':          '/code/OpsAgent/cache',
+			'cachedir':          None,
 			'test':              False,
 		}
 
-		states = []
+		# file roots
+		for path in config['file_roots'].split(':'):
+			# check and make path
+			if not self.__mkdir(path):
+				continue
 
-		# transfer json
-		state = self.transfer_module(module, parameter, step)
-		if not state or not isinstance(state, dict) or not isinstance(state, list):
+			self._salt_opts['file_roots']['base'].append(path)
+
+		if len(self._salt_opts['file_roots']['base']) == 0:
+			print "ERROR: Missing file roots argument"
+			## todo
+
+		if not self.__mkdir(config['extension_modules']):
+			print "ERROR: Missing extension modules argument"
+			## todo
+
+		self._salt_opts['extension_modules'] = config['extension_modules']
+
+		if not self.__mkdir(config['cachedir']):
+			print "ERROR: Missing cachedir argument"
+			## todo
+		self._salt_opts['cachedir'] = config['cachedir']
+
+	def _init_state(self):
+		"""
+			Init salt state object.
+		"""
+
+		self.state = State(self._salt_opts)
+
+	def transfer(self, step, module, parameter):
+		"""
+			Transfer the module json data to salt states.
+		"""
+
+		# for uid, com in self.pre_states['component'].items():
+		# 		states = {}
+
+		# 		for p_state in com['state']:
+
+		# 			step = p_state['stateid']
+
+		# 			if p_state['module'] in self.pre_mapping:
+
+		# 				state = self.pre_mapping[p_state['module']](p_state['module'], p_state['parameter'], uid, step)
+
+		# 				if state:
+		# 					if isinstance(state, dict) or isinstance(state, list):
+		# 						states[step] = state
+
+		# 					else:
+		# 						print "invalid state"
+		# 						continue
+
+		# 		# order the states
+		# 		for i in range(len(states.keys())):
+		# 			step = str(i+1)
+
+		# 			if isinstance(states[step], dict):
+		# 				self.states.append(states[step])
+
+		# 			elif isinstance(states[step], list):
+		# 				self.states += states[step]
+
+		if not module:
+			print "please input module"
+			return
+
+		if module not in self.pre_mapping:
+			print "not supported module %s" % module
+			return
+
+		state = self.pre_mapping[module](module, parameter, None, step)
+		if not state or not isinstance(state, dict):
 			print "Transfer json to salt state failed"
-			return (False, None, 'Transfer json to salt state failed')
+			return
 
-		if isinstance(state, dict):
-			states.append(state)
-		elif isinstance(state, list):
-			states = state
+		self.states = state
+		return state
 
-		# execuse salt state
-		runner = StateRunner(salt_opts, states)
-		print json.dumps(runner.get_opts(), sort_keys=True,
-			  indent=4, separators=(',', ': '))
+	def exec_salt(self, step, module, parameter):
+		"""
+			Transfer and exec salt state.
+			return result format: (result,err_log,out_log), result:True/False
+		"""
 
-		# execute the salt state
 		result = err_log = out_log = None
-		ret = runner.run()
+
+		# transfer
+		state = self.transfer(step, module, parameter)
+		if not state:
+			err_log = "transfer salt state failed"
+			print err_log
+			return(False, err_log, out_log)
+
+		ret = self.state.call_high(state)
 		if ret:
 			# parse the ret and return
 			print json.dumps(ret, sort_keys=True,
 				  indent=4, separators=(',', ': '))
 
 			## set error and output log
-			for r in ret:
-				result = True
-				for r_tag, r_value in r.items():
-					## error log and std out log
+			result = True
+			for r_tag, r_value in ret.items():
+				# error log and std out log
+				if 'state_stderr' in r_value:
+					err_log = r_value['state_stderr']
+				if 'state_stdout' in r_value:
+					out_log = r_value['state_stdout']
 
-					if r_value['result'] = False:
-						break
-
-			return (result, err_log, std_log)
+				if not r_value['result']:
+					break
 
 		else:
-			return (False, None, "wait failed")
+			out_log = "wait failed"
+
+		return (result, err_log, out_log)
 
 	## package
 	def _package_yum_package(self, module, parameter, uid=None, step=None):
@@ -1382,51 +1416,67 @@ class StatePreparation(object):
 
 		return 0
 
+	def __mkdir(self, path):
+		"""
+			Check and make directory.
+		"""
+		if not os.path.isdir(path):
+			try:
+				os.makedirs(path)
+			except OSError, e:
+				print "Create directory %s failed" % path
+				return False
+
+		return True
+
 # codes for test
 def main():
 
-	import json
-
 	pre_states = json.loads(open('api.json').read())
 
-	salt_opts = {
-		'file_client':       'local',
-		'renderer':          'yaml_jinja',
-		'failhard':          False,
-		'state_top':         'salt://top.sls',
-		'nodegroups':        {},
-		'file_roots':        {'base': ['/srv/salt']},
-		'state_auto_order':  False,
-		'extension_modules': '/var/cache/salt/minion/extmods',
-		'id':                '',
-		'pillar_roots':      '',
-		'cachedir':          '/code/OpsAgent/cache',
-		'test':              False,
+	# salt_opts = {
+	# 	'file_client':       'local',
+	# 	'renderer':          'yaml_jinja',
+	# 	'failhard':          False,
+	# 	'state_top':         'salt://top.sls',
+	# 	'nodegroups':        {},
+	# 	'file_roots':        {'base': ['/srv/salt']},
+	# 	'state_auto_order':  False,
+	# 	'extension_modules': '/var/cache/salt/minion/extmods',
+	# 	'id':                '',
+	# 	'pillar_roots':      '',
+	# 	'cachedir':          '/code/OpsAgent/cache',
+	# 	'test':              False,
+	# }
+
+	config = {
+		'file_roots' : '/srv/salt',
+		'extension_modules' : '/var/cache/salt/minion/extmods',
+		'cachedir' : '/code/OpsAgent/cache'
 	}
 
 	import pdb
 	pdb.set_trace()
 
-	sp = StatePreparation(pre_states)
-	states = sp.transfer()
+	sp = StatePreparation(config)
 
-	print json.dumps(states)
+	print json.dumps(sp._salt_opts, sort_keys=True,
+		indent=4, separators=(',', ': '))
 
-	out_states = [salt_opts] + states
-	with open('states.json', 'w') as f:
-		json.dump(out_states, f)
+	for uid, com in pre_states['component'].items():
+		states = {}
 
-	runner = StateRunner(salt_opts, states)
-	print json.dumps(runner.get_opts(), sort_keys=True,
-		  indent=4, separators=(',', ': '))
+		for p_state in com['state']:
 
-	ret = runner.run()
-	if ret:
-		print json.dumps(ret, sort_keys=True,
-			  indent=4, separators=(',', ': '))
+			step = p_state['stateid']
 
-	else:
-		print "wait failed"
+			if p_state['module'] in sp.pre_mapping:
+
+				ret = sp.exec_salt(step, p_state['module'], p_state['parameter'])
+
+	# out_states = [salt_opts] + states
+	# with open('states.json', 'w') as f:
+	# 	json.dump(out_states, f)
 
 if __name__ == '__main__':
 	main()
