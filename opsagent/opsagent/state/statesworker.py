@@ -16,7 +16,7 @@ from opsagent import utils
 from opsagent.objects import send
 from opsagent.exception import *
 
-#import StatePreparation
+import StatePreparation
 ##
 
 ## DEFINES
