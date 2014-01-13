@@ -256,6 +256,7 @@ class StatesWorker(threading.Thread):
         # (out_log,err_log) = p.communicate()
         # /TODO
 
+        # Salt call
         (result, err_log, out_log) = self.__stateprepare.exec_salt(id, module, parameter)
 
         utils.log("INFO", "State ID '%s' from module '%s' done, result '%s'."%(id,module,result),('__exec_salt',self))
