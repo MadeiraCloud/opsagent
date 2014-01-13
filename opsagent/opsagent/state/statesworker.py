@@ -16,7 +16,7 @@ from opsagent import utils
 from opsagent.objects import send
 from opsagent.exception import *
 
-import StatePreparation
+#import StatePreparation
 ##
 
 ## DEFINES
@@ -40,8 +40,6 @@ class StatesWorker(threading.Thread):
         self.__config = config
         self.__manager = None
 
-        self.__stateprepare = StatePreparation(config['salt'])
-
         # events
         self.__cv = threading.Condition()
         self.__wait_event = threading.Event()
@@ -56,11 +54,10 @@ class StatesWorker(threading.Thread):
         self.__run = False
         self.__waiting = False
 
-        # builtins map
+        # builtins methods map
         self.__builtins = {
-            'Wait' : self.__exec_wait,
+            'general.wait' : self.__exec_wait,
             }
-
 
 
     ## NETWORK RELAY
@@ -186,11 +183,7 @@ class StatesWorker(threading.Thread):
     ## MAIN EXECUTION
     # Action on wait
     def __exec_wait(self, id, module, parameter):
-        waited_s = parameter.get('stateid')
-        waited_i = parameter.get('instance_id')
-        if (not waited_s) or (not waited_i):
-            raise SWWaitFormatException
-        utils.log("INFO", "Waiting for state '%s' on instance '%s'..."%(waited_s,waited_i),('__exec_wait',self))
+        utils.log("INFO", "Waiting for external states ...",('__exec_wait',self))
         self.__waiting = True
         while (id not in self.__done) and (self.__run):
             self.__wait_event.wait()
@@ -205,21 +198,61 @@ class StatesWorker(threading.Thread):
             utils.log("WARNING", "Waited state ABORTED.",('__exec_wait',self))
         return (value,None,None)
 
+    import hashlib
+
+    # Write hash
+    def __create_hash(self, target, hash, file):
+        utils.log("DEBUG", "Writing new hash for file '%s' in '%s': '%s'"%(file, target, hash),('__create_hash',self))
+        f = open(target, 'w')
+        f.write(hash)
+        f.close()
+
     # Call salt library
     def __exec_salt(self, id, module, parameter):
         utils.log("INFO", "Loading state ID '%s' from module '%s' ..."%(id,module),('__exec_salt',self))
+        first = True
 
+        # Watch process
+        if type(parameter) is dict and paramater.get("watch"):
+            utils.log("DEBUG", "Watched state detected."%(watch),('__exec_salt',self))
+            watch = paramater.get("watch")
+            del parameter["watch"]
+            try:
+                if not os.path.isfile(watch):
+                    err = "Can't access watched file '%s'."%(watch)
+                    utils.log("ERROR", err,('__exec_salt',self))
+                    return (FAIL,err,None)
+                else:
+                    utils.log("DEBUG", "Watched file '%s' found."%(watch),('__exec_salt',self))
+                    curent_hash = hashlib.md5(watch).hexdigest()
+                    cs = os.path.join(self.__config['global']['watch'], id)
+                    if os.path.isfile(cs):
+                        first = False
+                        with open(cs, 'r') as f:
+                            old_hash = f.read()
+                        if old_hash != curent_hash:
+                            utils.log("INFO","Watch event triggered, replacing standard action ...",('__exec_salt',self))
+                            parameter["watch"] = True
+                            utils.log("DEBUG","Standard action replaced.",('__exec_salt',self))
+                        else:
+                            utils.log("DEBUG","No watched event triggered.",('__exec_salt',self))
+                    else:
+                        utils.log("DEBUG","No old record, creating hash and executing normal command ...",('__exec_salt',self))
+                        self.__create_hash(cs, curent_hash, file)
+                        utils.log("DEBUG","Hash stored.",('__exec_salt',self))
+            except Exception as e:
+                err = "Unknown error during watch process on file '%s': %s."%(watch,e)
+                utils.log("WARNING", err,('__exec_salt',self))
+                return (FAIL,err,None)
+
+        # Standard execution
         # TODO dict conversion + salt call
-        #import subprocess
-        #p = subprocess.Popen(["sleep","5"])
-        #result = (SUCCESS if p.wait() == 0 else FAIL)
-        #(out_log,err_log) = p.communicate()
+        import subprocess
+        p = subprocess.Popen(["sleep","5"])
+        result = (SUCCESS if p.wait() == 0 else FAIL)
+        (out_log,err_log) = p.communicate()
         # /TODO
 
-        # transfer json to salt state and exec salt state
-        (result, err_log, out_log) = self.__stateprepare.exec_salt(id, module, parameter)
-
-#        (result,err_log,out_log) = (SUCCESS,"ERR SALT","OUT SALT")
         utils.log("INFO", "State ID '%s' from module '%s' done, result '%s'."%(id,module,result),('__exec_salt',self))
         utils.log("DEBUG", "State out log='%s'"%(out_log),('__exec_salt',self))
         utils.log("DEBUG", "State error log='%s'"%(err_log),('__exec_salt',self))

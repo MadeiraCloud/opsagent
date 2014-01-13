@@ -205,13 +205,9 @@ class Manager(WebSocketClient):
             self.__states_worker.kill()
             self.__states_worker.reset()
             utils.log("DEBUG", "Reset succeed",('__close',self))
-        utils.log("DEBUG", "Setting closing stream",('__close',self))
-        self.stream.closing = self.stream.close(code, reason)
-        utils.log("DEBUG", "Terminating socket ...",('__close',self))
-        # TODO choose ?
-        #self.terminate()
-        self.close()
-        utils.log("INFO", "Socket terminated, connection closed.",('__close',self))
+        utils.log("DEBUG", "Closing socket ...",('__close',self))
+        self.close(code, reason)
+        utils.log("INFO", "Socket closed, connection terminated.",('__close',self))
 
     # Send data to backend
     def send_json(self, raw_data):

@@ -160,6 +160,7 @@ def main():
     sw = StatesWorker(config=config)
     sw.start()
     while True:
+# TODO delete (DEBUG)
 #    if True:
         try:
             run(config, sw)
