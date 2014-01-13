@@ -1,0 +1,46 @@
+#cloud-config
+##
+## Bootstrap cloudinit script for MadeiraCloud OpsAgent
+## Version 0.0.1a
+## @author: Thibault BRONCHAIN
+##
+## (c) 2014 MadeiraCloud LTD.
+##
+
+# user-data
+app_id: ethylic
+token: token
+
+# Packages required
+packages:
+  - curl
+  - tar
+  - python27
+
+# Bootstrap commands
+runcmd:
+  - cd /root
+  - curl -O https://URL/agent.tgz
+  - tar xfz agent.tgz /madeira
+  - python /madeira/bootstrap/virtualenv/virtualenv.py /madeira/env
+  - cp -r /madeira/sources/ws4py /madeira/env/lib/python2.7/
+  - cp -r /madeira/sources/salt /madeira/env/lib/python2.7/
+  - cp -r /madeira/sources/opsagent/opsagent /madeira/env/lib/python2.7/
+  - cp /madeira/sources/opsagent/opsagent.py /madeira/env/bin/opsagent
+
+# EOF
+
+curl -O https://pypi.python.org/packages/source/v/virtualenv/virtualenv-X.X.tar.gz
+tar xvfz virtualenv-X.X.tar.gz
+cd virtualenv-X.X
+python virtualenv.py myVE
+
+
+- madeira
+  - bootstrap
+    - virtualenv
+  - sources
+    - opsagent
+    - salt
+    - ws4py
+  - etc

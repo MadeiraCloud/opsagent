@@ -40,7 +40,7 @@ def instance_id(config):
     return id
 
 # Get app ID and token from AWS passed by Madeira
-def user_data_real(config):
+def user_data(config):
     try:
         app_id = get_aws_data(config['network']['app_id'])
     except AWSNotFoundException:
@@ -60,5 +60,5 @@ def user_data_real(config):
     return (app_id,token)
 
 # TODO: switch
-def user_data(config):
+def user_data_test(config):
     return ('ethylic','token')
