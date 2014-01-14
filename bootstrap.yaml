@@ -8,14 +8,15 @@
 ##
 
 # user-data
-app_id: ethylic
-token: token
+app_id: %app_id%
+token: %token%
 
 # Packages required
 packages:
   - curl
   - tar
-  - python27
+  - %python%
+%add_pkg%
 
 # Bootstrap commands
 runcmd:
@@ -26,21 +27,6 @@ runcmd:
   - cp -r /madeira/sources/ws4py /madeira/env/lib/python2.7/
   - cp -r /madeira/sources/salt /madeira/env/lib/python2.7/
   - cp -r /madeira/sources/opsagent/opsagent /madeira/env/lib/python2.7/
-  - cp /madeira/sources/opsagent/opsagent.py /madeira/env/bin/opsagent
+  - chown -R root:root /madeira
 
 # EOF
-
-curl -O https://pypi.python.org/packages/source/v/virtualenv/virtualenv-X.X.tar.gz
-tar xvfz virtualenv-X.X.tar.gz
-cd virtualenv-X.X
-python virtualenv.py myVE
-
-
-- madeira
-  - bootstrap
-    - virtualenv
-  - sources
-    - opsagent
-    - salt
-    - ws4py
-  - etc

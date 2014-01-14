@@ -59,6 +59,8 @@ def user_data(config):
         return user_data(config)
     return (app_id,token)
 
-# TODO: switch
+# TODO: delete
 def user_data_test(config):
     return ('ethylic','token')
+def instance_id_test(config):
+    return ('slurry')

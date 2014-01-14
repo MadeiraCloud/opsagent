@@ -1,7 +1,6 @@
 #!/usr/bin/python
-## TODO CHANGE THIS
 '''
-Madeira OpsAgent launcher file
+Madeira OpsAgent launcher script
 
 @author: Thibault BRONCHAIN
 '''
