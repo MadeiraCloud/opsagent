@@ -16,7 +16,7 @@ from opsagent import utils
 from opsagent.objects import send
 from opsagent.exception import *
 
-import StatePreparation
+#import StatePreparation
 ##
 
 ## DEFINES
@@ -41,7 +41,7 @@ class StatesWorker(threading.Thread):
         self.__manager = None
 
         # state transfer
-        self.__stateprepare = StatePreparation(config['salt'])
+#        self.__stateprepare = StatePreparation(config['salt'])
 
         # events
         self.__cv = threading.Condition()
@@ -216,9 +216,9 @@ class StatesWorker(threading.Thread):
         first = True
 
         # Watch process
-        if type(parameter) is dict and paramater.get("watch"):
+        if type(parameter) is dict and parameter.get("watch"):
             utils.log("DEBUG", "Watched state detected."%(watch),('__exec_salt',self))
-            watch = paramater.get("watch")
+            watch = parameter.get("watch")
             del parameter["watch"]
             try:
                 if not os.path.isfile(watch):

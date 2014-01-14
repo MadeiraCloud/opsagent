@@ -24,8 +24,8 @@ import utils
 
 ## DEFINES
 # Time to wait before retrying handshake
-WAIT_CONNECT=1
-WAIT_RECONNECT=1
+WAIT_CONNECT=5
+WAIT_RECONNECT=5
 ##
 
 
@@ -185,9 +185,9 @@ class Manager(WebSocketClient):
     def __get_id(self):
         utils.log("INFO", "Fetching instance data from AWS ...",('__get_id',self))
         instance_id = aws.instance_id(self.__config)
-        utils.log("DEBUG", "Instance ID: '%s'"%(instance_id),('__get_id',self))
+        utils.log("INFO", "Instance ID: '%s'"%(instance_id),('__get_id',self))
         (app_id,token) = aws.user_data(self.__config)
-        utils.log("DEBUG", "App ID: '%s' - Token: '%s'"%(app_id,token),('__get_id',self))
+        utils.log("INFO", "App ID: '%s' - Token: '%s'"%(app_id,token),('__get_id',self))
         return ({
                 'instance_id':instance_id,
                 'app_id':app_id,

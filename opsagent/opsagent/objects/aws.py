@@ -60,7 +60,7 @@ def user_data(config):
     return (app_id,token)
 
 # TODO: delete
-def user_data_test(config):
+def user_data_t(config):
     return ('ethylic','token')
-def instance_id_test(config):
+def instance_id_t(config):
     return ('slurry')

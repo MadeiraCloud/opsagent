@@ -16,7 +16,7 @@ TREE_DIR=$BUILD_DIR/tree
 USER_DIR=$BUILD_DIR/userdata
 VIRTUALENV_URI=https://pypi.python.org/packages/source/v/virtualenv/virtualenv-${VIRTUALENV_VERSION}.tar.gz
 WS4PY_URI=https://github.com/Lawouach/WebSocket-for-Python.git
-CONF={aws_test.cfg,madeira_test.cfg,test.cfg}
+CONF="{aws_test.cfg,madeira_test.cfg,test.cfg}"
 
 PYTHON_APT=python2.7
 PYTHON_YUM=python27
@@ -52,6 +52,7 @@ function tree() {
     chmod +x madeira/env/bin/opsagent
     # Copy config files
     cp ../../conf/${CONF} madeira/env/etc/
+    tar cfz ../agent.tgz *
 }
 
 function userdata() {

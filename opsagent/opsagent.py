@@ -15,7 +15,7 @@ import time
 # Custom imports
 from opsagent.config import Config
 from opsagent import utils
-from opsagent import exception
+from opsagent.exception import *
 from opsagent.manager import Manager
 from opsagent.state.statesworker import StatesWorker
 
@@ -149,7 +149,13 @@ def main():
     __log(loglvl, options.log_file)
 
     # config parser
-    config = Config(options.config_file).getConfig()
+    try:
+        config = Config(options.config_file).getConfig()
+    except ConfigFileException:
+        config = Config().getConfig()
+    except Exception as e:
+        utils.log("ERROR", "Unknown fatal config exception: %s."%(e),('main',self))
+        config = Config().getConfig()
 
     # start daemon
 #    if options.daemon:

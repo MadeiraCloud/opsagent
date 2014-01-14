@@ -13,15 +13,15 @@ from copy import deepcopy
 
 # Custon imports
 import utils
-import exception
+from exception import *
 
 
 # Config class
 class Config():
     requiredKeys = {
-        'foo': {
-            'bar': "bar represents blablabla",
-            },
+#        'foo': {
+#            'bar': "bar represents blablabla",
+#            },
         }
 
     defaultValues = {
@@ -56,8 +56,8 @@ class Config():
         if file:
             self.__read_file(file)
             try:
-                self.__parse_file()
-                self.__check_required(Config.requiredKeys)
+                self.parse_file()
+                self.check_required(Config.requiredKeys)
             except Exception as e:
                 utils.log("ERROR", "Invalid config file '%s': %s"%(file,e),('__init__',self))
                 raise ConfigFileException
@@ -78,9 +78,9 @@ class Config():
     def parse_file(self, file=None):
         if file:
             self.__read_file(file)
-        for name in parser.sections():
+        for name in self.__parser.sections():
             self.__c.setdefault(name, {})
-            for key, value in parser.items(name):
+            for key, value in self.__parser.items(name):
                 self.__c[name][key] = value
 
     def check_required(self, required):
