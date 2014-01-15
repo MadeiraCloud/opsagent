@@ -31,6 +31,12 @@ class StatePreparation(object):
 
 		'package.pip.package' : {
 			'package.pkg.package' : { 'name' : ['python-pip'] }
+		},
+
+		'sys.selinux' : {
+			'package.pkg.package' : {
+				'name' : ['libsemanage', 'setools-console', 'policycoreutils-python']
+			}
 		}
 	}
 
