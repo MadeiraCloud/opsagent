@@ -52,7 +52,7 @@ function tree() {
     chmod +x madeira/env/bin/opsagent
     # Copy config files
     cp ../../conf/*.cfg madeira/env/etc/
-    tar cfz ../agent.tgz *
+    tar cfvz ../agent.tgz madeira
 }
 
 function userdata() {
@@ -64,14 +64,14 @@ function userdata() {
     IID=$4
     eval PYTHON_VERSION=\${PYTHON_$MANAGER}
     if [ $MANAGER = 'APT' ]; then
-        ADD_PKG="s/%add_pkg%/  - python-apt/g"
+        ADD_PKG="  - python-apt"
     else
         ADD_PKG=""
     fi
     sed -e "s/%python%/${PYTHON_VERSION}/g" \
         -e "s/%app_id%/${APP_ID}/g" \
         -e "s/%token%/${TOKEN}/g" \
-        -e "$ADD_PKG" \
+        -e "s/%add_pkg%/${ADD_PKG}/g" \
         < ../../bootstrap.yaml > bootstrap_$IID.yaml
 }
 

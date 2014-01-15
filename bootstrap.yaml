@@ -21,12 +21,13 @@ packages:
 # Bootstrap commands
 runcmd:
   - cd /root
-  - curl -O https://URL/agent.tgz
-  - tar xfz agent.tgz /madeira
-  - python /madeira/bootstrap/virtualenv/virtualenv.py /madeira/env
-  - cp -r /madeira/sources/ws4py /madeira/env/lib/python2.7/
-  - cp -r /madeira/sources/salt /madeira/env/lib/python2.7/
-  - cp -r /madeira/sources/opsagent/opsagent /madeira/env/lib/python2.7/
+  - curl -O https://s3.amazonaws.com/visualops/agent.tgz
+  - cd /
+  - tar xfz /root/agent.tgz
+  - python2.7 /madeira/bootstrap/virtualenv/virtualenv.py /madeira/env
+  - cp -r /madeira/sources/ws4py /madeira/env/lib/python2.7/site-packages/
+  - cp -r /madeira/sources/salt /madeira/env/lib/python2.7/site-packages/
+  - cp -r /madeira/sources/opsagent /madeira/env/lib/python2.7/site-packages/
   - chown -R root:root /madeira
 
 # EOF
