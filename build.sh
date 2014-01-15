@@ -39,6 +39,8 @@ function tree() {
     # Copy ws4py sources
     cp -r WebSocket-for-Python/ws4py madeira/sources/
     # Copy salt sources
+    cp -r ../../salt-0.17.4/salt madeira/sources/
+    # Patch salt
     cp -r ../../salt madeira/sources/
     # Copy opsagent sources
     for file in `find ../../opsagent/opsagent -type f -name '*.py'`

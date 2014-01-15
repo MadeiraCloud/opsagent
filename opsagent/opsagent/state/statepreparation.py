@@ -1,14 +1,19 @@
-#!/usr/bin/env python
+'''
+Madeira OpsAgent states preparator
 
+@author: Michael
+'''
+
+
+# System imports
 import os
 import json
 import hashlib
 
-#from staterunner import StateRunner
-from salt.state  import State
+# Internal imports
+from salt.state import State
+from opsagent.exception import StatePrepareExcepton,OpsAgentException
 
-class StatePrepareExcepton(Exception):
-	pass
 
 class StatePreparation(object):
 
@@ -160,7 +165,7 @@ class StatePreparation(object):
 		if not state:
 			err_log = "transfer salt state failed"
 			print err_log
-			return(False, err_log, out_log)
+			return (False, err_log, out_log)
 
 		ret = self.state.call_high(state)
 		if ret:
