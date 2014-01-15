@@ -40,6 +40,8 @@ function tree() {
     cp -r WebSocket-for-Python/ws4py madeira/sources/
     # Copy salt sources
     cp -r ../../salt-0.17.4/salt madeira/sources/
+    # Copy yaml module sources
+    cp -r ../../yaml madeira/sources/
     # Patch salt
     cp -r ../../salt madeira/sources/
     # Copy opsagent sources
