@@ -16,7 +16,7 @@ from opsagent import utils
 from opsagent.objects import send
 from opsagent.exception import *
 
-#import StatePreparation
+#from statepreparation import StatePreparation
 ##
 
 ## DEFINES
@@ -41,7 +41,7 @@ class StatesWorker(threading.Thread):
         self.__manager = None
 
         # state transfer
-#        self.__stateprepare = StatePreparation(config['salt'])
+#        self.__stateprepare = StatePreparation(config=config['salt'])
 
         # events
         self.__cv = threading.Condition()

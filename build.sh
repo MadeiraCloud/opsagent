@@ -39,6 +39,10 @@ function tree() {
     # Copy ws4py sources
     cp -r WebSocket-for-Python/ws4py madeira/sources/
     # Copy salt sources
+    cp -r ../../salt-0.17.4/salt madeira/sources/
+    # Copy yaml module sources
+    cp -r ../../yaml madeira/sources/
+    # Patch salt
     cp -r ../../salt madeira/sources/
     # Copy opsagent sources
     for file in `find ../../opsagent/opsagent -type f -name '*.py'`
@@ -52,7 +56,7 @@ function tree() {
     chmod +x madeira/env/bin/opsagent
     # Copy config files
     cp ../../conf/*.cfg madeira/env/etc/
-    tar cfz ../agent.tgz *
+    tar cfvz ../agent.tgz madeira
 }
 
 function userdata() {
@@ -64,14 +68,14 @@ function userdata() {
     IID=$4
     eval PYTHON_VERSION=\${PYTHON_$MANAGER}
     if [ $MANAGER = 'APT' ]; then
-        ADD_PKG="s/%add_pkg%/  - python-apt/g"
+        ADD_PKG="  - python-apt"
     else
         ADD_PKG=""
     fi
     sed -e "s/%python%/${PYTHON_VERSION}/g" \
         -e "s/%app_id%/${APP_ID}/g" \
         -e "s/%token%/${TOKEN}/g" \
-        -e "$ADD_PKG" \
+        -e "s/%add_pkg%/${ADD_PKG}/g" \
         < ../../bootstrap.yaml > bootstrap_$IID.yaml
 }
 

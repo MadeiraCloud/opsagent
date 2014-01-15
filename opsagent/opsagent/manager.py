@@ -134,7 +134,7 @@ class Manager(WebSocketClient):
         for dir in dirs:
             try:
                 if not os.path.isdir(dir):
-                    os.makedirs(proc,0755)
+                    os.makedirs(dir,0755)
                 if not os.access(dir, os.W_OK):
                     raise ManagerInitDirDeniedException
             except ManagerInitDirDeniedException:
