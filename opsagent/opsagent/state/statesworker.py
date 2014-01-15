@@ -16,7 +16,7 @@ from opsagent import utils
 from opsagent.objects import send
 from opsagent.exception import *
 
-from statepreparation import StatePreparation
+#from statepreparation import StatePreparation
 ##
 
 ## DEFINES
@@ -41,7 +41,7 @@ class StatesWorker(threading.Thread):
         self.__manager = None
 
         # state transfer
-        self.__stateprepare = StatePreparation(config=config['salt'])
+#        self.__stateprepare = StatePreparation(config=config['salt'])
 
         # events
         self.__cv = threading.Condition()
@@ -250,14 +250,14 @@ class StatesWorker(threading.Thread):
 
         # Standard execution
         # TODO dict conversion + salt call
-#        import subprocess
-#        p = subprocess.Popen(["sleep","5"])
-#        result = (SUCCESS if p.wait() == 0 else FAIL)
-#        (out_log,err_log) = p.communicate()
+        import subprocess
+        p = subprocess.Popen(["sleep","5"])
+        result = (SUCCESS if p.wait() == 0 else FAIL)
+        (out_log,err_log) = p.communicate()
         # /TODO
 
         # Salt call
-        (result, err_log, out_log) = self.__stateprepare.exec_salt(id, module, parameter)
+#        (result, err_log, out_log) = self.__stateprepare.exec_salt(id, module, parameter)
 
         utils.log("INFO", "State ID '%s' from module '%s' done, result '%s'."%(id,module,result),('__exec_salt',self))
         utils.log("DEBUG", "State out log='%s'"%(out_log),('__exec_salt',self))
