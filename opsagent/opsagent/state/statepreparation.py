@@ -223,7 +223,7 @@ class StatePreparation(object):
 
 		# get package name and verson
 		for attr, value in parameter.items():
-			if not value: continue
+			if value is None: continue
 
 			if attr == 'name':
 				if isinstance(value, dict):
@@ -390,7 +390,7 @@ class StatePreparation(object):
 		filename = None
 
 		for attr, value in parameter.items():
-			if not value: continue
+			if value is None: continue
 
 			if attr == 'path':
 				addin['name'] = filename = value
@@ -447,7 +447,7 @@ class StatePreparation(object):
 		scm_dir_addin = {}
 
 		for attr, value in parameter.items():
-			if not value:	continue
+			if value is None:	continue
 
 			if attr == 'repo':
 				addin['name'] = repo = value.split('-')[1].strip()
@@ -565,7 +565,7 @@ class StatePreparation(object):
 		addin = {}
 
 		for attr, value in parameter.items():
-			if not value: continue
+			if value is None: continue
 
 			if attr == 'name':
 				addin['name'] = value
@@ -645,7 +645,7 @@ class StatePreparation(object):
 		addin = {}
 		cmd = None
 		for attr, value in parameter.items():
-			if not value: continue
+			if value is None: continue
 
 			if attr == 'name' or attr == 'cmd':
 				addin['name'] = cmd = value
@@ -735,7 +735,7 @@ class StatePreparation(object):
 		addin = {}
 
 		for attr, value in parameter.items():
-			if not value: continue
+			if value is None: continue
 
 			if attr == 'cmd':
 				addin['name'] = value
@@ -789,7 +789,7 @@ class StatePreparation(object):
 		addin = {}
 
 		for attr, value in parameter.items():
-			if not value: continue
+			if value is None: continue
 
 			if attr == 'username':
 				addin['name'] = value
@@ -836,7 +836,7 @@ class StatePreparation(object):
 		addin = {}
 
 		for attr, value in parameter.items():
-			if not value: continue
+			if value is None: continue
 
 			if attr == 'groupname':
 				addin['name'] = value
@@ -885,7 +885,7 @@ class StatePreparation(object):
 		ip = None
 
 		for attr, value in parameter.items():
-			if not value: continue
+			if value is None: continue
 
 			if attr == 'hostname':
 				host = value
@@ -964,7 +964,7 @@ class StatePreparation(object):
 		mount = None
 
 		for attr, value in parameter.items():
-			if not value: continue
+			if value is None: continue
 
 			if attr == 'path':
 				addin['name'] = mount = value
@@ -1031,20 +1031,35 @@ class StatePreparation(object):
 			return 2
 
 		type = module.split('.')[1]
-		selinuxname = None
+		addin = {}
 
-		if selinuxname:
+		for attr, value in parameter.items():
+			if value is None:	continue
 
-			return {
-				selinuxname : {
-					type : [
-						'boolean',
-						{
-							'value' : parameter['on']
-						}
-					]
-				}
+			if attr == 'on':
+				if value == True:
+					addin['name'] = 'enforcing'
+				else:
+					addin['name'] = 'permissive'
+
+			else:
+				addin[attr] = value
+
+		if not addin:
+			print "invalid parameters"
+			return 3
+
+		state = 'mode'
+		tag = self.__get_tag(module, uid, step, addin['name'], state)
+
+		return {
+			tag : {
+				type : [
+					state,
+					addin,
+				]
 			}
+		}
 
 	def _sys_timezone(self, module, parameter, uid=None, step=None):
 		"""
@@ -1064,7 +1079,7 @@ class StatePreparation(object):
 		addin = {}
 
 		for attr, value in parameter.items():
-			if not value:	continue
+			if value is None:	continue
 
 			if attr == 'name':
 				addin['name'] = value
@@ -1110,7 +1125,7 @@ class StatePreparation(object):
 		addin = {}
 
 		for attr, value in parameter.items():
-			if not value: continue
+			if value is None: continue
 
 			if attr == 'authname':
 				addin['name'] = value
@@ -1192,7 +1207,7 @@ class StatePreparation(object):
 		addin = {}
 
 		for attr, value in parameter.items():
-			if not value: continue
+			if value is None: continue
 
 			if attr == 'hostname':
 				addin['name'] = value
