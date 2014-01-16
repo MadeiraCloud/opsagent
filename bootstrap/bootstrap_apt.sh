@@ -5,7 +5,7 @@
 ##
 
 # setup dependencies
-apt-get install python2.7
-apt-get install python-apt
+apt-get -yq install python2.7
+apt-get -yq install python-apt
 
 # EOF
