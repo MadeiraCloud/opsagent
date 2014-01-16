@@ -29,7 +29,7 @@ def get_aws_data(url):
     return res
 
 # Get instance ID from AWS
-def instance_id_r(config):
+def instance_id(config):
     utils.log("DEBUG", "Getting instance id ...",('instance_id','aws'))
     try:
         id = get_aws_data(config['network']['instance_id'])
@@ -43,34 +43,36 @@ def instance_id_r(config):
         return instance_id(config)
     return id
 
-# Get app ID and token from AWS passed by Madeira
-def user_data_r(config):
+# Get app ID from AWS passed by Madeira
+def app_id(config):
     utils.log("DEBUG", "Getting app id ...",('instance_id','aws'))
     try:
-        app_id = get_aws_data(config['network']['app_id'])
+        user_data = get_aws_data(config['network']['user_data'])
     except AWSNotFoundException:
-        utils.log("ERROR", "App ID not found, retrying in '%s' seconds."%(WAIT_RETRY),('user_data','aws'))
+        utils.log("ERROR", "User data not found, retrying in '%s' seconds."%(WAIT_RETRY),('user_data','aws'))
         time.sleep(WAIT_RETRY)
-        return user_data(config)
+        return app_id(config)
     except Exception as e:
-        utils.log("ERROR", "App ID failure, unknown error: '%s', retrying in '%s' seconds."%(e,WAIT_RETRY),('user_data','aws'))
+        utils.log("ERROR", "User data failure, unknown error: '%s', retrying in '%s' seconds."%(e,WAIT_RETRY),('user_data','aws'))
         time.sleep(WAIT_RETRY)
-        return user_data(config)
-    utils.log("DEBUG", "Getting token ...",('instance_id','aws'))
+        return app_id(config)
     try:
-        token = get_aws_data(config['network']['token'])
-    except AWSNotFoundException:
-        utils.log("ERROR", "Token not found, retrying in '%s' seconds."%(WAIT_RETRY),('user_data','aws'))
-        time.sleep(WAIT_RETRY)
-        return user_data(config)
+        r = re.search("#app_id=(.+)\n",user_data)
+        app_id = r.group(1)
     except Exception as e:
-        utils.log("ERROR", "Token failure, unknown error: '%s', retrying in '%s' seconds."%(e,WAIT_RETRY),('user_data','aws'))
+        utils.log("ERROR", "Can't get appid '%s', retrying in '%s' seconds."%(e,WAIT_RETRY),('user_data','aws'))
         time.sleep(WAIT_RETRY)
-        return user_data(config)
-    return (app_id,token)
+        return app_id(config)
+    return app_id
+
+# TODO: token
+def token(config):
+    return ('token')
 
 # TODO: delete
-def user_data(config):
-    return ('ethylic','token')
-def instance_id(config):
+def app_id_t(config):
+    return ('ethylic')
+def isntance_id_t(config):
     return ('slurry')
+def token_t(config):
+    return ('token')

@@ -186,8 +186,10 @@ class Manager(WebSocketClient):
         utils.log("INFO", "Fetching instance data from AWS ...",('__get_id',self))
         instance_id = aws.instance_id(self.__config)
         utils.log("INFO", "Instance ID: '%s'"%(instance_id),('__get_id',self))
-        (app_id,token) = aws.user_data(self.__config)
-        utils.log("INFO", "App ID: '%s' - Token: '%s'"%(app_id,token),('__get_id',self))
+        app_id = aws.app_id(self.__config)
+        utils.log("INFO", "App ID: '%s'"%(app_id),('__get_id',self))
+        token = aws.token(self.__config)
+        utils.log("DEBUG", "Token: '%s'"%(token),('__get_id',self))
         return ({
                 'instance_id':instance_id,
                 'app_id':app_id,

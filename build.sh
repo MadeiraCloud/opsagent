@@ -14,8 +14,8 @@ VIRTUALENV_VERSION=1.9
 BUILD_DIR=build
 TREE_DIR=$BUILD_DIR/tree
 USER_DIR=$BUILD_DIR/userdata
-VIRTUALENV_URI=https://pypi.python.org/packages/source/v/virtualenv/virtualenv-${VIRTUALENV_VERSION}.tar.gz
-WS4PY_URI=https://github.com/Lawouach/WebSocket-for-Python.git
+#VIRTUALENV_URI=https://pypi.python.org/packages/source/v/virtualenv/virtualenv-${VIRTUALENV_VERSION}.tar.gz
+#WS4PY_URI=https://github.com/Lawouach/WebSocket-for-Python.git
 #CONF="{aws_test.cfg,madeira_test.cfg,test.cfg}"
 
 PYTHON_APT=python2.7
@@ -29,19 +29,23 @@ function tree() {
     cd ${TREE_DIR}
     # Create agent build tree
     mkdir -p madeira/{bootstrap,sources,env/etc,env/bin}
+    # Copy bootstrap scripts
+    cp ../../bootstrap/bootstrap_{apt,yum}.sh madeira/bootstrap/
     # Fetch virtualenv
-    curl -O ${VIRTUALENV_URI}
-    tar xvfz virtualenv-${VIRTUALENV_VERSION}.tar.gz
+#    curl -O ${VIRTUALENV_URI}
+#    tar xvfz virtualenv-${VIRTUALENV_VERSION}.tar.gz
     # Create virtualenv directory in tree
-    mv virtualenv-${VIRTUALENV_VERSION} madeira/bootstrap/virtualenv
+#    mv virtualenv-${VIRTUALENV_VERSION} madeira/bootstrap/virtualenv
     # Fetch ws4py library
-    git clone ${WS4PY_URI}
+#    git clone ${WS4PY_URI}
     # Copy ws4py sources
-    cp -r WebSocket-for-Python/ws4py madeira/sources/
-    # Copy salt sources
-    cp -r ../../salt-0.17.4/salt madeira/sources/
-    # Copy yaml module sources
-    cp -r ../../yaml madeira/sources/
+#    cp -r WebSocket-for-Python/ws4py madeira/sources/
+    # Copy virtualenv
+    cp -r ../../libs/virtualenv madeira/bootstrap/
+    # Copy ws4py sources
+    cp -r ../../libs/ws4py madeira/sources/
+    # Copy salt and dependencies
+    cp -r ../../libs/{msgpack,yaml,jinja2,markupsafe,salt-0.17.4/salt} madeira/sources/
     # Patch salt
     cp -r ../../salt madeira/sources/
     # Copy opsagent sources
