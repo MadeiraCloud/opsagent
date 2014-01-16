@@ -29,6 +29,8 @@ function tree() {
     cd ${TREE_DIR}
     # Create agent build tree
     mkdir -p madeira/{bootstrap,sources,env/etc,env/bin}
+    # Copy bootstrap scripts
+    cp ../../bootstrap/bootstrap_{apt,yum}.sh madeira/bootstrap/
     # Fetch virtualenv
 #    curl -O ${VIRTUALENV_URI}
 #    tar xvfz virtualenv-${VIRTUALENV_VERSION}.tar.gz
@@ -43,7 +45,7 @@ function tree() {
     # Copy ws4py sources
     cp -r ../../libs/ws4py madeira/sources/
     # Copy salt and dependencies
-    cp -r ../../libs/{yaml,jinja2,salt-0.17.4/salt} madeira/sources/
+    cp -r ../../libs/{yaml,jinja2,markupsafe,salt-0.17.4/salt} madeira/sources/
     # Patch salt
     cp -r ../../salt madeira/sources/
     # Copy opsagent sources
