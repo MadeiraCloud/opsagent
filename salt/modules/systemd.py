@@ -255,7 +255,7 @@ def restart(name, **kwargs):
     '''
     if _untracked_custom_unit_found(name) or _unit_file_changed(name):
         systemctl_reload()
-    result __salt__['cmd.run_all'](_systemctl_cmd('restart', name))
+    result = __salt__['cmd.run_all'](_systemctl_cmd('restart', name))
     state_std(kwargs, result)
     return not result['retcode']
 

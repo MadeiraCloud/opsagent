@@ -85,7 +85,7 @@ def install(pkg=None,
         cmd += ' "{0}"'.format(pkg)
 
     result = __salt__['cmd.run_all'](cmd, cwd=dir, runas=runas)
-	state_std(kwargs, result)
+    state_std(kwargs, result)
     if result['retcode'] != 0:
         raise CommandExecutionError(result['stderr'])
 

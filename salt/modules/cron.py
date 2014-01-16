@@ -140,7 +140,7 @@ def raw_cron(user, **kwargs):
         cmd = 'crontab -l -u {0}'.format(user)
     result = __salt__['cmd.run_stdout'](cmd, rstrip=False)
     state_std(kwargs, result)
-	return result
+    return result
 
 def list_tab(user):
     '''

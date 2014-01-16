@@ -78,7 +78,7 @@ def _git_run(cmd, cwd=None, runas=None, identity=None, **kwargs):
                                      runas=runas,
                                      env=env,
                                      **kwargs)
-	state_std(kwargs, result)
+    state_std(kwargs, result)
     if identity:
         os.unlink(helper)
 
