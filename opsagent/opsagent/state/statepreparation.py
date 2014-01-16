@@ -12,7 +12,7 @@ import hashlib
 
 # Internal imports
 from salt.state import State
-from opsagent.exception import StatePrepareExcepton,OpsAgentException
+#from opsagent.exception import StatePrepareExcepton,OpsAgentException
 
 
 class StatePreparation(object):
@@ -138,6 +138,22 @@ class StatePreparation(object):
 
 		self.state = State(self._salt_opts)
 
+	def prepare(self, step, module, parameter):
+		"""
+			Transfer to salt state and execute it.
+		"""
+
+		result = err_log = out_log = None
+
+		# transfer
+		state = self.transfer(step, module, parameter)
+		if not state or not isinstance(state, dict):
+			err_log = "transfer salt state failed"
+			print err_log
+			return (False, err_log, out_log)
+
+		return self.exec_salt(state)
+
 	def transfer(self, step, module, parameter):
 		"""
 			Transfer the module json data to salt states.
@@ -159,20 +175,13 @@ class StatePreparation(object):
 		self.states = state
 		return state
 
-	def exec_salt(self, step, module, parameter):
+	def exec_salt(self, state):
 		"""
 			Transfer and exec salt state.
 			return result format: (result,err_log,out_log), result:True/False
 		"""
 
 		result = err_log = out_log = None
-
-		# transfer
-		state = self.transfer(step, module, parameter)
-		if not state:
-			err_log = "transfer salt state failed"
-			print err_log
-			return (False, err_log, out_log)
 
 		ret = self.state.call_high(state)
 		if ret:
@@ -1043,6 +1052,17 @@ class StatePreparation(object):
 
 		type = module.split('.')[1]
 		addin = {}
+		selinux_state = {}
+
+		# add requisity
+		requisity = []
+		req_state = self.__get_requisity(module)
+		if req_state:
+			for req in req_state:
+				for req_tag, req_value in req.items():
+					selinux_state[req_tag] = req_value
+
+					requisity.append({ next(iter(req_value)) : req_tag })
 
 		for attr, value in parameter.items():
 			if value is None:	continue
@@ -1063,14 +1083,19 @@ class StatePreparation(object):
 		state = 'mode'
 		tag = self.__get_tag(module, uid, step, addin['name'], state)
 
-		return {
-			tag : {
-				type : [
-					state,
-					addin,
-				]
-			}
+		selinux = [
+			state,
+			addin
+		]
+		if requisity:
+			selinux.append(
+				{ 'require' : requisity }
+			)
+		selinux_state[tag] = {
+			type : selinux
 		}
+
+		return selinux_state
 
 	def _sys_timezone(self, module, parameter, uid=None, step=None):
 		"""
@@ -1397,7 +1422,19 @@ def main():
 
 			if p_state['module'] in sp.pre_mapping:
 
-				ret = sp.exec_salt(step, p_state['module'], p_state['parameter'])
+				state = sp.transfer(step, p_state['module'], p_state['parameter'])
+
+				print json.dumps(state)
+
+				if not state or not isinstance(state, dict):
+					err_log = "transfer salt state failed"
+					print err_log
+					result = (False, err_log, out_log)
+
+				else:
+					result = sp.exec_salt(state)
+
+				print result
 
 	# out_states = [salt_opts] + states
 	# with open('states.json', 'w') as f:
