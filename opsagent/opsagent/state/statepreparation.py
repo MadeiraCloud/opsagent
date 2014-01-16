@@ -228,7 +228,7 @@ class StatePreparation(object):
 		addin = {}
 
 		# add requisity
-		requisities = []
+		requisity = []
 		if m_list[1] in ['gem', 'npm', 'pecl', 'pip']:
 			req_state = self.__get_requisity(module)
 			if req_state:
@@ -236,7 +236,7 @@ class StatePreparation(object):
 					for req_tag, req_value in req.items():
 						pkg_state[req_tag] = req_value
 
-						requisities.append({ next(iter(req_value)) : req_tag })
+						requisity.append({ next(iter(req_value)) : req_tag })
 
 		if m_list[1] in ['apt', 'yum']:
 			m_list[1] = 'pkg'
@@ -285,8 +285,8 @@ class StatePreparation(object):
 				state
 			]
 
-			if requisities:
-				pkg.append({'require':requisities})
+			if requisity:
+				pkg.append({ 'require' : requisity })
 
 			tag = self.__get_tag(module, uid, step, 'pkgs', state)
 
@@ -1022,19 +1022,21 @@ class StatePreparation(object):
 
 	def _sys_ntp(self, module, parameter, uid=None, step=None):
 		"""
-			Transfer system ntp to salt state.
+			Transfer system ntp to salt state. (Salt currently only supports Windows platform.)
 		"""
 		# check
-		if not isinstance(module, basestring) or not isinstance(parameter, dict):
-			print "invalid preparation states"
-			return 1
+		# if not isinstance(module, basestring) or not isinstance(parameter, dict):
+		# 	print "invalid preparation states"
+		# 	return 1
 
-		if self.__check_module(module) != 0:
-			print "invalid system state"
-			return 2
+		# if self.__check_module(module) != 0:
+		# 	print "invalid system state"
+		# 	return 2
 
-		addin = {}
-		ntp = None
+		# addin = {}
+		# ntp = None
+
+		return None
 
 	def _sys_selinux(self, module, parameter, uid=None, step=None):
 		"""
