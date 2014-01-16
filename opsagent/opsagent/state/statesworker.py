@@ -11,12 +11,13 @@ import threading
 import time
 import os
 import signal
+import re
 # Custom imports
 from opsagent import utils
 from opsagent.objects import send
 from opsagent.exception import *
 
-#from statepreparation import StatePreparation
+from statepreparation import StatePreparation
 ##
 
 ## DEFINES
@@ -41,7 +42,7 @@ class StatesWorker(threading.Thread):
         self.__manager = None
 
         # state transfer
-#        self.__stateprepare = StatePreparation(config=config['salt'])
+        self.__stateprepare = StatePreparation(config=config['salt'])
 
         # events
         self.__cv = threading.Condition()
@@ -114,7 +115,7 @@ class StatesWorker(threading.Thread):
             utils.log("WARNING", "/!\ procfs is disabled, and you shouldn't do this. Potential hazardous behaviour can happen ...",('__kill_childs',self))
             return
         proc = self.__config['global']['proc']
-        Flag = False
+        flag = False
         cur_pid = os.getpid()
         pids = [pid for pid in os.listdir(proc) if pid.isdigit()]
         for pid in pids:
@@ -128,8 +129,8 @@ class StatesWorker(threading.Thread):
                         utils.log("DEBUG", "Process killed.",('kill',self))
                         flag = True
             except Exception as e:
-                utils.log("DEBUG", "Kill child error on pid #%s: '%s'."(pid,e),('__kill_childs',self))
-        if not Flag:
+                utils.log("DEBUG", "Kill child error on pid #%s: '%s'."%(pid,e),('__kill_childs',self))
+        if not flag:
             utils.log("INFO", "No state execution found.",('__kill_childs',self))
 
     # Halt wait
@@ -250,14 +251,14 @@ class StatesWorker(threading.Thread):
 
         # Standard execution
         # TODO dict conversion + salt call
-        import subprocess
-        p = subprocess.Popen(["sleep","5"])
-        result = (SUCCESS if p.wait() == 0 else FAIL)
-        (out_log,err_log) = p.communicate()
+#        import subprocess
+#        p = subprocess.Popen(["sleep","5"])
+#        result = (SUCCESS if p.wait() == 0 else FAIL)
+#        (out_log,err_log) = p.communicate()
         # /TODO
 
         # Salt call
-#        (result, err_log, out_log) = self.__stateprepare.exec_salt(id, module, parameter)
+        (result, err_log, out_log) = self.__stateprepare.exec_salt(id, module, parameter)
 
         utils.log("INFO", "State ID '%s' from module '%s' done, result '%s'."%(id,module,result),('__exec_salt',self))
         utils.log("DEBUG", "State out log='%s'"%(out_log),('__exec_salt',self))
@@ -273,6 +274,10 @@ class StatesWorker(threading.Thread):
             self.__cv.wait()
         utils.log("DEBUG", "Ready to go ...",('run',self))
         while self.__run:
+            if not self.__states:
+                utils.log("WARNING", "Empty states list.",('run',self))
+                self.__run = False
+                continue
             state = self.__states[self.__status]
             utils.log("INFO", "Running state '%s', #%s"%(state['stateid'], self.__status),('run',self))
             try:
