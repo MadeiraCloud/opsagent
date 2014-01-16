@@ -36,32 +36,38 @@ class StatePreparation(object):
 
 		'package.pip.package' : {
 			'package.pkg.package' : { 'name' : ['python-pip'] }
+		},
+
+		'sys.selinux' : {
+			'package.pkg.package' : {
+				'name' : ['libsemanage', 'setools-console', 'policycoreutils-python']
+			}
 		}
 	}
 
 	def __init__(self, config):
 
 		self.pre_mapping = {
-			'package.pkg.package'	:	self.__package,
-			'package.apt.package'	:	self._package_apt_package,
-			'package.yum.package'	:	self._package_yum_package,
-			'package.gem.package'	:	self._package_gem_package,
-			'package.npm.package'	:	self._package_npm_package,
-			'package.pecl.package'	:	self._package_pecl_package,
-			'package.pip.package'	:	self._package_pip_package,
-			'package.zypper.package':	self._package_zypper_package,
-			'package.yum.repo'		:	self._package_yum_repo,
-			'package.apt.repo'		:	self._package_apt_repo,
-			'package.gem.source'	:	self._package_gem_source,
-			'path.file'				:	self._path_file,
-			'path.dir'				:	self._path_dir,
-			'path.symlink'			:	self._path_symlink,
-			'scm.git'				:	self._scm_git,
-			'scm.svn'				:	self._scm_svn,
-			'scm.hg'				:	self._scm_hg,
-			'service.supervisord'	:	self._service_supervisord,
-			'service.sysvinit'		:	self._service_sysvinit,
-			'service.upstart'		:	self._service_upstart,
+			'package.pkg.package'	:	self._package,
+			'package.apt.package'	:	self._package,
+			'package.yum.package'	:	self._package,
+			'package.gem.package'	:	self._package,
+			'package.npm.package'	:	self._package,
+			'package.pecl.package'	:	self._package,
+			'package.pip.package'	:	self._package,
+			'package.zypper.package':	self._repo,
+			'package.yum.repo'		:	self._repo,
+			'package.apt.repo'		:	self._repo,
+			'package.gem.source'	:	self._repo,
+			'path.file'				:	self._file,
+			'path.dir'				:	self._file,
+			'path.symlink'			:	self._file,
+			'scm.git'				:	self._scm,
+			'scm.svn'				:	self._scm,
+			'scm.hg'				:	self._scm,
+			'service.supervisord'	:	self._service,
+			'service.sysvinit'		:	self._service,
+			'service.upstart'		:	self._service,
 			'sys.cmd'				:	self._sys_cmd,
 			'sys.script'			:	self._sys_script,
 			'sys.cron'				:	self._sys_cron,
@@ -72,6 +78,7 @@ class StatePreparation(object):
 			'sys.mount'				:	self._sys_mount,
 			'sys.ntp'				:	self._sys_ntp,
 			'sys.selinux'			:	self._sys_selinux,
+			'sys.timezone'			:	self._sys_timezone,
 			'system.ssh.auth'		:	self._system_ssh_auth,
 			'system.ssh.known_host' :	self._system_ssh_known_host,
 		}
@@ -191,50 +198,7 @@ class StatePreparation(object):
 		return (result, err_log, out_log)
 
 	## package
-	def _package_yum_package(self, module, parameter, uid=None, step=None):
-		"""
-			Transfer yum package to salt state.
-		"""
-		return self.__package(module, parameter, uid, step)
-
-	def _package_apt_package(self, module, parameter, uid=None, step=None):
-		"""
-			Transfer apt package to salt state.
-		"""
-		return self.__package(module, parameter, uid, step)
-
-	def _package_gem_package(self, module, parameter, uid=None, step=None):
-		"""
-			Transfer gem package to salt state.
-		"""
-		return self.__package(module, parameter, uid, step)
-
-	def _package_npm_package(self, module, parameter, uid=None, step=None):
-		"""
-			Transfer npm package to salt state.
-		"""
-
-		return self.__package(module, parameter, uid, step)
-
-	def _package_pecl_package(self, module, parameter, uid=None, step=None):
-		"""
-			Transfer pecl package to salt state.
-		"""
-		return self.__package(module, parameter, uid, step)
-
-	def _package_pip_package(self, module, parameter, uid=None, step=None):
-		"""
-			Transfer pip package to salt state.
-		"""
-		return self.__package(module, parameter, uid, step)
-
-	def _package_zypper_package(self, module, parameter, uid=None, step=None):
-		"""
-			Transfer zypper package to salt state.
-		"""
-		return self.__package(module, parameter, uid, step)
-
-	def __package(self, module, parameter, uid=None, step=None):
+	def _package(self, module, parameter, uid=None, step=None):
 		"""
 			Transfer package to salt state.
 		"""
@@ -255,22 +219,22 @@ class StatePreparation(object):
 		addin = {}
 
 		# add requisity
-		# requisities = []
-		# if m_list[1] in ['gem', 'npm', 'pecl', 'pip']:
-		# 	req_state = self.__get_requisity(module)
-		# 	if req_state:
-		# 		for req in req_state:
-		# 			for req_tag, req_value in req.items():
-		# 				pkg_state[req_tag] = req_value
+		requisities = []
+		if m_list[1] in ['gem', 'npm', 'pecl', 'pip']:
+			req_state = self.__get_requisity(module)
+			if req_state:
+				for req in req_state:
+					for req_tag, req_value in req.items():
+						pkg_state[req_tag] = req_value
 
-		# 				requisities.append({ next(iter(req_value)) : req_tag })
+						requisities.append({ next(iter(req_value)) : req_tag })
 
 		if m_list[1] in ['apt', 'yum']:
 			m_list[1] = 'pkg'
 
 		# get package name and verson
 		for attr, value in parameter.items():
-			if not value: continue
+			if value is None: continue
 
 			if attr == 'name':
 				if isinstance(value, dict):
@@ -312,8 +276,8 @@ class StatePreparation(object):
 				state
 			]
 
-			# if requisities:
-			# 	pkg.append({'require':requisities})
+			if requisities:
+				pkg.append({'require':requisities})
 
 			tag = self.__get_tag(module, uid, step, 'pkgs', state)
 
@@ -324,25 +288,7 @@ class StatePreparation(object):
 		return pkg_state
 
 	## repo, source
-	def _package_yum_repo(self, module, parameter, uid=None, step=None):
-		"""
-			Transfer yum repository to salt state.
-		"""
-		return self.__repo(module, parameter, uid, step)
-
-	def _package_apt_repo(self, module, parameter, uid=None, step=None):
-		"""
-			Transfer apt repository to salt state.
-		"""
-		return self.__repo(module, parameter, step)
-
-	def _package_gem_source(self, module, parameter, uid=None, step=None):
-		"""
-			Transfer gem source to salt state.
-		"""
-		return self.__repo(module, parameter, step)
-
-	def __repo(self, module, parameter, uid=None, step=None):
+	def _repo(self, module, parameter, uid=None, step=None):
 		"""
 			Transfer repository to salt state.
 		"""
@@ -396,16 +342,16 @@ class StatePreparation(object):
 
 		elif type == 'gem':
 
-			# requisities = []
+			requisities = []
 
 			# # add package requisity
-			# req_state = self.__get_requisity('package.gem.package')
-			# if req_state:
-			# 	for req in req_state:
-			# 		for req_tag, req_value in req.items():
-			# 			repo_state[req_tag] = req_value
+			req_state = self.__get_requisity('package.gem.package')
+			if req_state:
+				for req in req_state:
+					for req_tag, req_value in req.items():
+						repo_state[req_tag] = req_value
 
-			# 			requisities.append({ next(iter(req_value)) : req_tag })
+						requisities.append({ next(iter(req_value)) : req_tag })
 
 			# gem source
 			if 'url' not in parameter or not parameter['url']:
@@ -426,8 +372,8 @@ class StatePreparation(object):
 			]
 
 			# add requisity
-			# if requisities:
-			# 	cmd.append({ 'require' : requisities })
+			if requisities:
+				cmd.append({ 'require' : requisities })
 
 			repo_state[tag] = {
 				'cmd' : cmd
@@ -438,25 +384,7 @@ class StatePreparation(object):
 		return repo_state
 
 	## file, directory, symlink
-	def _path_file(self, module, parameter, uid=None, step=None):
-		"""
-			Transfer file to salt state.
-		"""
-		return self.__file(module, parameter, uid, step)
-
-	def _path_dir(self, module, parameter, uid=None, step=None):
-		"""
-			Transfer directory to salt state.
-		"""
-		return self.__file(module, parameter, uid, step)
-
-	def _path_symlink(self, module, parameter, uid=None, step=None):
-		"""
-			Transfer symlink to salt state.
-		"""
-		return self.__file(module, parameter, uid, step)
-
-	def __file(self, module, parameter, uid=None, step=None):
+	def _file(self, module, parameter, uid=None, step=None):
 		# check
 		if not isinstance(module, basestring) or not isinstance(parameter, dict):
 			print "invalid preparation states"
@@ -473,7 +401,7 @@ class StatePreparation(object):
 		filename = None
 
 		for attr, value in parameter.items():
-			if not value: continue
+			if value is None: continue
 
 			if attr == 'path':
 				addin['name'] = filename = value
@@ -508,7 +436,7 @@ class StatePreparation(object):
 		return file_state
 
 	## scm
-	def __scm(self, module, parameter, uid=None, step=None):
+	def _scm(self, module, parameter, uid=None, step=None):
 		"""
 			Transfer scm to salt state.
 		"""
@@ -530,7 +458,7 @@ class StatePreparation(object):
 		scm_dir_addin = {}
 
 		for attr, value in parameter.items():
-			if not value:	continue
+			if value is None:	continue
 
 			if attr == 'repo':
 				addin['name'] = repo = value.split('-')[1].strip()
@@ -600,48 +528,30 @@ class StatePreparation(object):
 		}
 
 		# add directory state
-		# scm_dir_state = 'file'
-		# dir_state = 'directory'
-		# if addin['target'] and scm_dir_addin:
-		# 	scm_dir_addin['recurse'] = scm_dir_addin.keys()
-		# 	scm_dir_addin['name'] = addin['target']
+		scm_dir_state = 'file'
+		dir_state = 'directory'
+		if addin['target'] and scm_dir_addin:
+			scm_dir_addin['recurse'] = scm_dir_addin.keys()
+			scm_dir_addin['name'] = addin['target']
 
-		# 	scm_dir_tag = self.__get_tag('path.dir', uid, step, addin['target'], dir_state)
+			scm_dir_tag = self.__get_tag('path.dir', uid, step, addin['target'], dir_state)
 
-		# 	scm_states[scm_dir_tag] = {
-		# 		scm_dir_state : [
-		# 			dir_state,
-		# 			scm_dir_addin,
-		# 			{
-		# 				'require' : [
-		# 					{ type : tag }
-		# 				]
-		# 			},
-		# 		]
-		# 	}
+			scm_states[scm_dir_tag] = {
+				scm_dir_state : [
+					dir_state,
+					scm_dir_addin,
+					{
+						'require' : [
+							{ type : tag }
+						]
+					},
+				]
+			}
 
 		return scm_states
 
-	def _scm_git(self, module, parameter, uid=None, step=None):
-		"""
-			Transfer git repo to salt state.
-		"""
-		return self.__scm(module, parameter, uid, step)
-
-	def _scm_svn(self, module, parameter, uid=None, step=None):
-		"""
-			Transfer svn repo to salt state.
-		"""
-		return self.__scm(module, parameter, uid, step)
-
-	def _scm_hg(self, module, parameter, uid=None, step=None):
-		"""
-			Transfer hg repo to salt state.
-		"""
-		return self.__scm(module, parameter, uid, step)
-
 	## service
-	def __service(self, module, parameter, uid=None, step=None):
+	def _service(self, module, parameter, uid=None, step=None):
 		"""
 			Transfer service to salt state.
 		"""
@@ -666,7 +576,7 @@ class StatePreparation(object):
 		addin = {}
 
 		for attr, value in parameter.items():
-			if not value: continue
+			if value is None: continue
 
 			if attr == 'name':
 				addin['name'] = value
@@ -726,24 +636,6 @@ class StatePreparation(object):
 
 		return srv_state
 
-	def _service_supervisord(self, module, parameter, uid=None, step=None):
-		"""
-			Transfer supervisord service to salt state.
-		"""
-		return self.__service(module, parameter, uid, step)
-
-	def _service_sysvinit(self, module, parameter, uid=None, step=None):
-		"""
-			Transfer sysvinit service to salt state.
-		"""
-		return self.__service(module, parameter, uid, step)
-
-	def _service_upstart(self, module, parameter, uid=None, step=None):
-		"""
-			Transfer upstart service to salt state.
-		"""
-		return self.__service(module, parameter, uid, step)
-
 	## sys
 	def _sys_cmd(self, module, parameter, uid=None, step=None):
 		"""
@@ -764,7 +656,7 @@ class StatePreparation(object):
 		addin = {}
 		cmd = None
 		for attr, value in parameter.items():
-			if not value: continue
+			if value is None: continue
 
 			if attr == 'name' or attr == 'cmd':
 				addin['name'] = cmd = value
@@ -854,7 +746,7 @@ class StatePreparation(object):
 		addin = {}
 
 		for attr, value in parameter.items():
-			if not value: continue
+			if value is None: continue
 
 			if attr == 'cmd':
 				addin['name'] = value
@@ -908,7 +800,7 @@ class StatePreparation(object):
 		addin = {}
 
 		for attr, value in parameter.items():
-			if not value: continue
+			if value is None: continue
 
 			if attr == 'username':
 				addin['name'] = value
@@ -955,7 +847,7 @@ class StatePreparation(object):
 		addin = {}
 
 		for attr, value in parameter.items():
-			if not value: continue
+			if value is None: continue
 
 			if attr == 'groupname':
 				addin['name'] = value
@@ -1004,7 +896,7 @@ class StatePreparation(object):
 		ip = None
 
 		for attr, value in parameter.items():
-			if not value: continue
+			if value is None: continue
 
 			if attr == 'hostname':
 				host = value
@@ -1083,7 +975,7 @@ class StatePreparation(object):
 		mount = None
 
 		for attr, value in parameter.items():
-			if not value: continue
+			if value is None: continue
 
 			if attr == 'path':
 				addin['name'] = mount = value
@@ -1150,20 +1042,80 @@ class StatePreparation(object):
 			return 2
 
 		type = module.split('.')[1]
-		selinuxname = None
+		addin = {}
 
-		if selinuxname:
+		for attr, value in parameter.items():
+			if value is None:	continue
 
-			return {
-				selinuxname : {
-					type : [
-						'boolean',
-						{
-							'value' : parameter['on']
-						}
-					]
-				}
+			if attr == 'on':
+				if value == True:
+					addin['name'] = 'enforcing'
+				else:
+					addin['name'] = 'permissive'
+
+			else:
+				addin[attr] = value
+
+		if not addin:
+			print "invalid parameters"
+			return 3
+
+		state = 'mode'
+		tag = self.__get_tag(module, uid, step, addin['name'], state)
+
+		return {
+			tag : {
+				type : [
+					state,
+					addin,
+				]
 			}
+		}
+
+	def _sys_timezone(self, module, parameter, uid=None, step=None):
+		"""
+			Transfer system timezon to salt state.
+		"""
+
+		# check
+		if not isinstance(module, basestring) or not isinstance(parameter, dict):
+			print "invalid preparation states"
+			return 1
+
+		if self.__check_module(module) != 0:
+			print "invalid system state"
+			return 2
+
+		type = module.split('.')[1]
+		addin = {}
+
+		for attr, value in parameter.items():
+			if value is None:	continue
+
+			if attr == 'name':
+				addin['name'] = value
+
+			elif attr == 'use_utc':
+				addin['utc'] = value
+
+			else:
+				addin[attr] = value
+
+		if not addin or 'name' not in addin:
+			print "invalid parameters"
+			return 3
+
+		state = 'system'
+		tag = self.__get_tag(module, uid, step, addin['name'], state)
+
+		return {
+			tag : {
+				type : [
+					state,
+					addin,
+				]
+			}
+		}
 
 	## ssh
 	def _system_ssh_auth(self, module, parameter, uid=None, step=None):
@@ -1184,7 +1136,7 @@ class StatePreparation(object):
 		addin = {}
 
 		for attr, value in parameter.items():
-			if not value: continue
+			if value is None: continue
 
 			if attr == 'authname':
 				addin['name'] = value
@@ -1266,7 +1218,7 @@ class StatePreparation(object):
 		addin = {}
 
 		for attr, value in parameter.items():
-			if not value: continue
+			if value is None: continue
 
 			if attr == 'hostname':
 				addin['name'] = value
@@ -1367,7 +1319,7 @@ class StatePreparation(object):
 			'path'			: ['file', 'dir', 'symlink'],
 			'scm' 			: ['git', 'svn', 'hg'],
 			'service'		: ['supervisord', 'sysvinit', 'upstart'],
-			'sys'			: ['cmd', 'cron', 'group', 'host', 'mount', 'ntp', 'selinux', 'user'],
+			'sys'			: ['cmd', 'cron', 'group', 'host', 'mount', 'ntp', 'selinux', 'user', 'timezone'],
 			'system'		: ['ssh_auth', 'ssh_known_host']
 		}
 
@@ -1430,9 +1382,6 @@ def main():
 		'extension_modules' : '/var/cache/salt/minion/extmods',
 		'cachedir' : '/code/OpsAgent/cache'
 	}
-
-	import pdb
-	pdb.set_trace()
 
 	sp = StatePreparation(config)
 
