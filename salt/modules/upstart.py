@@ -45,7 +45,7 @@ import os
 
 # Import salt libs
 import salt.utils
-from salt.states import state_std
+from salt.modules import state_std
 
 __func_alias__ = {
     'reload_': 'reload'

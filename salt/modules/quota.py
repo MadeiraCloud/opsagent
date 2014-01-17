@@ -8,7 +8,7 @@ import logging
 
 # Import salt libs
 import salt.utils
-from salt.states import state_std
+from salt.modules import state_std
 from salt.exceptions import CommandExecutionError, SaltInvocationError
 
 log = logging.getLogger(__name__)

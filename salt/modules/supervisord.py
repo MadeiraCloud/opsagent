@@ -7,7 +7,7 @@ virtualenv
 # Import python libs
 import os
 
-from salt.states import state_std
+from salt.modules import state_std
 
 # Import salt libs
 from salt.exceptions import CommandNotFoundError

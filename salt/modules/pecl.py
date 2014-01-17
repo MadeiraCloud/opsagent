@@ -9,7 +9,7 @@ import logging
 
 # Import salt libs
 import salt.utils
-from salt.states import state_std
+from salt.modules import state_std
 
 __func_alias__ = {
     'list_': 'list'

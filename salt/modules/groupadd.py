@@ -9,7 +9,7 @@ try:
 except ImportError:
     pass
 
-from salt.states import state_std
+from salt.modules import state_std
 
 # Define the module's virtual name
 __virtualname__ = 'group'

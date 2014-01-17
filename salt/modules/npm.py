@@ -10,7 +10,7 @@ import distutils.version  # pylint: disable=E0611
 
 # Import salt libs
 import salt.utils
-from salt.states import state_std
+from salt.modules import state_std
 from salt.exceptions import CommandExecutionError
 
 

@@ -7,7 +7,7 @@ to this basic module
 # Import python libs
 import os
 
-from salt.states import state_std
+from salt.modules import state_std
 
 __func_alias__ = {
     'reload_': 'reload'
