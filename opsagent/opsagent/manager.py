@@ -283,7 +283,7 @@ class Manager(WebSocketClient):
                 except ManagerInvalidWaitFormatException:
                     utils.log("ERROR", "Invalid wait format",('received_message',self))
                 except Exception as e:
-                    utils.log("ERROR", "Unknown exception cought '%s'"%(e),('received_message',self))
+                    utils.log("ERROR", "Unknown exception caught '%s'"%(e),('received_message',self))
                 else:
                     utils.log("INFO", "Action on code '%s' succeed"%(data['code']),('received_message',self))
             else:
