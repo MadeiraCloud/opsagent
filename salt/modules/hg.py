@@ -47,7 +47,7 @@ def revision(cwd, rev='tip', short=False, user=None, **kwargs):
 
     result = __salt__['cmd.run_all'](cmd, cwd=cwd, runas=user)
     state_std(kwargs, result)
-	
+    
     if result['retcode'] == 0:
         result
     else:
@@ -124,7 +124,7 @@ def archive(cwd, output, rev='tip', fmt=None, prefix=None, user=None, **kwargs):
 
     result = __salt__['cmd.run_all'](cmd, cwd=cwd, runas=user)
     state_std(kwargs, result)
-	return result['stdout']
+    return result['stdout']
 
 
 def pull(cwd, opts=None, user=None, **kwargs):
@@ -151,7 +151,7 @@ def pull(cwd, opts=None, user=None, **kwargs):
     if not opts:
         opts = ''
     result = __salt__['cmd.run_all']('hg pull {0}'.format(opts), cwd=cwd, runas=user)
-	state_std(kwargs, result)
+    state_std(kwargs, result)
     return result['stdout']
 
 
@@ -212,5 +212,5 @@ def clone(cwd, repository, opts=None, user=None, **kwargs):
         opts = ''
     cmd = 'hg clone {0} {1} {2}'.format(repository, cwd, opts)
     result = __salt__['cmd.run_all'](cmd, runas=user)
-	state_std(kwargs, result)
-	return result['stdout']
+    state_std(kwargs, result)
+    return result['stdout']

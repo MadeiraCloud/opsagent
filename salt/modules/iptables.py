@@ -297,9 +297,9 @@ def check(table='filter', chain=None, rule=None, **kwargs):
 
     if __grains__['os_family'] == 'RedHat':
         cmd = 'iptables-save'
-	    result = __salt__['cmd.run_all'](cmd)
-	    state_std(kwargs, result)
-	    out = result['stdout'].find('-A_ {1} {2}'.format(
+        result = __salt__['cmd.run_all'](cmd)
+        state_std(kwargs, result)
+        out = result['stdout'].find('-A_ {1} {2}'.format(
             table,
             chain,
             rule,
@@ -310,9 +310,9 @@ def check(table='filter', chain=None, rule=None, **kwargs):
             return False
     else:
         cmd = 'iptables -t {0} -C {1} {2}'.format(table, chain, rule)
-	    result = __salt__['cmd.run_all'](cmd)
-	    state_std(kwargs, result)
-	    out = result['stdout']
+        result = __salt__['cmd.run_all'](cmd)
+        state_std(kwargs, result)
+        out = result['stdout']
     if not out:
         return True
     return out
@@ -334,9 +334,9 @@ def check_chain(table='filter', chain=None, **kwargs):
         return 'Error: Chain needs to be specified'
 
     cmd = 'iptables-save -t {0}'.format(table)
-	result = __salt__['cmd.run_all'](cmd)
-	state_std(kwargs, result)
-	out = result['stdout'].find(':{1} '.format(table, chain))
+    result = __salt__['cmd.run_all'](cmd)
+    state_std(kwargs, result)
+    out = result['stdout'].find(':{1} '.format(table, chain))
     if out != -1:
         out = True
     else:
@@ -361,9 +361,9 @@ def new_chain(table='filter', chain=None, **kwargs):
         return 'Error: Chain needs to be specified'
 
     cmd = 'iptables -t {0} -N {1}'.format(table, chain)
-	result = __salt__['cmd.run_all'](cmd)
-	state_std(kwargs, result)
-	out = result['stdout']
+    result = __salt__['cmd.run_all'](cmd)
+    state_std(kwargs, result)
+    out = result['stdout']
     if not out:
         out = True
     return out
@@ -385,9 +385,9 @@ def delete_chain(table='filter', chain=None, **kwargs):
         return 'Error: Chain needs to be specified'
 
     cmd = 'iptables -t {0} -X {1}'.format(table, chain)
-	result = __salt__['cmd.run_all'](cmd)
-	state_std(kwargs, result)
-	out = result['stdout']
+    result = __salt__['cmd.run_all'](cmd)
+    state_std(kwargs, result)
+    out = result['stdout']
     if not out:
         out = True
     return out
@@ -415,9 +415,9 @@ def append(table='filter', chain=None, rule=None, **kwargs):
         return 'Error: Rule needs to be specified'
 
     cmd = 'iptables -t {0} -A {1} {2}'.format(table, chain, rule)
-	result = __salt__['cmd.run_all'](cmd)
-	state_std(kwargs, result)
-	out = result['stdout']
+    result = __salt__['cmd.run_all'](cmd)
+    state_std(kwargs, result)
+    out = result['stdout']
     if len(out) == 0:
         return True
     else:
@@ -448,9 +448,9 @@ def insert(table='filter', chain=None, position=None, rule=None, **kwargs):
         return 'Error: Rule needs to be specified'
 
     cmd = 'iptables -t {0} -I {1} {2} {3}'.format(table, chain, position, rule)
-	result = __salt__['cmd.run_all'](cmd)
-	state_std(kwargs, result)
-	out = result['stdout']
+    result = __salt__['cmd.run_all'](cmd)
+    state_std(kwargs, result)
+    out = result['stdout']
     return out
 
 
@@ -480,9 +480,9 @@ def delete(table, chain=None, position=None, rule=None, **kwargs):
         rule = position
 
     cmd = 'iptables -t {0} -D {1} {2}'.format(table, chain, rule)
-	result = __salt__['cmd.run_all'](cmd)
-	state_std(kwargs, result)
-	out = result['stdout']
+    result = __salt__['cmd.run_all'](cmd)
+    state_std(kwargs, result)
+    out = result['stdout']
     return out
 
 
@@ -502,9 +502,9 @@ def flush(table='filter', chain='', **kwargs):
         cmd = 'iptables -t {0} -F {1}'.format(table, chain)
     else:
         cmd = 'iptables -t {0} -F'.format(table)
-	result = __salt__['cmd.run_all'](cmd)
-	state_std(kwargs, result)
-	out = result['stdout']
+    result = __salt__['cmd.run_all'](cmd)
+    state_std(kwargs, result)
+    out = result['stdout']
     return out
 
 

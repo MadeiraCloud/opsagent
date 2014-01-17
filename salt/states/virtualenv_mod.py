@@ -67,7 +67,7 @@ def managed(name,
             - system_site_packages: False
             - requirements: salt://REQUIREMENTS.txt
     '''
-    ret = {'name': name, 'result': True, 'comment': '', 'changes': {}}
+    ret = {'name': name, 'result': True, 'comment': '', 'changes': {}, 'state_stdout': '', 'state_stderr': ''}
 
     if not 'virtualenv.create' in __salt__:
         ret['result'] = False
@@ -163,7 +163,8 @@ def managed(name,
             extra_search_dir=extra_search_dir,
             never_download=never_download,
             prompt=prompt,
-            runas=user
+            user=user,
+            state_ret=ret
         )
 
         ret['result'] = _ret['retcode'] == 0
@@ -196,13 +197,14 @@ def managed(name,
             requirements=requirements,
             bin_env=name,
             use_wheel=use_wheel,
-            runas=user,
+            user=user,
             cwd=cwd,
             index_url=index_url,
             extra_index_url=extra_index_url,
             no_chown=no_chown,
             pre_releases=pre_releases,
             no_deps=no_deps,
+            state_ret=ret
         )
         ret['result'] &= _ret['retcode'] == 0
         if _ret['retcode'] > 0:

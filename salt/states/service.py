@@ -372,9 +372,9 @@ def dead(name, enable=None, sig=None, **kwargs):
             return ret
     else:
         if enable is True:
-            return _enable(name, state_ret=ret, False)
+            return _enable(name, False, state_ret=ret)
         elif enable is False:
-            return _disable(name, state_ret=ret, False)
+            return _disable(name, False, state_ret=ret)
         else:
             ret['comment'] = 'Service {0} was killed'.format(name)
             return ret

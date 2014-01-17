@@ -25,7 +25,7 @@ def _gem(command, ruby=None, runas=None, **kwargs):
         cmdline,
         runas=runas
         )
-	state_std(kwargs, result)
+    state_std(kwargs, result)
     if ret['retcode'] == 0:
         return ret['stdout']
     else:
