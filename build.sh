@@ -45,7 +45,7 @@ function tree() {
     # Copy ws4py sources
     cp -r ../../libs/ws4py madeira/sources/
     # Copy salt and dependencies
-    cp -r ../../libs/{msgpack,yaml,jinja2,markupsafe,salt-0.17.4/salt} madeira/sources/
+    cp -r ../../libs/{msgpack,yaml,jinja2,markupsafe,salt} madeira/sources/
     # Patch salt
     cp -r ../../salt madeira/sources/
     # Copy opsagent sources
