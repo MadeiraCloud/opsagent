@@ -266,7 +266,7 @@ class StatesWorker(threading.Thread):
         return (result,err_log,out_log)
 
     # Delay at the end of the states
-    def recipe_delay(self):
+    def __recipe_delay(self):
         utils.log("INFO", "Last state reached, execution paused for %s minutes."%(self.__config['salt']['delay']),('run',self))
         pid = os.fork()
         if (pid == 0):

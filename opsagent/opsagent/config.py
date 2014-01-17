@@ -45,6 +45,7 @@ class Config():
             'extension_modules': '/var/cache/salt/minion/extmods',
             'cachedir': '/var/cache/madeira/',
             'delay': 1,
+            'timeout': 30,
             }
         }
 
