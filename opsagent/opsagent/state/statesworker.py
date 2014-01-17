@@ -265,6 +265,16 @@ class StatesWorker(threading.Thread):
         utils.log("DEBUG", "State error log='%s'"%(err_log),('__exec_salt',self))
         return (result,err_log,out_log)
 
+    # Delay at the end of the states
+    def recipe_delay(self):
+        utils.log("INFO", "Last state reached, execution paused for %s minutes."%(self.__config['salt']['delay']),('run',self))
+        pid = os.fork()
+        if (pid == 0):
+            time.sleep(self.__config['salt']['delay']*60)
+        else:
+            pid.wait()
+        utils.log("INFO", "Delay passed, execution restarting...",('run',self))
+
     # Callback on start
     def run(self):
         utils.log("INFO", "Running StatesWorker ...",('run',self))
@@ -312,8 +322,9 @@ class StatesWorker(threading.Thread):
                     # global status iteration
                     self.__status += 1
                     if self.__status >= len(self.__states):
-                        self.__status = 0
                         utils.log("INFO", "All good, last state succeed! Back to first one.",('run',self))
+                        self.__recipe_delay()
+                        self.__status = 0
                     else:
                         utils.log("INFO", "All good, switching to next state.",('run',self))
                 else:

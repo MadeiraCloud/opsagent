@@ -5,6 +5,6 @@
 ##
 
 # setup dependencies
-yum -yq install python27
+yum -y -q install python27
 
 # EOF

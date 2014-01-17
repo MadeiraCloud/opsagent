@@ -44,6 +44,7 @@ class Config():
             'file_roots': '/srv/salt',
             'extension_modules': '/var/cache/salt/minion/extmods',
             'cachedir': '/var/cache/madeira/',
+            'delay': 1,
             }
         }
 
