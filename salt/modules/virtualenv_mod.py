@@ -12,7 +12,7 @@ import os.path
 
 # Import salt libs
 import salt.utils
-from salt.states import state_std
+from salt.modules import state_std
 import salt.exceptions
 
 log = logging.getLogger(__name__)

@@ -14,7 +14,7 @@ except ImportError:
 
 # Import salt libs
 from salt import utils, exceptions
-from salt.states import state_std
+from salt.modules import state_std
 
 
 def __virtual__():

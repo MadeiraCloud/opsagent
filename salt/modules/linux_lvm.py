@@ -5,7 +5,7 @@ Support for Linux LVM2
 
 # Import salt libs
 import salt.utils
-from salt.states import state_std
+from salt.modules import state_std
 
 # Define the module's virtual name
 __virtualname__ = 'lvm'

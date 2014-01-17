@@ -16,7 +16,7 @@ import yaml
 
 # Import salt libs
 import salt.utils
-from salt.states import state_std
+from salt.modules import state_std
 from salt._compat import string_types
 from salt.exceptions import (
     CommandExecutionError, MinionError, SaltInvocationError

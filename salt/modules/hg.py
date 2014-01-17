@@ -5,7 +5,7 @@ Support for the Mercurial SCM
 
 # Import salt libs
 from salt import utils
-from salt.states import state_std
+from salt.modules import state_std
 
 if utils.is_windows():
     hg_binary = "hg.exe"

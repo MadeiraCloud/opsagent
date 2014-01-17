@@ -11,7 +11,7 @@ import shlex
 # Import salt libs
 import salt.utils
 from salt.state import STATE_INTERNAL_KEYWORDS as _STATE_INTERNAL_KEYWORDS
-from salt.states import state_std
+from salt.modules import state_std
 from salt.exceptions import SaltException
 
 

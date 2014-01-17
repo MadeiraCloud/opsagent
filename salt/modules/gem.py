@@ -6,7 +6,7 @@ Manage ruby gems.
 # Import python libs
 import re
 
-from salt.states import state_std
+from salt.modules import state_std
 
 __func_alias__ = {
     'list_': 'list'

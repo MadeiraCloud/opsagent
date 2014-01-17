@@ -10,7 +10,7 @@ import logging
 
 # Import salt libs
 import salt.utils
-from salt.states import state_std
+from salt.modules import state_std
 from salt._compat import string_types
 from salt.utils import which as _which
 from salt.exceptions import CommandNotFoundError, CommandExecutionError

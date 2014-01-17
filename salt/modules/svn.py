@@ -10,7 +10,7 @@ import subprocess
 
 # Import salt libs
 from salt import utils, exceptions
-from salt.states import state_std
+from salt.modules import state_std
 _INI_RE = re.compile(r"^([^:]+):\s+(\S.*)$", re.M)
 
 

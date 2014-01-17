@@ -9,7 +9,7 @@ import re
 
 # Import salt libs
 import salt.utils
-from salt.states import state_std
+from salt.modules import state_std
 
 log = logging.getLogger(__name__)
 

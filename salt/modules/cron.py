@@ -9,7 +9,7 @@ import random
 
 # Import salt libs
 import salt.utils
-from salt.states import state_std
+from salt.modules import state_std
 
 TAG = '# Lines below here are managed by Salt, do not edit\n'
 
