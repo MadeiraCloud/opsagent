@@ -272,7 +272,7 @@ class StatesWorker(threading.Thread):
         if (pid == 0):
             time.sleep(self.__config['salt']['delay']*60)
         else:
-            pid.wait()
+            os.waitpid(pid)
         utils.log("INFO", "Delay passed, execution restarting...",('run',self))
 
     # Callback on start
