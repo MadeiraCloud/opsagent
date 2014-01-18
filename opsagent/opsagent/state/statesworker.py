@@ -267,29 +267,29 @@ class StatesWorker(threading.Thread):
 
     # Delay at the end of the states
     def __recipe_delay(self):
-        utils.log("INFO", "Last state reached, execution paused for %s minutes."%(self.__config['salt']['delay']),('run',self))
+        utils.log("INFO", "Last state reached, execution paused for %s minutes."%(self.__config['salt']['delay']),('__recipe_delay',self))
         pid = os.fork()
         if (pid == 0):
             time.sleep(self.__config['salt']['delay']*60)
         else:
             os.waitpid(pid)
-        utils.log("INFO", "Delay passed, execution restarting...",('run',self))
+        utils.log("INFO", "Delay passed, execution restarting...",('__recipe_delay',self))
 
-    # Callback on start
-    def run(self):
-        utils.log("INFO", "Running StatesWorker ...",('run',self))
-        utils.log("DEBUG", "Waiting for recipes ...",('run',self))
+    # Render recipes
+    def __runner(self):
+        utils.log("INFO", "Running StatesWorker ...",('__runner',self))
+        utils.log("DEBUG", "Waiting for recipes ...",('__runner',self))
         self.__cv.acquire()
         while not self.__run:
             self.__cv.wait()
-        utils.log("DEBUG", "Ready to go ...",('run',self))
+        utils.log("DEBUG", "Ready to go ...",('__runner',self))
         while self.__run:
             if not self.__states:
-                utils.log("WARNING", "Empty states list.",('run',self))
+                utils.log("WARNING", "Empty states list.",('__runner',self))
                 self.__run = False
                 continue
             state = self.__states[self.__status]
-            utils.log("INFO", "Running state '%s', #%s"%(state['stateid'], self.__status),('run',self))
+            utils.log("INFO", "Running state '%s', #%s"%(state['stateid'], self.__status),('__runner',self))
             try:
                 if state.get('module') in self.__builtins:
                     (result,err_log,out_log) = self.__builtins[state['module']](state['stateid'],
@@ -300,18 +300,18 @@ class StatesWorker(threading.Thread):
                                                                 state['module'],
                                                                 state['parameter'])
             except SWWaitFormatException:
-                utils.log("ERROR", "Wrong wait request",('run',self))
+                utils.log("ERROR", "Wrong wait request",('__runner',self))
                 result = FAIL
                 err_log = "Wrong wait request"
                 out_log = None
             except Exception as e:
-                utils.log("ERROR", "Unknown exception: '%s'."%(e),('run',self))
+                utils.log("ERROR", "Unknown exception: '%s'."%(e),('__runner',self))
                 result = FAIL
                 err_log = "Unknown exception: '%s'."%(e)
                 out_log = None
             self.__waiting = False
             if self.__run:
-                utils.log("INFO", "Execution complete, reporting logs to backend.",('run',self))
+                utils.log("INFO", "Execution complete, reporting logs to backend.",('__runner',self))
                 self.__send(send.statelog(init=self.__config['init'],
                                           version=self.__version,
                                           id=state['stateid'],
@@ -322,17 +322,29 @@ class StatesWorker(threading.Thread):
                     # global status iteration
                     self.__status += 1
                     if self.__status >= len(self.__states):
-                        utils.log("INFO", "All good, last state succeed! Back to first one.",('run',self))
+                        utils.log("INFO", "All good, last state succeed! Back to first one.",('__runner',self))
                         self.__recipe_delay()
                         self.__status = 0
                     else:
-                        utils.log("INFO", "All good, switching to next state.",('run',self))
+                        utils.log("INFO", "All good, switching to next state.",('__runner',self))
                 else:
-                    utils.log("WARNING", "Something went wrong, retrying current state in %s seconds"%(WAIT_STATE_RETRY),('run',self))
+                    utils.log("WARNING", "Something went wrong, retrying current state in %s seconds"%(WAIT_STATE_RETRY),('__runner',self))
                     time.sleep(WAIT_STATE_RETRY)
             else:
-                utils.log("WARNING", "Execution aborted.",('run',self))
+                utils.log("WARNING", "Execution aborted.",('__runner',self))
+            if ABORT:
+                utils.log("WARNING", "Exiting...",('__runner',self))
+                self.__run = False
         self.__cv.release()
-        self.run()
+
+    # Callback on start
+    def run(self):
+        try:
+            while not ABORT:
+                self.__runner()
+        except Exception as e:
+            utils.log("ERROR", "Unexpected error: %s."%(e),('run',self))
+        if self.__manager:
+            self.__manager.stop()
     ##
 ##

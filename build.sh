@@ -31,6 +31,10 @@ function tree() {
     mkdir -p madeira/{bootstrap,sources,env/etc,env/bin}
     # Copy bootstrap scripts
     cp ../../bootstrap/bootstrap_{apt,yum}.sh madeira/bootstrap/
+    # Copy services install scripts
+    cp ../../bootstrap/bootstrap_{chkconfig,updaterc}.sh madeira/bootstrap/
+    # Copy services launchers
+    cp ../../bootstrap/daemon_{chkconfig,updaterc}.sh madeira/bootstrap/
     # Fetch virtualenv
 #    curl -O ${VIRTUALENV_URI}
 #    tar xvfz virtualenv-${VIRTUALENV_VERSION}.tar.gz
@@ -59,7 +63,7 @@ function tree() {
     sed -e "s/#!\/usr\/bin\/python/#!\/madeira\/env\/bin\/python/g" < ../../opsagent/opsagent.py > madeira/env/bin/opsagent
     chmod +x madeira/env/bin/opsagent
     # Copy config files
-    cp ../../conf/*.cfg madeira/env/etc/
+    cp ../../conf/* madeira/env/etc/ #TODO change * to opsagent.conf
     tar cfvz ../agent.tgz madeira
 }
 

@@ -199,6 +199,11 @@ class Manager(WebSocketClient):
 
 
     ## NETWORK METHODS
+    # Stop
+    def stop(self):
+        utils.log("INFO", "Stopping manager ...",('stop',self))
+        self.__close(code=codes.C_STOP,reason=codes.M_STOP)
+
     # Close socket
     def __close(self, code=1000, reason='', reset=False):
         utils.log("INFO", "Closing connection ... (code='%s', reason='%s')"%(code,reason),('__close',self))
