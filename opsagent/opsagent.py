@@ -30,8 +30,8 @@ VERSION = '%prog '+VERSION_NBR
 
 
 # global abort
-ABORT=False
 global ABORT
+ABORT=False
 
 # terminating process
 def handler(signum=None, frame=None):
