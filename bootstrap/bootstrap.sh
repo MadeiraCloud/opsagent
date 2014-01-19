@@ -7,6 +7,9 @@
 # define vendor
 YUM_CMD=$(which yum)
 APT_CMD=$(which apt-get)
+UPDATERC_CMD=$(which update-rc.d)
+CHKCONFIG_CMD=$(which chkconfig)
+
 
 # locate in root home directory
 cd /root
@@ -30,15 +33,18 @@ cp -r /madeira/sources/{msgpack,yaml,jinja2,markupsafe,salt} /madeira/env/lib/py
 cp -r /madeira/sources/opsagent /madeira/env/lib/python2.7/site-packages/
 # set ownership to root
 chown -R root:root /madeira
+# create log directory
+mkdir /var/log/madeira
+# link config file
+ln -s /madeira/env/etc/opsagent.conf /etc/opsagent.conf
 
-
-# TMP (AGENT START)
-# TODO: remove
-#MADEIRA_HOST=$(grep "api.madeiracloud.com" /etc/hosts | wc -l)
-#if [ $MADEIRA_HOST -eq 0 ]; then
-#    echo "211.98.26.9 api.madeiracloud.com" >> /etc/hosts
-#fi
-#cd /root
-#nohup /madeira/env/bin/opsagent -v -c /madeira/env/etc/madeira_test.cfg &
+# create service
+if [ $UPDATERC_CMD ]; then
+    source /madeira/bootstrap/bootstrap_updaterc.sh
+elif [ $CHKCONFIG_CMD ]; then
+    source /madeira/bootstrap/bootstrap_chkconfig.sh
+fi
+# start service
+service opsagentd start
 
 # EOF
