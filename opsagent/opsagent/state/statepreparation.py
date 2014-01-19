@@ -1,7 +1,7 @@
 '''
 Madeira OpsAgent states preparator
 
-@author: Michael
+@author: Michael (michael@mc2.io)
 '''
 
 
@@ -9,6 +9,7 @@ Madeira OpsAgent states preparator
 import os
 import json
 import hashlib
+import collections
 
 # Internal imports
 from salt.state import State
@@ -171,6 +172,9 @@ class StatePreparation(object):
 		if not state or not isinstance(state, dict):
 			print "Transfer json to salt state failed"
 			return
+
+		# convert from unicode to string
+		state = self.__convert(state)
 
 		self.states = state
 		return state
@@ -1383,6 +1387,20 @@ class StatePreparation(object):
 				return False
 
 		return True
+
+	def __convert(self, data):
+		"""
+			Convert data from unicode to string.
+		"""
+
+		if isinstance(data, basestring):
+			return str(data)
+		elif isinstance(data, collections.Mapping):
+			return dict(map(self.__convert, data.iteritems()))
+		elif isinstance(data, collections.Iterable):
+			return type(data)(map(self.__convert, data))
+		else:
+			return data
 
 # codes for test
 def main():
