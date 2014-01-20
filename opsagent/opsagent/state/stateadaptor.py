@@ -1,5 +1,5 @@
 '''
-Madeira OpsAgent states preparator
+Madeira OpsAgent states adaptor
 
 @author: Michael (michael@mc2.io)
 '''
@@ -13,10 +13,9 @@ import collections
 
 # Internal imports
 #from opsagent.exception import StatePrepareExcepton,OpsAgentException
-from runner import Runner
 
 
-class Adaptor(object):
+class StateAdaptor(object):
 
 	ssh_key_type = ['ecdsa', 'ssh-rsa', 'ssh-dss']
 
@@ -1885,8 +1884,9 @@ def main():
 		'cachedir' : '/code/OpsAgent/cache'
 	}
 
-	adaptor = Adaptor()
-	runner = Runner(config)
+        from staterunner import StateRunner
+	adaptor = StateAdaptor()
+	runner = StateRunner(config)
 
 	# print json.dumps(adaptor._salt_opts, sort_keys=True,
 	# 	indent=4, separators=(',', ': '))

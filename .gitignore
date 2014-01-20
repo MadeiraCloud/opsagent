@@ -9,5 +9,6 @@
 *~
 \#*\#
 test.sh
+test-1.sh
 build/
 build_stable/

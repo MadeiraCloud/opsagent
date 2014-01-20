@@ -1,5 +1,5 @@
 '''
-Madeira OpsAgent states preparator
+Madeira OpsAgent state runner
 
 @author: Michael (michael@mc2.io)
 '''
@@ -9,7 +9,7 @@ import json
 
 from salt.state import State
 
-class Runner(object):
+class StateRunner(object):
 
 	def __init__(self, config):
 

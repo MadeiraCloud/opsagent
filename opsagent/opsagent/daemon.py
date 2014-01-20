@@ -111,7 +111,7 @@ class Daemon():
             sig = (SIGTERM if wait else SIGKILL)
             while True:
                 os.kill(pid, sig)
-                time.sleep(0.1)
+                time.sleep(1)
         except OSError, err:
             err = str(err)
             if err.find("No such process"):
