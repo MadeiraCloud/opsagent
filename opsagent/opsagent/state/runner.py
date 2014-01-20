@@ -5,6 +5,7 @@ Madeira OpsAgent states preparator
 '''
 
 import os
+import json
 
 from salt.state import State
 
