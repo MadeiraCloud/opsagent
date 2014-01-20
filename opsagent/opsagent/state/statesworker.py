@@ -57,6 +57,7 @@ class StatesWorker(threading.Thread):
         # flags
         self.__run = False
         self.__waiting = False
+        self.__abort = False
 
         # builtins methods map
         self.__builtins = {
@@ -104,6 +105,14 @@ class StatesWorker(threading.Thread):
     # Reset states status
     def reset(self):
         self.__status = 0
+
+    # End program
+    def abort(self):
+        self.__abort = True
+
+    # Program status
+    def aborted(self):
+        return self.__aborted
     ##
 
 
@@ -332,7 +341,7 @@ class StatesWorker(threading.Thread):
                     time.sleep(WAIT_STATE_RETRY)
             else:
                 utils.log("WARNING", "Execution aborted.",('__runner',self))
-            if ABORT:
+            if self.__abort:
                 utils.log("WARNING", "Exiting...",('__runner',self))
                 self.__run = False
         self.__cv.release()
@@ -340,7 +349,7 @@ class StatesWorker(threading.Thread):
     # Callback on start
     def run(self):
         try:
-            while not ABORT:
+            while not self.__abort:
                 self.__runner()
         except Exception as e:
             utils.log("ERROR", "Unexpected error: %s."%(e),('run',self))

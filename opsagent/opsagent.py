@@ -13,6 +13,7 @@ import time
 import sys
 import signal
 import re
+import threading, Queue
 
 # Custom imports
 from opsagent.daemon import Daemon
@@ -27,12 +28,6 @@ from opsagent.state.statesworker import StatesWorker
 USAGE = 'usage: %prog [-hqv] [-l logfile] [-c configfile] (start|stop|restart|stop-wait|restart-wait)'
 VERSION_NBR = '0.0.1a'
 VERSION = '%prog '+VERSION_NBR
-
-
-# terminating process
-def handler(signum=None, frame=None):
-    utils.log("WARNING", "Signal handler called with signal %s"%signum,('handler',None))
-    ABORT=True
 
 
 # logger settings
@@ -51,41 +46,59 @@ def __log(lvl, file=None):
 # OpsAgent safe runner
 class OpsAgentRunner(Daemon):
     def run_manager(self, config, sw):
-        utils.log("DEBUG", "Creating Network Manager ...",('run_manager',None))
+        utils.log("DEBUG", "Creating Network Manager ...",('run_manager','OpsAgentRunner'))
         manager = Manager(url=config['network']['ws_uri'], config=config, statesworker=sw)
-        utils.log("DEBUG", "Network Manager created.",('run_manager',None))
+        utils.log("DEBUG", "Network Manager created.",('run_manager','OpsAgentRunner'))
         try:
-            utils.log("DEBUG", "Connecting manager to backend.",('run_manager',None))
+            utils.log("DEBUG", "Connecting manager to backend.",('run_manager','OpsAgentRunner'))
             manager.connect()
-            utils.log("DEBUG", "Connection done, registering to StateWorker.",('run_manager',None))
+            utils.log("DEBUG", "Connection done, registering to StateWorker.",('run_manager','OpsAgentRunner'))
             sw.set_manager(manager)
-            utils.log("DEBUG", "Registration done, running forever ...",('run_manager',None))
+            utils.log("DEBUG", "Registration done, running forever ...",('run_manager','OpsAgentRunner'))
             manager.run_forever()
-            utils.log("DEBUG", "Network connection lost/aborted.",('run_manager',None))
+            utils.log("DEBUG", "Network connection lost/aborted.",('run_manager','OpsAgentRunner'))
         except Exception as e:
-            utils.log("ERROR", "Network error: '%s'"%(e),('run_manager',None))
+            utils.log("ERROR", "Network error: '%s'"%(e),('run_manager','OpsAgentRunner'))
             if manager.connected():
-                utils.log("INFO", "Connection not closed. Closing ...",('run_manager',None))
+                utils.log("INFO", "Connection not closed. Closing ...",('run_manager','OpsAgentRunner'))
                 manager.close()
-                utils.log("DEBUG", "Connection closed.",('run_manager',None))
+                utils.log("DEBUG", "Connection closed.",('run_manager','OpsAgentRunner'))
             else:
-                utils.log("DEBUG", "Connection already closed.",('run_manager',None))
+                utils.log("DEBUG", "Connection already closed.",('run_manager','OpsAgentRunner'))
 
     def run(self, config):
-        # start
+        # init
         sw = StatesWorker(config=config)
+
+        # terminating process
+        def handler(signum=None, frame=None):
+            utils.log("WARNING", "Signal handler called with signal %s"%signum,('handler','OpsAgentRunner'))
+            sw.abort()
+
+        # handle termination
+        for sig in [signal.SIGTERM, signal.SIGINT, signal.SIGHUP, signal.SIGQUIT]:
+            try: signal.signal(sig, handler)
+            except: pass #pass some signals if not POSIX
+
+        # start
         sw.start()
-        while not ABORT:
+
+        # run forever
+        while sw.aborted():
             try:
+                # states worker dead
                 if not sw.is_alive():
                     del sw
                     sw = StatesWorker(config=config)
                     sw.start()
+                # run manager
                 self.run_manager(config, sw)
             except Exception as e:
-                utils.log("ERROR", "Unexpected error: '%s'"%(e),('run',None))
+                utils.log("ERROR", "Unexpected error: '%s'"%(e),('run','OpsAgentRunner'))
                 time.sleep(0.1)
-                utils.log("WARNING", "Conenction aborted, retrying ...",('run',None))
+                utils.log("WARNING", "Conenction aborted, retrying ...",('run','OpsAgentRunner'))
+
+        # end properly
         if sw.is_alive():
             sw.join()
 
@@ -130,15 +143,6 @@ def main():
     elif options.quiet: loglvl = 'ERROR'
     __log(loglvl,
           (options.log_file if options.log_file else config['global'].get('logfile')))
-
-    # global abort
-    global ABORT
-    ABORT=False
-
-    # handle termination
-    for sig in [signal.SIGTERM, signal.SIGINT, signal.SIGHUP, signal.SIGQUIT]:
-        try: signal.signal(sig, handler)
-        except: pass #pass some signals if not POSIX
 
     # run
     runner = OpsAgentRunner(config['global']['pidfile'])
