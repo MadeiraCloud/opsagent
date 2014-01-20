@@ -34,7 +34,7 @@ cp -r /madeira/sources/opsagent /madeira/env/lib/python2.7/site-packages/
 # set ownership to root
 chown -R root:root /madeira
 # create log directory
-mkdir /var/log/madeira
+mkdir -p /var/log/madeira
 # link config file
 mv /etc/opsagent.conf /etc/opsagent.old.conf
 ln -s /madeira/env/etc/opsagent.conf /etc/opsagent.conf
@@ -47,6 +47,6 @@ elif [ $UPDATERC_CMD ]; then
 fi
 # start service
 chmod +x /etc/init.d/opsagentd
-service opsagentd start
+#service opsagentd start
 
 # EOF

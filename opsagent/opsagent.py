@@ -29,10 +29,6 @@ VERSION_NBR = '0.0.1a'
 VERSION = '%prog '+VERSION_NBR
 
 
-# global abort
-global ABORT
-ABORT=False
-
 # terminating process
 def handler(signum=None, frame=None):
     utils.log("WARNING", "Signal handler called with signal %s"%signum,('handler',None))
@@ -115,32 +111,35 @@ def main():
     # options parsing
     options, args = optParse()
 
-# /madeira/env/bin/opsagent -c /etc/opsagent.conf start
-
     # config parser
     try:
         config = Config(options.config_file).getConfig()
     except ConfigFileException:
         config = Config().getConfig()
     except Exception as e:
-        sys.stderr.write("ERROR: Unknown fatal config exception: %s, loading default."%(e),('main',self))
+        sys.stderr.write("ERROR: Unknown fatal config exception: %s, loading default.\n"%(e),('main',self))
         config = Config().getConfig()
 
     # set log level
     loglvl = config['global']['loglvl']
+    if loglvl and loglvl not in LOGLVL_VALUES:
+        sys.stderr.write("WARNING: Wrong loglvl '%s' (check config file). Loading in default mode (INFO).\n"%(loglvl),('main',self))
+        loglvl = 'INFO'
     if options.verbose: loglvl = 'DEBUG'
     elif options.quiet: loglvl = 'ERROR'
     __log(loglvl,
           (options.log_file if options.log_file else config['global'].get('logfile')))
 
+    # global abort
+    global ABORT
+    ABORT=False
+
     # handle termination
     for sig in [signal.SIGTERM, signal.SIGINT, signal.SIGHUP, signal.SIGQUIT]:
-        try:
-            signal.signal(sig, handler)
-        except:
-            pass
+        try: signal.signal(sig, handler)
+        except: pass #pass some signals if not POSIX
 
-#    def __init__(self, pidfile, stdin='/dev/null', stdout='/dev/null', stderr='/dev/null'):
+    # run
     runner = OpsAgentRunner(config['global']['pidfile'])
     command = sys.argv[-1:]
     if command == "start":
@@ -155,6 +154,8 @@ def main():
         runner.restart(wait=True)
     else:
         runner.run(config)
+
+
 
 if __name__ == '__main__':
     main()
