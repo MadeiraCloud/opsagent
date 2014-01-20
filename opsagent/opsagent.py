@@ -84,13 +84,13 @@ class OpsAgentRunner(Daemon):
         sw.start()
 
         # run forever
-        while sw.aborted():
+        while not sw.aborted():
             try:
-                # states worker dead
-                if not sw.is_alive():
-                    del sw
-                    sw = StatesWorker(config=config)
-                    sw.start()
+#                # states worker dead
+#                if not sw.is_alive():
+#                    del sw
+#                    sw = StatesWorker(config=config)
+#                    sw.start()
                 # run manager
                 self.run_manager(config, sw)
             except Exception as e:

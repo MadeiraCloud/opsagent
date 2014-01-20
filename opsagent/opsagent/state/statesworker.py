@@ -348,11 +348,11 @@ class StatesWorker(threading.Thread):
 
     # Callback on start
     def run(self):
-        try:
-            while not self.__abort:
+        while not self.__abort:
+            try:
                 self.__runner()
-        except Exception as e:
-            utils.log("ERROR", "Unexpected error: %s."%(e),('run',self))
+            except Exception as e:
+                utils.log("ERROR", "Unexpected error: %s."%(e),('run',self))
         if self.__manager:
             self.__manager.stop()
     ##
