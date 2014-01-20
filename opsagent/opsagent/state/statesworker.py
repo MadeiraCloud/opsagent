@@ -113,6 +113,7 @@ class StatesWorker(threading.Thread):
     # End program
     def abort(self):
         self.__abort = True
+        self.__run = False
 
     # Program status
     def aborted(self):
@@ -220,9 +221,8 @@ class StatesWorker(threading.Thread):
     # Write hash
     def __create_hash(self, target, hash, file):
         utils.log("DEBUG", "Writing new hash for file '%s' in '%s': '%s'"%(file, target, hash),('__create_hash',self))
-        f = open(target, 'w')
-        f.write(hash)
-        f.close()
+        with open(target, 'w') as f:
+            f.write(hash)
 
     # Call salt library
     def __exec_salt(self, id, module, parameter):
@@ -340,9 +340,6 @@ class StatesWorker(threading.Thread):
                     time.sleep(WAIT_STATE_RETRY)
             else:
                 utils.log("WARNING", "Execution aborted.",('__runner',self))
-            if self.__abort:
-                utils.log("WARNING", "Exiting...",('__runner',self))
-                self.__run = False
 
     # Callback on start
     def run(self):
@@ -357,8 +354,9 @@ class StatesWorker(threading.Thread):
                 self.__runner()
             except Exception as e:
                 utils.log("ERROR", "Unexpected error: %s."%(e),('run',self))
-            self.__cv.release()
             self.reset()
+            self.__cv.release()
+        utils.log("WARNING", "Exiting...",('run',self))
         if self.__manager:
             self.__manager.stop()
     ##
