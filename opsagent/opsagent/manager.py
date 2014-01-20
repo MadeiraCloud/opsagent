@@ -253,7 +253,8 @@ class Manager(WebSocketClient):
         utils.log("INFO", "Socket closed: %s, code '%s'"%(reason,code),('closed',self))
         utils.log("INFO", "Reconnection will start in '%s' seconds ..."%(WAIT_RECONNECT),('closed',self))
         self.__connected = False
-        self.__states_worker.set_manager(None)
+        if self.__states_worker and self.__states_worker.is_alive():
+            self.__states_worker.set_manager(None)
         time.sleep(WAIT_RECONNECT)
         utils.log("DEBUG", "Ready to reconnect",('closed',self))
 
