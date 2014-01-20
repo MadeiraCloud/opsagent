@@ -14,7 +14,7 @@ CHKCONFIG_CMD=$(which chkconfig)
 # locate in root home directory
 cd /root
 # get agent
-curl -sSLO https://s3.amazonaws.com/visualops-salt/agent.tgz
+curl -sSLO https://s3.amazonaws.com/visualops/agent.tgz
 cd /
 tar xfz /root/agent.tgz
 # setup dependencies
@@ -47,6 +47,6 @@ elif [ $UPDATERC_CMD ]; then
 fi
 # start service
 chmod +x /etc/init.d/opsagentd
-#service opsagentd start
+service opsagentd start
 
 # EOF
