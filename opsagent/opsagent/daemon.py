@@ -15,8 +15,10 @@ from signal import SIGTERM,SIGINT
 
 # Daemon class
 class Daemon():
-    def __init__(self, pidfile, stdin='/dev/null', stdout='/dev/null', stderr='/dev/null'):
-        self.__pidfile = pidfile
+    def __init__(self, config, stdin='/dev/null', stdout='/dev/null', stderr='/dev/null'):
+        self.__sw = None
+        self.__config = config
+        self.__pidfile = config['global']['pidfile']
         self.__stdin = stdin
         self.__stdout = stdout
         self.__stderr = stderr

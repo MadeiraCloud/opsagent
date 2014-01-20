@@ -45,9 +45,9 @@ def __log(lvl, file=None):
 
 # OpsAgent safe runner
 class OpsAgentRunner(Daemon):
-    def run_manager(self, config, sw):
+    def run_manager(self):
         utils.log("DEBUG", "Creating Network Manager ...",('run_manager','OpsAgentRunner'))
-        manager = Manager(url=config['network']['ws_uri'], config=config, statesworker=sw)
+        manager = Manager(url=config['network']['ws_uri'], config=self.__config, statesworker=self.__sw)
         utils.log("DEBUG", "Network Manager created.",('run_manager','OpsAgentRunner'))
         try:
             utils.log("DEBUG", "Connecting manager to backend.",('run_manager','OpsAgentRunner'))
@@ -66,14 +66,14 @@ class OpsAgentRunner(Daemon):
             else:
                 utils.log("DEBUG", "Connection already closed.",('run_manager','OpsAgentRunner'))
 
-    def run(self, config):
+    def run(self):
         # init
-        sw = StatesWorker(config=config)
+        self.__sw = StatesWorker(config=self.__config)
 
         # terminating process
         def handler(signum=None, frame=None):
             utils.log("WARNING", "Signal handler called with signal %s"%signum,('handler','OpsAgentRunner'))
-            sw.abort()
+            self.__sw.abort()
 
         # handle termination
         for sig in [signal.SIGTERM, signal.SIGINT, signal.SIGHUP, signal.SIGQUIT]:
@@ -81,10 +81,10 @@ class OpsAgentRunner(Daemon):
             except: pass #pass some signals if not POSIX
 
         # start
-        sw.start()
+        self.__sw.start()
 
         # run forever
-        while not sw.aborted():
+        while not self.__sw.aborted():
             try:
 #                # states worker dead
 #                if not sw.is_alive():
@@ -92,15 +92,15 @@ class OpsAgentRunner(Daemon):
 #                    sw = StatesWorker(config=config)
 #                    sw.start()
                 # run manager
-                self.run_manager(config, sw)
+                self.run_manager()
             except Exception as e:
                 utils.log("ERROR", "Unexpected error: '%s'"%(e),('run','OpsAgentRunner'))
                 time.sleep(0.1)
                 utils.log("WARNING", "Conenction aborted, retrying ...",('run','OpsAgentRunner'))
 
         # end properly
-        if sw.is_alive():
-            sw.join()
+        if self.__sw.is_alive():
+            self.__sw.join()
 
 
 # option parser
@@ -145,7 +145,7 @@ def main():
           (options.log_file if options.log_file else config['global'].get('logfile')))
 
     # run
-    runner = OpsAgentRunner(config['global']['pidfile'])
+    runner = OpsAgentRunner(config)
     command = sys.argv[-1]
     if command == "start":
         runner.start()
