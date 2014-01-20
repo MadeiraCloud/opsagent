@@ -18,6 +18,7 @@ from opsagent.objects import send
 from opsagent.exception import *
 
 from adaptor import Adaptor
+from runner import Runner
 ##
 
 ## DEFINES
@@ -42,7 +43,10 @@ class StatesWorker(threading.Thread):
         self.__manager = None
 
         # state transfer
-        self.__adaptor = Adaptor(config=config['salt'])
+        self.__adaptor = Adaptor()
+
+        # state runner
+        self.__runner = Runner(config=config['salt'])
 
         # events
         self.__cv = threading.Condition()
@@ -257,8 +261,11 @@ class StatesWorker(threading.Thread):
 #        (out_log,err_log) = p.communicate()
         # /TODO
 
-        # Salt call
-        (result, err_log, out_log) = self.__adaptor.prepare(id, module, parameter)
+        # state transfer
+        salt_state = self.__adaptor.transfer(id, module, parameter)
+
+        # exec salt state
+        (result, err_log, out_log) = self.__runner.exec_salt(salt_state)
 
         utils.log("INFO", "State ID '%s' from module '%s' done, result '%s'."%(id,module,result),('__exec_salt',self))
         utils.log("DEBUG", "State out log='%s'"%(out_log),('__exec_salt',self))
