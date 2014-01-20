@@ -247,8 +247,11 @@ class StatesWorker(threading.Thread):
         utils.log("INFO", "Loading state ID '%s' from module '%s' ..."%(id,module),('__exec_salt',self))
         first = True
 
+        import pdb
+        pdb.set_trace()
+
         # Watch process
-        if type(parameter) is dict and parameter.get("watch"):
+        if parameter and type(parameter) is dict and parameter.get("watch"):
             utils.log("DEBUG", "Watched state detected."%(watch),('__exec_salt',self))
             watch = parameter.get("watch")
             del parameter["watch"]
@@ -369,8 +372,8 @@ class StatesWorker(threading.Thread):
             try:
                 if not self.__run:
                     utils.log("INFO", "Waiting for recipes ...",('run',self))
-                # TODO while not run?
-                self.__cv.wait()
+                    # TODO while not run?
+                    self.__cv.wait()
                 utils.log("DEBUG", "Ready to go ...",('run',self))
                 self.__runner()
             except Exception as e:
