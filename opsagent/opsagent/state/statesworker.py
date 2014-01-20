@@ -112,7 +112,7 @@ class StatesWorker(threading.Thread):
 
     # Program status
     def aborted(self):
-        return self.__aborted
+        return self.__abort
     ##
 
 
