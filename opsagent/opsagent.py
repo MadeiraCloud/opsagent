@@ -146,7 +146,7 @@ def main():
 
     # run
     runner = OpsAgentRunner(config['global']['pidfile'])
-    command = sys.argv[-1:]
+    command = sys.argv[-1]
     if command == "start":
         runner.start()
     elif command == "stop":
