@@ -539,7 +539,10 @@ class StateAdaptor(object):
 			print "not supported module %s" % module
 			return
 
-		state = self._transfer(module, parameter, step)
+		if module in ['linux.apt.package', 'linux.yum.package', 'common.gem.package', 'common.npm.package', 'common.pecl.package', 'common.pip.package']:
+			state = self._package(step, module, parameter)
+		else:
+			state = self._transfer(module, parameter, step)
 		if not state or not isinstance(state, dict):
 			print "Transfer json to salt state failed"
 			return
@@ -621,8 +624,6 @@ class StateAdaptor(object):
 
 			if attr in self.salt_map[module]['attributes'].keys():
 				key = self.salt_map[module]['attributes'][attr]
-				## render to do
-				## if isinstance(key, dict):
 
 				if isinstance(value, dict):
 					addin[key] = []
@@ -794,20 +795,11 @@ class StateAdaptor(object):
 
 	##################################################################################
 	## package
-	def _package(self, module, parameter, uid=None, step=None):
+	def _package(self, step, module, parameter):
 		"""
 			Transfer package to salt state.
 		"""
 		pkg_state = {}
-
-		# check
-		if not isinstance(module, basestring) or not isinstance(parameter, dict) or 'name' not in parameter:
-			print "invalid preparation states"
-			return pkg_state
-
-		if self.__check_module(module) != 0:
-			print "invalid package type"
-			return 2
 
 		m_list = module.split('.')
 
@@ -816,8 +808,8 @@ class StateAdaptor(object):
 
 		# add require
 		require = []
-		if m_list[1] in ['gem', 'npm', 'pecl', 'pip']:
-			req_state = self.__get_require(module)
+		if 'require' in self.salt_map[module]:
+			req_state = self.__get_require(self.salt_map[module]['require'])
 			if req_state:
 				for req in req_state:
 					for req_tag, req_value in req.items():
@@ -875,7 +867,7 @@ class StateAdaptor(object):
 			if require:
 				pkg.append({ 'require' : require })
 
-			tag = self.__get_tag(module, uid, step, 'pkgs', state)
+			tag = self.__get_tag(module, None, step, 'pkgs', state)
 
 			pkg_state[tag] = {
 				m_list[1] : pkg
