@@ -306,7 +306,7 @@ class StatesWorker(threading.Thread):
         if (pid == 0):
             time.sleep(self.__config['salt']['delay']*60)
         else:
-            os.waitpid(pid)
+            os.waitpid(pid,0)
         utils.log("INFO", "Delay passed, execution restarting...",('__recipe_delay',self))
 
     # Render recipes
