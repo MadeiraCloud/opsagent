@@ -190,6 +190,7 @@ class Adaptor(object):
 			},
 			'require_in' : {
 				'linux.dir' : {
+					'path' : 'name',
 					'user' : 'user',
 					'group' : 'group',
 					'mode' : 'mode',
@@ -216,6 +217,7 @@ class Adaptor(object):
 			},
 			'require_in' : {
 				'linux.dir' : {
+					'path' : 'name',
 					'user' : 'user',
 					'group' : 'group',
 					'mode' : 'mode'
@@ -241,6 +243,7 @@ class Adaptor(object):
 			},
 			'require_in' : {
 				'linux.dir' : {
+					'path' : 'name',
 					'user' : 'user',
 					'group' : 'group',
 					'mode' : 'mode'
@@ -603,6 +606,11 @@ class Adaptor(object):
 			type : module_state
 		}
 
+		# add env and sls
+		if 'require_in' in self.salt_map[module]:
+			salt_state[tag]['__env__'] = 'base'
+			salt_state[tag]['__sls__'] = 'madeira'
+
 		return salt_state
 
 	def __init_addin(self, module, parameter):
@@ -627,6 +635,10 @@ class Adaptor(object):
 
 				else:
 					addin[key] = value
+
+					## todo
+					if module in ['common.git', 'common.svn', 'common.hg'] and key == 'name':
+						addin[key] = value.split('-')[1].strip()
 
 		return addin
 
@@ -698,13 +710,13 @@ class Adaptor(object):
 		require_in_state = {}
 
 		for module, attrs in require_in.items():
-			req_p = {}
+			req_addin = {}
 			for k, v in attrs.items():
-				if not v or v not in parameter:	continue
+				if not v or k not in parameter:	continue
 
-				req_p[k] = parameter[v]
+				req_addin[v] = parameter[k]
 
-			addin = self.__init_addin(module, req_p)
+			#addin = self.__init_addin(module, req_p)
 			state = self.salt_map[module]['states'][0]
 			type = self.salt_map[module]['type']
 
@@ -713,7 +725,7 @@ class Adaptor(object):
 			require_in_state[tag] = {
 				type : [
 					state,
-					addin
+					req_addin
 				]
 			}
 
@@ -1887,6 +1899,8 @@ def main():
 	# print json.dumps(adaptor._salt_opts, sort_keys=True,
 	# 	indent=4, separators=(',', ': '))
 
+	err_log = None
+	out_log = None
 	for uid, com in pre_states['component'].items():
 		states = {}
 
