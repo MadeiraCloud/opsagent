@@ -594,8 +594,8 @@ class Adaptor(object):
 			module_state.append({ 'require_in' : require_in })
 
 		# tag
-		name = addin['names'] if 'names' in addin else addin['name']
-		tag = self.__get_tag(module, None, step, name, state)
+		#name = addin['names'] if 'names' in addin else addin['name']
+		tag = self.__get_tag(module, None, step, None, state)
 
 		type = self.salt_map[module]['type']
 
@@ -618,7 +618,13 @@ class Adaptor(object):
 				## if isinstance(key, dict):
 
 				if isinstance(value, dict):
-					addin[key] = [ {k:v} for k,v in value.items() ]
+					addin[key] = []
+					for k, v in value.items():
+						if v:
+							addin[key].append({k:v})
+						else:
+							addin[key].append(k)
+
 				else:
 					addin[key] = value
 
