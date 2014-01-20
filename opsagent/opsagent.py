@@ -47,7 +47,7 @@ def __log(lvl, file=None):
 class OpsAgentRunner(Daemon):
     def run_manager(self):
         utils.log("DEBUG", "Creating Network Manager ...",('run_manager','OpsAgentRunner'))
-        manager = Manager(url=config['network']['ws_uri'], config=self.__config, statesworker=self.__sw)
+        manager = Manager(url=self.config['network']['ws_uri'], config=self.config, statesworker=self.sw)
         utils.log("DEBUG", "Network Manager created.",('run_manager','OpsAgentRunner'))
         try:
             utils.log("DEBUG", "Connecting manager to backend.",('run_manager','OpsAgentRunner'))
@@ -68,7 +68,7 @@ class OpsAgentRunner(Daemon):
 
     def run(self):
         # init
-        self.__sw = StatesWorker(config=self.__config)
+        self.__sw = StatesWorker(config=self.config)
 
         # terminating process
         def handler(signum=None, frame=None):
@@ -101,6 +101,7 @@ class OpsAgentRunner(Daemon):
         # end properly
         if self.__sw.is_alive():
             self.__sw.join()
+        self.__sw = None
 
 
 # option parser
@@ -158,7 +159,7 @@ def main():
     elif command == "restart-wait":
         runner.restart(wait=True)
     else:
-        runner.run(config)
+        runner.run()
 
 
 
