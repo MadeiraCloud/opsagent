@@ -35,7 +35,7 @@ ABORT=False
 
 # terminating process
 def handler(signum=None, frame=None):
-    print "Signal handler called with signal %s"%signum
+    utils.log("WARNING", "Signal handler called with signal %s"%signum,('handler',None))
     ABORT=True
 
 
@@ -154,7 +154,7 @@ def main():
     elif command == "restart-wait":
         runner.restart(wait=True)
     else:
-        runner.run()
+        runner.run(config)
 
 if __name__ == '__main__':
     main()

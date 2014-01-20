@@ -46,6 +46,7 @@ elif [ $UPDATERC_CMD ]; then
     source /madeira/bootstrap/bootstrap_updaterc.sh
 fi
 # start service
+chmod +x /etc/init.d/opsagentd
 service opsagentd start
 
 # EOF

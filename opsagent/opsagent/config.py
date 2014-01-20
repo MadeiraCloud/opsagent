@@ -59,21 +59,21 @@ class Config():
                 self.parse_file()
                 self.check_required(Config.requiredKeys)
             except Exception as e:
-                sys.stderr.write("ERROR: Invalid config file '%s': %s"%(file,e))
+                sys.stderr.write("ERROR: Invalid config file '%s': %s\n"%(file,e))
                 raise ConfigFileException
             except ConfigFileFormatException:
-                sys.stderr.write("ERROR: Invalid config file '%s'."%(file))
+                sys.stderr.write("ERROR: Invalid config file '%s'.\n"%(file))
                 raise ConfigFileException
             else:
-                sys.stdout.write("Config file loaded '%s'."%(file))
+                sys.stdout.write("Config file loaded '%s'.\n"%(file))
 
     def __read_file(self, file):
         try:
             self.__parser.read(file)
         except ConfigParser.ParsingError as e:
-            sys.stderr.write("ERROR: Can't load config file %s, %s"%(file,e))
+            sys.stderr.write("ERROR: Can't load config file %s, %s.\n"%(file,e))
         else:
-            sys.stdout.write("Config file parsed '%s'."%(file))
+            sys.stdout.write("Config file parsed '%s'.\n"%(file))
 
     def parse_file(self, file=None):
         if file:
@@ -87,12 +87,12 @@ class Config():
         valid = True
         for section in required:
             if section not in self.__c:
-                sys.stderr.write("ERROR: Missing section '%s' in current configuration file."%(section))
+                sys.stderr.write("ERROR: Missing section '%s' in current configuration file.\n"%(section))
                 valid = False
                 continue
             for key in required[section]:
                 if key not in self.__c[section]:
-                    sys.stderr.write("ERROR: Missing key '%s' in section '%s' in current configuration file."%(key,section))
+                    sys.stderr.write("ERROR: Missing key '%s' in section '%s' in current configuration file.\n"%(key,section))
                     valid = False
         if not valid:
             raise ConfigFileException
