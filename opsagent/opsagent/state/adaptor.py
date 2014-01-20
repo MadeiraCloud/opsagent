@@ -12,8 +12,8 @@ import hashlib
 import collections
 
 # Internal imports
-from salt.state import State
 #from opsagent.exception import StatePrepareExcepton,OpsAgentException
+from runner import Runner
 
 
 class Adaptor(object):
@@ -252,8 +252,8 @@ class Adaptor(object):
 		'linux.supervisord' : {
 			'attributes' : {
 				'name'	:	'name',
-				'config':	'conf_file',	
-				#'watch'	:	'',		
+				'config':	'conf_file',
+				#'watch'	:	'',
 			},
 			'states' : ['running'],
 			'type' : 'supervisord',
@@ -273,20 +273,20 @@ class Adaptor(object):
 			},
 			'states' : ['running'],
 			'type' : 'service',
-		},		
+		},
 
 		## cmd
 		'sys.cmd' : {
 			'attributes' : {
-				'bin'			: 'shell',	
-				'cmd'			: 'name',	
-				'cwd'			: 'cwd',	
-				'user'			: 'user',	
-				'group'			: 'group',	
-				'timeout'		: 'timeout',	
-				'env'			: 'env',	
+				'bin'			: 'shell',
+				'cmd'			: 'name',
+				'cwd'			: 'cwd',
+				'user'			: 'user',
+				'group'			: 'group',
+				'timeout'		: 'timeout',
+				'env'			: 'env',
 				#'with_path'		: '',
-				#'without_path'	: '',				
+				#'without_path'	: '',
 			},
 			'states' : [
 				'run', 'call', 'wait', 'script'
@@ -317,12 +317,12 @@ class Adaptor(object):
 				'username'	: 'name',
 				'password'	: 'password',
 				'fullname'	: 'fullname',
-				'uid'		: 'uid',				
+				'uid'		: 'uid',
 				'gid'		: 'gid',
 				'shell'		: 'shell',
 				'home'		: 'home',
 				#'nologin'	: '',
-				'groups'	: 'groups',			
+				'groups'	: 'groups',
 			},
 			'states' : [ 'present', 'absent' ],
 			'type' : 'user'
@@ -421,30 +421,30 @@ class Adaptor(object):
 				'path'				: '',
 				'name'				: '',
 				'available'			: '',
-				'chunk size'		: '',	
-				'contiguous'		: '',	
-				'discards'			: '',	
-				'stripe number'		: '',	
-				'stripe size'		: '',	
-				'LE number'			: '',	
-				'LV size'			: '',	
-				'minor number'		: '',	
-				'persistent'		: '',	
-				'mirror number'		: '',	
-				'no udev sync'		: '',	
-				'monitor'			: '',	
-				'ignore monitoring' : '', 
-				'permission' 		: '',		
-				'pool metadata size': '', 
-				'region size'		: '',	
-				'readahead'			: '',	
-				'snapshot'			: '',	
-				'thinpool'			: '',	
-				'type'				: '',	
-				'virtual size'		: '',	
-				'zero'				: '',	
-				'autobackup'		: '',	
-				'tag'				: '',	
+				'chunk size'		: '',
+				'contiguous'		: '',
+				'discards'			: '',
+				'stripe number'		: '',
+				'stripe size'		: '',
+				'LE number'			: '',
+				'LV size'			: '',
+				'minor number'		: '',
+				'persistent'		: '',
+				'mirror number'		: '',
+				'no udev sync'		: '',
+				'monitor'			: '',
+				'ignore monitoring' : '',
+				'permission' 		: '',
+				'pool metadata size': '',
+				'region size'		: '',
+				'readahead'			: '',
+				'snapshot'			: '',
+				'thinpool'			: '',
+				'type'				: '',
+				'virtual size'		: '',
+				'zero'				: '',
+				'autobackup'		: '',
+				'tag'				: '',
 				'allocation policy'	: '',
 			},
 			'states' : ['lv_present', 'lv_absent'],
@@ -467,7 +467,7 @@ class Adaptor(object):
 			'attributes' : {
 				'hostname'	:	'name',
 				'username'	:	'user',
-				'filename'	:	'config',	
+				'filename'	:	'config',
 				'fingerprint'		: 'fingerprint',
 				'encrypt_algorithm'	: 'enc',
 			},
@@ -476,7 +476,7 @@ class Adaptor(object):
 		},
 	}
 
-	def __init__(self, config):
+	def __init__(self):
 
 		self.pre_mapping = {
 			'package.pkg.package'	:	self._package,
@@ -514,76 +514,7 @@ class Adaptor(object):
 			'system.ssh.known_host' :	self._system_ssh_known_host,
 		}
 
-		# init salt opts
-		self._init_opts(config)
-
-		# init state
-		self._init_state()
-
 		self.states = None
-
-	def _init_opts(self, config):
-
-		self._salt_opts = {
-			'file_client':       'local',
-			'renderer':          'yaml_jinja',
-			'failhard':          False,
-			'state_top':         'salt://top.sls',
-			'nodegroups':        {},
-			'file_roots':        {'base': [ ]},
-			'state_auto_order':  False,
-			'extension_modules': None,
-			'id':                '',
-			'pillar_roots':      '',
-			'cachedir':          None,
-			'test':              False,
-		}
-
-		# file roots
-		for path in config['file_roots'].split(':'):
-			# check and make path
-			if not self.__mkdir(path):
-				continue
-
-			self._salt_opts['file_roots']['base'].append(path)
-
-		if len(self._salt_opts['file_roots']['base']) == 0:
-			print "ERROR: Missing file roots argument"
-			## todo
-
-		if not self.__mkdir(config['extension_modules']):
-			print "ERROR: Missing extension modules argument"
-			## todo
-
-		self._salt_opts['extension_modules'] = config['extension_modules']
-
-		if not self.__mkdir(config['cachedir']):
-			print "ERROR: Missing cachedir argument"
-			## todo
-		self._salt_opts['cachedir'] = config['cachedir']
-
-	def _init_state(self):
-		"""
-			Init salt state object.
-		"""
-
-		self.state = State(self._salt_opts)
-
-	def prepare(self, step, module, parameter):
-		"""
-			Transfer to salt state and execute it.
-		"""
-
-		result = err_log = out_log = None
-
-		# transfer
-		state = self.transfer(step, module, parameter)
-		if not state or not isinstance(state, dict):
-			err_log = "transfer salt state failed"
-			print err_log
-			return (False, err_log, out_log)
-
-		return self.exec_salt(state)
 
 	def transfer(self, step, module, parameter):
 		"""
@@ -597,6 +528,9 @@ class Adaptor(object):
 		# if self.__check_module(module) != 0:
 		# 	print "not supported module %s" % module
 		# 	return
+
+		# convert from unicode to string
+		parameter = self.__convert(parameter)
 
 		# get present state(default the first one)
 		if module not in self.salt_map:
@@ -612,20 +546,21 @@ class Adaptor(object):
 		return state
 
 	def _transfer(self, module, parameter, step=None):
+
+		salt_state = {}
+
 		# get state
 		state = self.salt_map[module]['states'][0]
 		# check state
 		if self.__check_state(module, state) != 0:
 			print "not supported state"
-			return
+			return salt_state
 
 		# generate addin
 		addin = self.__init_addin(module, parameter)
 		if not addin:
 			print "invalid parameters"
-			return
-
-		salt_state = {}
+			return salt_state
 
 		# add require
 		require = []
@@ -659,8 +594,8 @@ class Adaptor(object):
 			module_state.append({ 'require_in' : require_in })
 
 		# tag
-		name = addin['names'] if 'names' in addin else addin['name']
-		tag = self.__get_tag(module, None, step, name, state)
+		#name = addin['names'] if 'names' in addin else addin['name']
+		tag = self.__get_tag(module, None, step, None, state)
 
 		type = self.salt_map[module]['type']
 
@@ -669,37 +604,6 @@ class Adaptor(object):
 		}
 
 		return salt_state
-
-	def exec_salt(self, state):
-		"""
-			Transfer and exec salt state.
-			return result format: (result,err_log,out_log), result:True/False
-		"""
-
-		result = err_log = out_log = None
-
-		ret = self.state.call_high(state)
-		if ret:
-			# parse the ret and return
-			print json.dumps(ret, sort_keys=True,
-				  indent=4, separators=(',', ': '))
-
-			## set error and output log
-			result = True
-			for r_tag, r_value in ret.items():
-				# error log and std out log
-				if 'state_stderr' in r_value:
-					err_log = r_value['state_stderr']
-				if 'state_stdout' in r_value:
-					out_log = r_value['state_stdout']
-
-				if not r_value['result']:
-					break
-
-		else:
-			out_log = "wait failed"
-
-		return (result, err_log, out_log)
 
 	def __init_addin(self, module, parameter):
 
@@ -714,7 +618,13 @@ class Adaptor(object):
 				## if isinstance(key, dict):
 
 				if isinstance(value, dict):
-					addin[key] = [ {k:v} for k,v in value.items() ]
+					addin[key] = []
+					for k, v in value.items():
+						if v:
+							addin[key].append({k:v})
+						else:
+							addin[key].append(k)
+
 				else:
 					addin[key] = value
 
@@ -735,10 +645,10 @@ class Adaptor(object):
 				step = str(step)
 			tag = step + '_' + tag
 
-		# if uid:
-		# 	if not isinstance(step, basestring):
-		# 		uid = str(uid)
-		# 	tag = uid + '_' + tag
+		if uid:
+			if not isinstance(step, basestring):
+				uid = str(uid)
+			tag = uid + '_' + tag
 
 		if name:
 			if not isinstance(name, basestring):
@@ -856,19 +766,6 @@ class Adaptor(object):
 			return 1
 
 		return 0
-
-	def __mkdir(self, path):
-		"""
-			Check and make directory.
-		"""
-		if not os.path.isdir(path):
-			try:
-				os.makedirs(path)
-			except OSError, e:
-				print "Create directory %s failed" % path
-				return False
-
-		return True
 
 	def __convert(self, data):
 		"""
@@ -1984,9 +1881,10 @@ def main():
 		'cachedir' : '/code/OpsAgent/cache'
 	}
 
-	sp = Adaptor(config)
+	adaptor = Adaptor()
+	runner = Runner(config)
 
-	# print json.dumps(sp._salt_opts, sort_keys=True,
+	# print json.dumps(adaptor._salt_opts, sort_keys=True,
 	# 	indent=4, separators=(',', ': '))
 
 	for uid, com in pre_states['component'].items():
@@ -1996,19 +1894,19 @@ def main():
 
 			step = p_state['stateid']
 
-			state = sp.transfer(step, p_state['module'], p_state['parameter'])
+			state = adaptor.transfer(step, p_state['module'], p_state['parameter'])
 
 			print json.dumps(state)
 
-			# if not state or not isinstance(state, dict):
-			# 	err_log = "transfer salt state failed"
-			# 	print err_log
-			# 	result = (False, err_log, out_log)
+			if not state or not isinstance(state, dict):
+				err_log = "transfer salt state failed"
+				print err_log
+				result = (False, err_log, out_log)
 
-			# else:
-			# 	result = sp.exec_salt(state)
+			else:
+				result = runner.exec_salt(state)
 
-			# print result
+			print result
 
 	# out_states = [salt_opts] + states
 	# with open('states.json', 'w') as f:
