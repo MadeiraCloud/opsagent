@@ -61,6 +61,7 @@ class StatesWorker(threading.Thread):
         # flags
         self.__run = False
         self.__waiting = False
+        self.__abort = False
 
         # builtins methods map
         self.__builtins = {
@@ -108,6 +109,33 @@ class StatesWorker(threading.Thread):
     # Reset states status
     def reset(self):
         self.__status = 0
+        self.__done[:] = []
+        self.__run = False
+        self.__waiting = False
+        self.__wait_event.clear()
+
+    # End program
+    def abort(self, kill=False):
+        if self.__abort:
+            utils.log("DEBUG", "Already aborting ...",('abort',self))
+            return
+        self.__abort = True
+        self.__run = False
+        if kill:
+            self.kill()
+
+        utils.log("DEBUG", "Aquire conditional lock ...",('abort',self))
+        self.__cv.acquire()
+        utils.log("DEBUG", "Conditional lock acquired.",('abort',self))
+        utils.log("DEBUG", "Notify execution thread.",('abort',self))
+        self.__cv.notify()
+        utils.log("DEBUG", "Release conditional lock.",('abort',self))
+        self.__cv.release()
+
+
+    # Program status
+    def aborted(self):
+        return self.__abort
     ##
 
 
@@ -168,8 +196,8 @@ class StatesWorker(threading.Thread):
             self.__states = states
         else:
             utils.log("INFO", "No change in states.",('load',self))
-        utils.log("DEBUG", "Reseting status.",('load',self))
-        self.reset()
+#        utils.log("DEBUG", "Reseting status.",('load',self))
+#        self.reset()
         utils.log("DEBUG", "Allow to run.",('load',self))
         self.__run = True
         utils.log("DEBUG", "Notify execution thread.",('load',self))
@@ -211,9 +239,8 @@ class StatesWorker(threading.Thread):
     # Write hash
     def __create_hash(self, target, hash, file):
         utils.log("DEBUG", "Writing new hash for file '%s' in '%s': '%s'"%(file, target, hash),('__create_hash',self))
-        f = open(target, 'w')
-        f.write(hash)
-        f.close()
+        with open(target, 'w') as f:
+            f.write(hash)
 
     # Call salt library
     def __exec_salt(self, id, module, parameter):
@@ -285,11 +312,6 @@ class StatesWorker(threading.Thread):
     # Render recipes
     def __runner(self):
         utils.log("INFO", "Running StatesWorker ...",('__runner',self))
-        utils.log("DEBUG", "Waiting for recipes ...",('__runner',self))
-        self.__cv.acquire()
-        while not self.__run:
-            self.__cv.wait()
-        utils.log("DEBUG", "Ready to go ...",('__runner',self))
         while self.__run:
             if not self.__states:
                 utils.log("WARNING", "Empty states list.",('__runner',self))
@@ -339,19 +361,27 @@ class StatesWorker(threading.Thread):
                     time.sleep(WAIT_STATE_RETRY)
             else:
                 utils.log("WARNING", "Execution aborted.",('__runner',self))
-            if ABORT:
-                utils.log("WARNING", "Exiting...",('__runner',self))
-                self.__run = False
-        self.__cv.release()
 
     # Callback on start
     def run(self):
-        try:
-            while not ABORT:
+        while not self.__abort:
+            self.__cv.acquire()
+            try:
+                if not self.__run:
+                    utils.log("INFO", "Waiting for recipes ...",('__runner',self))
+                # TODO while not run?
+                self.__cv.wait()
+                utils.log("DEBUG", "Ready to go ...",('__runner',self))
                 self.__runner()
-        except Exception as e:
-            utils.log("ERROR", "Unexpected error: %s."%(e),('run',self))
+            except Exception as e:
+                utils.log("ERROR", "Unexpected error: %s."%(e),('run',self))
+            self.reset()
+            self.__cv.release()
+        utils.log("WARNING", "Exiting...",('run',self))
         if self.__manager:
+            utils.log("INFO", "Stopping manager...",('run',self))
             self.__manager.stop()
+            utils.log("INFO", "Manager stopped.",('run',self))
+        utils.log("WARNING", "Terminated.",('run',self))
     ##
 ##

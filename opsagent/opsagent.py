@@ -13,6 +13,7 @@ import time
 import sys
 import signal
 import re
+import threading, Queue
 
 # Custom imports
 from opsagent.daemon import Daemon
@@ -29,17 +30,8 @@ VERSION_NBR = '0.0.1a'
 VERSION = '%prog '+VERSION_NBR
 
 
-# global abort
-global ABORT
-ABORT=False
-
-# terminating process
-def handler(signum=None, frame=None):
-    print "Signal handler called with signal %s"%signum
-    ABORT=True
-
-
 # logger settings
+LOGLVL_VALUES=['DEBUG','INFO','WARNING','ERROR']
 LOG_FORMAT = '[%(levelname)s]-%(asctime)s: %(message)s'
 def __log(lvl, file=None):
     level = logging.getLevelName(lvl)
@@ -53,44 +45,63 @@ def __log(lvl, file=None):
 
 # OpsAgent safe runner
 class OpsAgentRunner(Daemon):
-    def run_manager(self, config, sw):
-        utils.log("DEBUG", "Creating Network Manager ...",('run_manager',None))
-        manager = Manager(url=config['network']['ws_uri'], config=config, statesworker=sw)
-        utils.log("DEBUG", "Network Manager created.",('run_manager',None))
+    def run_manager(self):
+        utils.log("DEBUG", "Creating Network Manager ...",('run_manager','OpsAgentRunner'))
+        manager = Manager(url=self.config['network']['ws_uri'], config=self.config, statesworker=self.__sw)
+        utils.log("DEBUG", "Network Manager created.",('run_manager','OpsAgentRunner'))
         try:
-            utils.log("DEBUG", "Connecting manager to backend.",('run_manager',None))
+            utils.log("DEBUG", "Connecting manager to backend.",('run_manager','OpsAgentRunner'))
             manager.connect()
-            utils.log("DEBUG", "Connection done, registering to StateWorker.",('run_manager',None))
-            sw.set_manager(manager)
-            utils.log("DEBUG", "Registration done, running forever ...",('run_manager',None))
+            utils.log("DEBUG", "Connection done, registering to StateWorker.",('run_manager','OpsAgentRunner'))
+            self.__sw.set_manager(manager)
+            utils.log("DEBUG", "Registration done, running forever ...",('run_manager','OpsAgentRunner'))
             manager.run_forever()
-            utils.log("DEBUG", "Network connection lost/aborted.",('run_manager',None))
+            utils.log("DEBUG", "Network connection lost/aborted.",('run_manager','OpsAgentRunner'))
         except Exception as e:
-            utils.log("ERROR", "Network error: '%s'"%(e),('run_manager',None))
+            utils.log("ERROR", "Network error: '%s'"%(e),('run_manager','OpsAgentRunner'))
             if manager.connected():
-                utils.log("INFO", "Connection not closed. Closing ...",('run_manager',None))
+                utils.log("INFO", "Connection not closed. Closing ...",('run_manager','OpsAgentRunner'))
                 manager.close()
-                utils.log("DEBUG", "Connection closed.",('run_manager',None))
+                utils.log("DEBUG", "Connection closed.",('run_manager','OpsAgentRunner'))
             else:
-                utils.log("DEBUG", "Connection already closed.",('run_manager',None))
+                utils.log("DEBUG", "Connection already closed.",('run_manager','OpsAgentRunner'))
 
-    def run(self, config):
+    def run(self):
+        # init
+        self.__sw = StatesWorker(config=self.config)
+
+        # terminating process
+        def handler(signum=None, frame=None):
+            utils.log("WARNING", "Signal handler called with signal %s"%signum,('handler','OpsAgentRunner'))
+            self.__sw.abort()
+
+        # handle termination
+        for sig in [signal.SIGTERM, signal.SIGINT, signal.SIGHUP, signal.SIGQUIT]:
+            try: signal.signal(sig, handler)
+            except: pass #pass some signals if not POSIX
+
         # start
-        sw = StatesWorker(config=config)
-        sw.start()
-        while not ABORT:
+        self.__sw.start()
+
+        # run forever
+        while not self.__sw.aborted():
             try:
-                if not sw.is_alive():
-                    del sw
-                    sw = StatesWorker(config=config)
-                    sw.start()
-                self.run_manager(config, sw)
+#                # states worker dead
+#                if not sw.is_alive():
+#                    del sw
+#                    sw = StatesWorker(config=config)
+#                    sw.start()
+                # run manager
+                self.run_manager()
             except Exception as e:
-                utils.log("ERROR", "Unexpected error: '%s'"%(e),('run',None))
+                utils.log("ERROR", "Unexpected error: '%s'"%(e),('run','OpsAgentRunner'))
                 time.sleep(0.1)
-                utils.log("WARNING", "Conenction aborted, retrying ...",('run',None))
-        if sw.is_alive():
-            sw.join()
+                utils.log("WARNING", "Conenction aborted, retrying ...",('run','OpsAgentRunner'))
+
+        # end properly
+        if self.__sw.is_alive():
+            self.__sw.join()
+        self.__sw = None
 
 
 # option parser
@@ -115,34 +126,28 @@ def main():
     # options parsing
     options, args = optParse()
 
-# /madeira/env/bin/opsagent -c /etc/opsagent.conf start
-
     # config parser
     try:
         config = Config(options.config_file).getConfig()
     except ConfigFileException:
         config = Config().getConfig()
     except Exception as e:
-        sys.stderr.write("ERROR: Unknown fatal config exception: %s, loading default."%(e),('main',self))
+        sys.stderr.write("ERROR: Unknown fatal config exception: %s, loading default.\n"%(e),('main',self))
         config = Config().getConfig()
 
     # set log level
     loglvl = config['global']['loglvl']
+    if loglvl and loglvl not in LOGLVL_VALUES:
+        sys.stderr.write("WARNING: Wrong loglvl '%s' (check config file). Loading in default mode (INFO).\n"%(loglvl),('main',self))
+        loglvl = 'INFO'
     if options.verbose: loglvl = 'DEBUG'
     elif options.quiet: loglvl = 'ERROR'
     __log(loglvl,
           (options.log_file if options.log_file else config['global'].get('logfile')))
 
-    # handle termination
-    for sig in [signal.SIGTERM, signal.SIGINT, signal.SIGHUP, signal.SIGQUIT]:
-        try:
-            signal.signal(sig, handler)
-        except:
-            pass
-
-#    def __init__(self, pidfile, stdin='/dev/null', stdout='/dev/null', stderr='/dev/null'):
-    runner = OpsAgentRunner(config['global']['pidfile'])
-    command = sys.argv[-1:]
+    # run
+    runner = OpsAgentRunner(config)
+    command = sys.argv[-1]
     if command == "start":
         runner.start()
     elif command == "stop":
@@ -155,6 +160,8 @@ def main():
         runner.restart(wait=True)
     else:
         runner.run()
+
+
 
 if __name__ == '__main__':
     main()

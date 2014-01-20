@@ -34,17 +34,19 @@ cp -r /madeira/sources/opsagent /madeira/env/lib/python2.7/site-packages/
 # set ownership to root
 chown -R root:root /madeira
 # create log directory
-mkdir /var/log/madeira
+mkdir -p /var/log/madeira
 # link config file
+mv /etc/opsagent.conf /etc/opsagent.old.conf
 ln -s /madeira/env/etc/opsagent.conf /etc/opsagent.conf
 
 # create service
-if [ $UPDATERC_CMD ]; then
-    source /madeira/bootstrap/bootstrap_updaterc.sh
-elif [ $CHKCONFIG_CMD ]; then
+if [ $CHKCONFIG_CMD ]; then
     source /madeira/bootstrap/bootstrap_chkconfig.sh
+elif [ $UPDATERC_CMD ]; then
+    source /madeira/bootstrap/bootstrap_updaterc.sh
 fi
 # start service
-service opsagentd start
+chmod +x /etc/init.d/opsagentd
+#service opsagentd start
 
 # EOF

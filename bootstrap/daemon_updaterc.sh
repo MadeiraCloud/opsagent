@@ -18,7 +18,7 @@
 case "$1" in
   start)
     echo "Starting opsagent"
-    /madeira/env/bin/opsagent start
+    /madeira/env/bin/opsagent -c /etc/opsagent.conf start
     ;;
   stop)
     echo "Stopping opsagent"
@@ -34,7 +34,7 @@ case "$1" in
     ;;
   restart)
     echo "Restarting opsagent"
-    /madeira/env/bin/opsagent restart
+    /madeira/env/bin/opsagent /etc/opsagent.conf restart
     ;;
   *)
     echo "Usage: $0 {start|stop|restart|stop-wait|restart-wait}"
