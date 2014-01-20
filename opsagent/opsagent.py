@@ -36,6 +36,7 @@ def handler(signum=None, frame=None):
 
 
 # logger settings
+LOGLVL_VALUES=['DEBUG','INFO','WARNING','ERROR']
 LOG_FORMAT = '[%(levelname)s]-%(asctime)s: %(message)s'
 def __log(lvl, file=None):
     level = logging.getLevelName(lvl)
