@@ -214,6 +214,7 @@ class Manager(WebSocketClient):
             utils.log("DEBUG", "Reset succeed",('__close',self))
         utils.log("DEBUG", "Closing socket ...",('__close',self))
         self.close(code, reason)
+        self.terminated = True
         utils.log("INFO", "Socket closed, connection terminated.",('__close',self))
 
     # Send data to backend

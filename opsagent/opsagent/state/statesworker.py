@@ -368,10 +368,10 @@ class StatesWorker(threading.Thread):
             self.__cv.acquire()
             try:
                 if not self.__run:
-                    utils.log("INFO", "Waiting for recipes ...",('__runner',self))
+                    utils.log("INFO", "Waiting for recipes ...",('run',self))
                 # TODO while not run?
                 self.__cv.wait()
-                utils.log("DEBUG", "Ready to go ...",('__runner',self))
+                utils.log("DEBUG", "Ready to go ...",('run',self))
                 self.__runner()
             except Exception as e:
                 utils.log("ERROR", "Unexpected error: %s."%(e),('run',self))
