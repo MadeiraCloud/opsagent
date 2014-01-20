@@ -6,6 +6,6 @@
 
 # copy daemon file
 cp /madeira/bootstrap/daemon_updaterc.sh /etc/init.d/opsagentd
-update-rc.d celeryd defaults
-update-rc.d celeryd enable
+update-rc.d opsagentd defaults
+update-rc.d opsagentd enable
 # EOF
