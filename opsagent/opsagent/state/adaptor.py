@@ -1,7 +1,7 @@
 '''
 Madeira OpsAgent states preparator
 
-@author: Michael
+@author: Michael (michael@mc2.io)
 '''
 
 
@@ -9,40 +9,471 @@ Madeira OpsAgent states preparator
 import os
 import json
 import hashlib
+import collections
 
 # Internal imports
 from salt.state import State
 #from opsagent.exception import StatePrepareExcepton,OpsAgentException
 
 
-class StatePreparation(object):
+class Adaptor(object):
 
 	ssh_key_type = ['ecdsa', 'ssh-rsa', 'ssh-dss']
 
-	requisity_map = {
-		# only for clear enviroment
-		'package.gem.package' : {
-			'package.pkg.package' : { 'name' : ['rubygems'] }
+	salt_map = {
+		## package
+		'linux.apt.cdpackage'	: {
+			'attributes' : {
+				'name'			: 'names',
+				'fromrepo'		: 'fromrepo',
+				'debconf'		: 'debconf',
+				'verify_gpg'	: 'verify_gpg',
+			},
+			'states' : [
+				'installed', 'latest', 'removed', 'purged'
+			],
+			'type'	: 'pkg',
+		},
+		'linux.yum.package'	: {
+			'attributes' : {
+				'name'			: 'names',
+				'fromrepo'		: 'fromrepo',
+				'enablerepo'	: 'enablerepo',
+				'disablerepo'	: 'disablerepo',
+				'verify_gpg'	: 'verify_gpg',
+			},
+			'states' : [
+				'installed', 'latest', 'removed', 'purged'
+			],
+			'type'	: 'pkg',
+		},
+		'common.gem.package'	: {
+			'attributes' : {
+				'name'	: 'names',
+			},
+			'states' : [
+				'installed', 'removed'
+			],
+			'type'	: 'pkg',
+			'require'	: {
+				'linux.yum.package' : { 'name' : ['rubygems'] },
+			},
+		},
+		'common.npm.package'	: {
+			'attributes' : {
+				'name'		: 'names',
+				'path'		: '',
+				'index_url' : '',
+			},
+			'states' : [
+				'installed', 'removed', 'bootstrap'
+			],
+			'type'	: 'pkg',
+			'require'	: {
+				'linux.yum.package' : { 'name' : ['npm'] },
+			}
+		},
+		'common.pecl.package'	: {
+			'attributes' : {
+				'name' : 'names'
+			},
+			'states' : [
+				'installed', 'removed'
+			],
+			'type'	: 'pkg',
+			'require'	: {
+				'linux.yum.package' : { 'name' : ['php-pear'] }
+			}
+		},
+		'common.pip.package'	: {
+			'attributes' : {
+				'name' : 'names'
+			},
+			'states' : [
+				'installed', 'removed'
+			],
+			'type'	: 'pkg',
+			'require' : {
+				'linux.yum.package' : { 'name' : ['python-pip'] }
+			}
 		},
 
-		## only for clear enviroment(not check node version and so on, use nvm to control nodejs version)
-		'package.npm.package' : {
-			'package.pkg.package' : { 'name' : ['npm'] }
+		## repo
+		'package.apt.repo'	: {
+			'attributes' : {
+				'name' : 'path',
+				'contents' : 'content'
+			},
+			'states' : [
+				'managed'
+			],
+			'type' : 'file',
+		},
+		'package.yum.repo' : {
+			'attributes' : {
+				'name' : 'path',
+				'contents' : 'content'
+			},
+			'states' : [
+				'managed'
+			],
+			'type' : 'file'
+		},
+		'package.gem.source' : {
+			'attributes' : {
+				'url' : 'name'
+			},
+			'state' : [
+				'run'
+			],
+			'type' : 'cmd'
 		},
 
-		'package.pecl.package' : {
-			'package.pkg.package' : { 'name' : ['php-pear'] }
+		## path
+		'linux.dir' : {
+			'attributes' : {
+				'path' : 'name',
+				'user' : 'user',
+				'group' : 'group',
+				'mode' : 'mode',
+				##'recursive' : { 'recurse' : ['user', 'group', 'mode'] },
+				##'absent' : 'absent',
+			},
+			'states' : [
+				'directory', 'absent'
+			],
+			'type' : 'file'
+		},
+		'linux.file' : {
+			'attributes' : {
+				'path' : 'name',
+				'user' : 'user',
+				'group' : 'group',
+				'mode' : 'mode',
+				'content' : 'contents',
+				## 'absent' : 'absent',
+			},
+			'states' : [
+				'managed', 'absent'
+			],
+			'type' : 'file'
+		},
+		'linux.symlink' : {
+			'attributes' : {
+				'source' : 'name',
+				'target' : 'target',
+				## 'absent' : 'absent'
+			},
+			'states' : [
+				'symlink', 'absent'
+			],
+			'type' : 'symlink'
 		},
 
-		'package.pip.package' : {
-			'package.pkg.package' : { 'name' : ['python-pip'] }
+		## scm
+		'common.git' : {
+			'attributes' : {
+				'repo'		: 'name',
+				'branch'	: 'rev',
+				# 'version'	:,
+				# 'ssh_key'	: 'identify',
+				'path'		: 'target',
+				'user'		: 'user',
+				'force'		: 'force_checkout',
+			},
+			'states' : [
+				'latest', 'present',
+			],
+			'type' : 'git',
+			'require' : {
+				'linux.yum.package' : { 'name' : ['git'] }
+			},
+			'require_in' : {
+				'linux.dir' : {
+					'user' : 'user',
+					'group' : 'group',
+					'mode' : 'mode',
+				}
+			}
+		},
+		'common.svn' : {
+			'attributes' : {
+				'repo'		: 'name',
+				'branch'	: '',
+				'revision'	: 'rev',
+				'username'	: 'username',
+				'password'	: 'password',
+				'path'		: 'target',
+				'user'		: 'user',
+				'force'		: 'forge',
+			},
+			'states' : [
+				'latest', 'export'
+			],
+			'type' : 'svn',
+			'require' : {
+				'linux.yum.package' : { 'name' : ['subversion'] }
+			},
+			'require_in' : {
+				'linux.dir' : {
+					'user' : 'user',
+					'group' : 'group',
+					'mode' : 'mode'
+				}
+			},
+		},
+		'common.hg' : {
+			'attributes' : {
+				'repo'		: 'name',
+				'branch'	: '',
+				'revision'	: 'rev',
+				#'ssh_key'	: '',
+				'path'		: 'target',
+				'user'		: 'user',
+				'force'		: 'force',
+			},
+			'states' : [
+				'latest'
+			],
+			'type' : 'hg',
+			'require' : {
+				'linux.yum.package' : { 'name' : ['mercurial'] }
+			},
+			'require_in' : {
+				'linux.dir' : {
+					'user' : 'user',
+					'group' : 'group',
+					'mode' : 'mode'
+				}
+			},
 		},
 
-		'sys.selinux' : {
-			'package.pkg.package' : {
+		## service
+		'linux.supervisord' : {
+			'attributes' : {
+				'name'	:	'name',
+				'config':	'conf_file',	
+				#'watch'	:	'',		
+			},
+			'states' : ['running'],
+			'type' : 'supervisord',
+		},
+		'linux.systemd' : {
+			'attributes' : {
+				'name' : 'name',
+				# 'watch' : ''
+			},
+			'states' : ['running'],
+			'type' : 'service',
+		},
+		'linux.sysvinit' : {
+			'attributes' : {
+				'name' : 'name',
+				# 'watch' : ''
+			},
+			'states' : ['running'],
+			'type' : 'service',
+		},		
+
+		## cmd
+		'sys.cmd' : {
+			'attributes' : {
+				'bin'			: 'shell',	
+				'cmd'			: 'name',	
+				'cwd'			: 'cwd',	
+				'user'			: 'user',	
+				'group'			: 'group',	
+				'timeout'		: 'timeout',	
+				'env'			: 'env',	
+				#'with_path'		: '',
+				#'without_path'	: '',				
+			},
+			'states' : [
+				'run', 'call', 'wait', 'script'
+			],
+			'type' : 'cmd',
+		},
+
+		## cron
+		'linux.cron' : {
+			'attributes' : {
+				'minute'	:	'minute',
+				'hour'		:	'hour',
+				'day of month'	:	'daymonth',
+				'month'		:	'month',
+				'day of week'	:	'dayweek',
+				'username'		:	'user',
+				'cmd'			:	'name'
+			},
+			'states' : [
+				'present', 'absent'
+			],
+			'type' : 'cron',
+		},
+
+		## user
+		'linux.user' : {
+			'attributes' : {
+				'username'	: 'name',
+				'password'	: 'password',
+				'fullname'	: 'fullname',
+				'uid'		: 'uid',				
+				'gid'		: 'gid',
+				'shell'		: 'shell',
+				'home'		: 'home',
+				#'nologin'	: '',
+				'groups'	: 'groups',			
+			},
+			'states' : [ 'present', 'absent' ],
+			'type' : 'user'
+		},
+
+		## group
+		'linux.group' : {
+			'attributes' : {
+				'groupname' : 'name',
+				'gid' : 'gid',
+				'system group' : 'system'
+			},
+			'states' : ['present', 'absent'],
+			'type' : 'group'
+		},
+
+		## hostname
+
+		## hosts
+
+		## mount
+		'linux.mount' : {
+			'attributes' : {
+				'path'		:	'name',
+				'dev'		:	'device',
+				'filesystem':	'fstype',
+				'dump'		:	'dump',
+				'passno'	:	'pass_num',
+				'args'		:	'opts'
+			},
+			'states' : ['mounted', 'unmounted'],
+			'type' : 'mount'
+		},
+
+		## selinux
+		'linux.selinux' : {
+			'attributes' : {
+			},
+			'states' : ['boolean', 'mode'],
+			'type' : 'selinux',
+			'linux.yum.package' : {
 				'name' : ['libsemanage', 'setools-console', 'policycoreutils-python']
 			}
-		}
+		},
+
+		## timezone
+		'linux.timezone' : {
+			'attributes' : {
+				'name' : 'name',
+				'use_utc' : 'utc'
+			},
+			'states' : ['system'],
+			'type' : 'timezone'
+		},
+
+		## lvm
+		'linux.lvm.pv'	: {
+			'attributes' : {
+				'path'					: 'names',
+				# 'force'					: '',
+				# 'uuid'					: '',
+				# 'zero'					: '',
+				'data alignment'		: 'dataalignment',
+				'data alignment offset'	: 'dataalignmentoffset',
+				'metadata size'			: 'metadatasize',
+				# 'metadata type'			: '',
+				'metadata copies'		: 'metadatacopies',
+				'metadata ignore'		: 'metadataignore',
+				'restore file'			: 'restorefile',
+				'no restore file'		: 'norestorefile',
+				'label sector'			: 'labelsector',
+				'PV size'				: 'setphysicalvolumesize',
+			},
+			'states' : ['pv_present'],
+			'type' : 'lvm'
+		},
+		'linux.lvm.vg'	: {
+			'attributes' : {
+				'name'	: 'name',
+				'path' 	: 'devices',
+				'clustered'	: 'clustered',
+				'max LV number'	: 'maxlogicalvolumes',
+				'max PV number'	: 'maxphysicalvolumes',
+				# 'metadata type'	: '',
+				'metadata copies'	: 'metadatacopies',
+				'PE size'	: 'physicalextentsize',
+				# 'autobackup'	: '',
+				# 'tag'	: '',
+				# 'allocation policy'	:	'',
+			},
+			'states' : ['vg_present', 'vg_absent'],
+			'type' : 'lvm'
+		},
+		'linux.lvm.lv'	: {
+			'attributes'	: {
+				'path'				: '',
+				'name'				: '',
+				'available'			: '',
+				'chunk size'		: '',	
+				'contiguous'		: '',	
+				'discards'			: '',	
+				'stripe number'		: '',	
+				'stripe size'		: '',	
+				'LE number'			: '',	
+				'LV size'			: '',	
+				'minor number'		: '',	
+				'persistent'		: '',	
+				'mirror number'		: '',	
+				'no udev sync'		: '',	
+				'monitor'			: '',	
+				'ignore monitoring' : '', 
+				'permission' 		: '',		
+				'pool metadata size': '', 
+				'region size'		: '',	
+				'readahead'			: '',	
+				'snapshot'			: '',	
+				'thinpool'			: '',	
+				'type'				: '',	
+				'virtual size'		: '',	
+				'zero'				: '',	
+				'autobackup'		: '',	
+				'tag'				: '',	
+				'allocation policy'	: '',
+			},
+			'states' : ['lv_present', 'lv_absent'],
+			'type' : 'lvm',
+		},
+
+		## ssh
+		'common.ssh.auth' : {
+			'attributes' : {
+				'authname'	:	'name',
+				'username'	:	'user',
+				'filename'	:	'config',
+				#'content'	:	'',
+				'encrypt_algorithm' : 'enc',
+			},
+			'states' : ['present', 'absent'],
+			'type' : 'ssh_auth'
+		},
+		'common.ssh.known_host' : {
+			'attributes' : {
+				'hostname'	:	'name',
+				'username'	:	'user',
+				'filename'	:	'config',	
+				'fingerprint'		: 'fingerprint',
+				'encrypt_algorithm'	: 'enc',
+			},
+			'states' : ['present', 'absent'],
+			'type' : 'ssh_known_hosts'
+		},
 	}
 
 	def __init__(self, config):
@@ -159,21 +590,85 @@ class StatePreparation(object):
 			Transfer the module json data to salt states.
 		"""
 
-		if not module:
-			print "please input module"
+		if not isinstance(module, basestring) or not isinstance(parameter, dict):
+			print "invalid input parameter"
 			return
 
-		if module not in self.pre_mapping:
+		# if self.__check_module(module) != 0:
+		# 	print "not supported module %s" % module
+		# 	return
+
+		# get present state(default the first one)
+		if module not in self.salt_map:
 			print "not supported module %s" % module
 			return
 
-		state = self.pre_mapping[module](module, parameter, None, step)
+		state = self._transfer(module, parameter, step)
 		if not state or not isinstance(state, dict):
 			print "Transfer json to salt state failed"
 			return
 
 		self.states = state
 		return state
+
+	def _transfer(self, module, parameter, step=None):
+		# get state
+		state = self.salt_map[module]['states'][0]
+		# check state
+		if self.__check_state(module, state) != 0:
+			print "not supported state"
+			return
+
+		# generate addin
+		addin = self.__init_addin(module, parameter)
+		if not addin:
+			print "invalid parameters"
+			return
+
+		salt_state = {}
+
+		# add require
+		require = []
+		if 'require' in self.salt_map[module]:
+			req_state = self.__get_require(self.salt_map[module]['require'])
+			if req_state:
+				for req_tag, req_value in req_state.items():
+					salt_state[req_tag] = req_value
+
+					require.append({ next(iter(req_value)) : req_tag })
+
+		# add require in
+		require_in = []
+		if 'require_in' in self.salt_map[module]:
+			req_in_state = self.__get_require_in(self.salt_map[module]['require_in'], parameter)
+			if req_in_state:
+				for req_in_tag, req_in_value in req_in_state.items():
+					salt_state[req_in_tag] = req_in_value
+
+					require_in.append({ next(iter(req_in_value)) : req_in_tag })
+
+		# build up
+		module_state = [
+			state,
+			addin
+		]
+
+		if require:
+			module_state.append({ 'require' : require })
+		if require_in:
+			module_state.append({ 'require_in' : require_in })
+
+		# tag
+		name = addin['names'] if 'names' in addin else addin['name']
+		tag = self.__get_tag(module, None, step, name, state)
+
+		type = self.salt_map[module]['type']
+
+		salt_state[tag] = {
+			type : module_state
+		}
+
+		return salt_state
 
 	def exec_salt(self, state):
 		"""
@@ -206,6 +701,190 @@ class StatePreparation(object):
 
 		return (result, err_log, out_log)
 
+	def __init_addin(self, module, parameter):
+
+		addin = {}
+
+		for attr, value in parameter.items():
+			if value is None:	continue
+
+			if attr in self.salt_map[module]['attributes'].keys():
+				key = self.salt_map[module]['attributes'][attr]
+				## render to do
+				## if isinstance(key, dict):
+
+				if isinstance(value, dict):
+					addin[key] = [ {k:v} for k,v in value.items() ]
+				else:
+					addin[key] = value
+
+		return addin
+
+	def __get_tag(self, module, uid=None, step=None, name=None, state=None):
+		"""
+			generate state identify tag.
+		"""
+
+		if not isinstance(module, basestring):
+			module = str(module)
+
+		tag = module.replace('.', '_')
+
+		if step:
+			if not isinstance(step, basestring):
+				step = str(step)
+			tag = step + '_' + tag
+
+		# if uid:
+		# 	if not isinstance(step, basestring):
+		# 		uid = str(uid)
+		# 	tag = uid + '_' + tag
+
+		if name:
+			if not isinstance(name, basestring):
+				name = str(name)
+			tag += '_' + name
+
+		if state:
+			if not isinstance(state, basestring):
+				state = str(state)
+			tag += '_' + state
+
+		tag = '_' + tag
+
+		#return hashlib.md5(tag).hexdigest()
+		return tag
+
+	def __get_require(self, require):
+		"""
+			Generate require state.
+		"""
+
+		requre_state = {}
+
+		for module, parameter in require.items():
+			if module not in self.salt_map.keys():	continue
+
+			addin = self.__init_addin(module, parameter)
+
+			state 	= self.salt_map[module]['states'][0]
+			tag 	= self.__get_tag(module, None, None, 'require', state)
+			type 	= self.salt_map[module]['type']
+
+			requre_state[tag] = {
+				type : [
+					state,
+					addin
+				]
+			}
+
+		return requre_state
+
+	def __get_require_in(self, require_in, parameter):
+		"""
+			Generate require in state.
+		"""
+
+		require_in_state = {}
+
+		for module, attrs in require_in.items():
+			req_p = {}
+			for k, v in attrs.items():
+				if not v or v not in parameter:	continue
+
+				req_p[k] = parameter[v]
+
+			addin = self.__init_addin(module, req_p)
+			state = self.salt_map[module]['states'][0]
+			type = self.salt_map[module]['type']
+
+			tag = self.__get_tag(module, None, None, 'require_in', state)
+
+			require_in_state[tag] = {
+				type : [
+					state,
+					addin
+				]
+			}
+
+		return require_in_state
+
+	def __check_module(self, module):
+		"""
+			Check format of module.
+		"""
+
+		module_map = {
+			'package'		: ['pkg', 'apt', 'yum', 'gem', 'npm', 'pecl', 'pip'],
+			'repo'			: ['apt', 'yum', 'zypper'],
+			'source'		: ['gem'],
+			'path'			: ['file', 'dir', 'symlink'],
+			'scm' 			: ['git', 'svn', 'hg'],
+			'service'		: ['supervisord', 'sysvinit', 'upstart'],
+			'sys'			: ['cmd', 'cron', 'group', 'host', 'mount', 'ntp', 'selinux', 'user', 'timezone'],
+			'system'		: ['ssh_auth', 'ssh_known_host']
+		}
+
+		m_list = module.split('.')
+
+		if len(m_list) <= 1:
+			print "invalib module format"
+			return 1
+
+		p_module = m_list[0]
+		s_module = m_list[1]
+
+		if m_list[0] == 'package':
+			p_module = m_list[2]
+
+		elif m_list[0] == 'system':
+			s_module = module.split('.', 1)[1].replace('.', '_')
+
+		if p_module not in module_map.keys() or s_module not in module_map[p_module]:
+			print "not supported module: %s, %s" % (p_module, s_module)
+			return 2
+
+		return 0
+
+	def __check_state(self, module, state):
+		"""
+			Check supported state.
+		"""
+
+		if state not in self.salt_map[module]['states']:
+			print "not supported state %s in module %s" % (state, module)
+			return 1
+
+		return 0
+
+	def __mkdir(self, path):
+		"""
+			Check and make directory.
+		"""
+		if not os.path.isdir(path):
+			try:
+				os.makedirs(path)
+			except OSError, e:
+				print "Create directory %s failed" % path
+				return False
+
+		return True
+
+	def __convert(self, data):
+		"""
+			Convert data from unicode to string.
+		"""
+
+		if isinstance(data, basestring):
+			return str(data)
+		elif isinstance(data, collections.Mapping):
+			return dict(map(self.__convert, data.iteritems()))
+		elif isinstance(data, collections.Iterable):
+			return type(data)(map(self.__convert, data))
+		else:
+			return data
+
+	##################################################################################
 	## package
 	def _package(self, module, parameter, uid=None, step=None):
 		"""
@@ -227,16 +906,16 @@ class StatePreparation(object):
 		state_mapping = {}
 		addin = {}
 
-		# add requisity
-		requisity = []
+		# add require
+		require = []
 		if m_list[1] in ['gem', 'npm', 'pecl', 'pip']:
-			req_state = self.__get_requisity(module)
+			req_state = self.__get_require(module)
 			if req_state:
 				for req in req_state:
 					for req_tag, req_value in req.items():
 						pkg_state[req_tag] = req_value
 
-						requisity.append({ next(iter(req_value)) : req_tag })
+						require.append({ next(iter(req_value)) : req_tag })
 
 		if m_list[1] in ['apt', 'yum']:
 			m_list[1] = 'pkg'
@@ -264,7 +943,7 @@ class StatePreparation(object):
 						else:
 							state_mapping[state].append(name)
 
-				# support for requisity
+				# support for require
 				elif isinstance(value, list):
 					state_mapping['installed'] = value
 
@@ -285,8 +964,8 @@ class StatePreparation(object):
 				state
 			]
 
-			if requisity:
-				pkg.append({ 'require' : requisity })
+			if require:
+				pkg.append({ 'require' : require })
 
 			tag = self.__get_tag(module, uid, step, 'pkgs', state)
 
@@ -353,8 +1032,8 @@ class StatePreparation(object):
 
 			requisities = []
 
-			# # add package requisity
-			req_state = self.__get_requisity('package.gem.package')
+			# # add package require
+			req_state = self.__get_require('package.gem.package')
 			if req_state:
 				for req in req_state:
 					for req_tag, req_value in req.items():
@@ -380,7 +1059,7 @@ class StatePreparation(object):
 				}
 			]
 
-			# add requisity
+			# add require
 			if requisities:
 				cmd.append({ 'require' : requisities })
 
@@ -1056,15 +1735,15 @@ class StatePreparation(object):
 		addin = {}
 		selinux_state = {}
 
-		# add requisity
-		requisity = []
-		req_state = self.__get_requisity(module)
+		# add require
+		require = []
+		req_state = self.__get_require(module)
 		if req_state:
 			for req in req_state:
 				for req_tag, req_value in req.items():
 					selinux_state[req_tag] = req_value
 
-					requisity.append({ next(iter(req_value)) : req_tag })
+					require.append({ next(iter(req_value)) : req_tag })
 
 		for attr, value in parameter.items():
 			if value is None:	continue
@@ -1089,9 +1768,9 @@ class StatePreparation(object):
 			state,
 			addin
 		]
-		if requisity:
+		if require:
 			selinux.append(
-				{ 'require' : requisity }
+				{ 'require' : require }
 			)
 		selinux_state[tag] = {
 			type : selinux
@@ -1279,111 +1958,6 @@ class StatePreparation(object):
 			}
 		}
 
-	def __get_tag(self, module, uid=None, step=None, name=None, state=None):
-		"""
-			generate state identify tag.
-		"""
-
-		if not isinstance(module, basestring):
-			module = str(module)
-
-		tag = module.replace('.', '_')
-
-		if step:
-			if not isinstance(step, basestring):
-				step = str(step)
-			tag = step + '_' + tag
-
-		if uid:
-			if not isinstance(step, basestring):
-				uid = str(uid)
-			tag = uid + '_' + tag
-
-		if name:
-			if not isinstance(name, basestring):
-				name = str(name)
-			tag += '_' + name
-
-		if state:
-			if not isinstance(state, basestring):
-				state = str(state)
-			tag += '_' + state
-
-		tag = '_' + tag
-
-		#return hashlib.md5(tag).hexdigest()
-		return tag
-
-	def __get_requisity(self, module):
-		"""
-			Generate requisity state.
-		"""
-
-		req_state = []
-
-		if module in self.requisity_map and module in self.pre_mapping:
-			requisity = self.requisity_map[module]
-
-			for req_module, req_parameter in requisity.items():
-				if req_module not in self.pre_mapping: continue
-
-				state = self.pre_mapping[req_module](req_module, req_parameter)
-
-				if state:
-					req_state.append(state)
-
-		return req_state
-
-	def __check_module(self, module):
-		"""
-			Check format of module.
-		"""
-
-		module_map = {
-			'package'		: ['pkg', 'apt', 'yum', 'gem', 'npm', 'pecl', 'pip'],
-			'repo'			: ['apt', 'yum', 'zypper'],
-			'source'		: ['gem'],
-			'path'			: ['file', 'dir', 'symlink'],
-			'scm' 			: ['git', 'svn', 'hg'],
-			'service'		: ['supervisord', 'sysvinit', 'upstart'],
-			'sys'			: ['cmd', 'cron', 'group', 'host', 'mount', 'ntp', 'selinux', 'user', 'timezone'],
-			'system'		: ['ssh_auth', 'ssh_known_host']
-		}
-
-		m_list = module.split('.')
-
-		if len(m_list) <= 1:
-			print "invalib module format"
-			return 1
-
-		p_module = m_list[0]
-		s_module = m_list[1]
-
-		if m_list[0] == 'package':
-			p_module = m_list[2]
-
-		elif m_list[0] == 'system':
-			s_module = module.split('.', 1)[1].replace('.', '_')
-
-		if p_module not in module_map.keys() or s_module not in module_map[p_module]:
-			print "not supported module: %s, %s" % (p_module, s_module)
-			return 2
-
-		return 0
-
-	def __mkdir(self, path):
-		"""
-			Check and make directory.
-		"""
-		if not os.path.isdir(path):
-			try:
-				os.makedirs(path)
-			except OSError, e:
-				print "Create directory %s failed" % path
-				return False
-
-		return True
-
 # codes for test
 def main():
 
@@ -1410,10 +1984,10 @@ def main():
 		'cachedir' : '/code/OpsAgent/cache'
 	}
 
-	sp = StatePreparation(config)
+	sp = Adaptor(config)
 
-	print json.dumps(sp._salt_opts, sort_keys=True,
-		indent=4, separators=(',', ': '))
+	# print json.dumps(sp._salt_opts, sort_keys=True,
+	# 	indent=4, separators=(',', ': '))
 
 	for uid, com in pre_states['component'].items():
 		states = {}
@@ -1422,21 +1996,19 @@ def main():
 
 			step = p_state['stateid']
 
-			if p_state['module'] in sp.pre_mapping:
+			state = sp.transfer(step, p_state['module'], p_state['parameter'])
 
-				state = sp.transfer(step, p_state['module'], p_state['parameter'])
+			print json.dumps(state)
 
-				print json.dumps(state)
+			# if not state or not isinstance(state, dict):
+			# 	err_log = "transfer salt state failed"
+			# 	print err_log
+			# 	result = (False, err_log, out_log)
 
-				if not state or not isinstance(state, dict):
-					err_log = "transfer salt state failed"
-					print err_log
-					result = (False, err_log, out_log)
+			# else:
+			# 	result = sp.exec_salt(state)
 
-				else:
-					result = sp.exec_salt(state)
-
-				print result
+			# print result
 
 	# out_states = [salt_opts] + states
 	# with open('states.json', 'w') as f:
