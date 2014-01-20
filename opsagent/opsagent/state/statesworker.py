@@ -105,6 +105,10 @@ class StatesWorker(threading.Thread):
     # Reset states status
     def reset(self):
         self.__status = 0
+        self.__done[:] = []
+        self.__run = False
+        self.__waiting = False
+        self.__wait_event.clear()
 
     # End program
     def abort(self):
@@ -287,11 +291,6 @@ class StatesWorker(threading.Thread):
     # Render recipes
     def __runner(self):
         utils.log("INFO", "Running StatesWorker ...",('__runner',self))
-        utils.log("DEBUG", "Waiting for recipes ...",('__runner',self))
-        self.__cv.acquire()
-        while not self.__run:
-            self.__cv.wait()
-        utils.log("DEBUG", "Ready to go ...",('__runner',self))
         while self.__run:
             if not self.__states:
                 utils.log("WARNING", "Empty states list.",('__runner',self))
@@ -344,15 +343,22 @@ class StatesWorker(threading.Thread):
             if self.__abort:
                 utils.log("WARNING", "Exiting...",('__runner',self))
                 self.__run = False
-        self.__cv.release()
 
     # Callback on start
     def run(self):
         while not self.__abort:
+            self.__cv.acquire()
             try:
+                if not self.__run:
+                    utils.log("INFO", "Waiting for recipes ...",('__runner',self))
+                while not self.__run:
+                    self.__cv.wait()
+                utils.log("DEBUG", "Ready to go ...",('__runner',self))
                 self.__runner()
             except Exception as e:
                 utils.log("ERROR", "Unexpected error: %s."%(e),('run',self))
+            self.__cv.release()
+            self.reset()
         if self.__manager:
             self.__manager.stop()
     ##

@@ -22,19 +22,19 @@ case "$1" in
     ;;
   stop)
     echo "Stopping opsagent"
-    /madeira/env/bin/opsagent -c /etc/opsagent.conf stop
+    /madeira/env/bin/opsagent stop
     ;;
   stop-wait)
     echo "Stopping opsagent"
-    /madeira/env/bin/opsagent -c /etc/opsagent.conf stop-wait
+    /madeira/env/bin/opsagent stop-wait
     ;;
   restart-wait)
     echo "Restarting opsagent"
-    /madeira/env/bin/opsagent -c /etc/opsagent.conf restart-wait
+    /madeira/env/bin/opsagent restart-wait
     ;;
   restart)
     echo "Restarting opsagent"
-    /madeira/env/bin/opsagent -c /etc/opsagent.conf restart
+    /madeira/env/bin/opsagent /etc/opsagent.conf restart
     ;;
   *)
     echo "Usage: $0 {start|stop|restart|stop-wait|restart-wait}"
