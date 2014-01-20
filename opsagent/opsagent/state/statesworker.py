@@ -247,9 +247,6 @@ class StatesWorker(threading.Thread):
         utils.log("INFO", "Loading state ID '%s' from module '%s' ..."%(id,module),('__exec_salt',self))
         first = True
 
-        import pdb
-        pdb.set_trace()
-
         # Watch process
         if parameter and type(parameter) is dict and parameter.get("watch"):
             utils.log("DEBUG", "Watched state detected."%(watch),('__exec_salt',self))
