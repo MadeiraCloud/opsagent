@@ -47,13 +47,13 @@ def __log(lvl, file=None):
 class OpsAgentRunner(Daemon):
     def run_manager(self):
         utils.log("DEBUG", "Creating Network Manager ...",('run_manager','OpsAgentRunner'))
-        manager = Manager(url=self.config['network']['ws_uri'], config=self.config, statesworker=self.sw)
+        manager = Manager(url=self.config['network']['ws_uri'], config=self.config, statesworker=self.__sw)
         utils.log("DEBUG", "Network Manager created.",('run_manager','OpsAgentRunner'))
         try:
             utils.log("DEBUG", "Connecting manager to backend.",('run_manager','OpsAgentRunner'))
             manager.connect()
             utils.log("DEBUG", "Connection done, registering to StateWorker.",('run_manager','OpsAgentRunner'))
-            sw.set_manager(manager)
+            self.__sw.set_manager(manager)
             utils.log("DEBUG", "Registration done, running forever ...",('run_manager','OpsAgentRunner'))
             manager.run_forever()
             utils.log("DEBUG", "Network connection lost/aborted.",('run_manager','OpsAgentRunner'))

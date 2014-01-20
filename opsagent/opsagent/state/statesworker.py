@@ -111,9 +111,23 @@ class StatesWorker(threading.Thread):
         self.__wait_event.clear()
 
     # End program
-    def abort(self):
+    def abort(self, kill=False):
+        if self.__abort:
+            utils.log("DEBUG", "Already aborting ...",('abort',self))
+            return
         self.__abort = True
         self.__run = False
+        if kill:
+            self.kill()
+
+        utils.log("DEBUG", "Aquire conditional lock ...",('abort',self))
+        self.__cv.acquire()
+        utils.log("DEBUG", "Conditional lock acquired.",('abort',self))
+        utils.log("DEBUG", "Notify execution thread.",('abort',self))
+        self.__cv.notify()
+        utils.log("DEBUG", "Release conditional lock.",('abort',self))
+        self.__cv.release()
+
 
     # Program status
     def aborted(self):
@@ -178,8 +192,8 @@ class StatesWorker(threading.Thread):
             self.__states = states
         else:
             utils.log("INFO", "No change in states.",('load',self))
-        utils.log("DEBUG", "Reseting status.",('load',self))
-        self.reset()
+#        utils.log("DEBUG", "Reseting status.",('load',self))
+#        self.reset()
         utils.log("DEBUG", "Allow to run.",('load',self))
         self.__run = True
         utils.log("DEBUG", "Notify execution thread.",('load',self))
@@ -348,8 +362,8 @@ class StatesWorker(threading.Thread):
             try:
                 if not self.__run:
                     utils.log("INFO", "Waiting for recipes ...",('__runner',self))
-                while not self.__run:
-                    self.__cv.wait()
+                # TODO while not run?
+                self.__cv.wait()
                 utils.log("DEBUG", "Ready to go ...",('__runner',self))
                 self.__runner()
             except Exception as e:
@@ -358,6 +372,9 @@ class StatesWorker(threading.Thread):
             self.__cv.release()
         utils.log("WARNING", "Exiting...",('run',self))
         if self.__manager:
+            utils.log("INFO", "Stopping manager...",('run',self))
             self.__manager.stop()
+            utils.log("INFO", "Manager stopped.",('run',self))
+        utils.log("WARNING", "Terminated.",('run',self))
     ##
 ##
