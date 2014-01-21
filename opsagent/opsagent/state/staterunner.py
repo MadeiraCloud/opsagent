@@ -9,6 +9,9 @@ import json
 
 from salt.state import State
 
+from opsagent import utils
+from opsagent.exception import StatePrepareExcepton,OpsAgentException
+
 class StateRunner(object):
 
 	def __init__(self, config):
@@ -47,17 +50,17 @@ class StateRunner(object):
 			self._salt_opts['file_roots']['base'].append(path)
 
 		if len(self._salt_opts['file_roots']['base']) == 0:
-			print "ERROR: Missing file roots argument"
+			utils.log("ERROR", "Missing file roots argument", ("_init_opts", self))
 			## todo
 
 		if not self.__mkdir(config['extension_modules']):
-			print "ERROR: Missing extension modules argument"
+			utils.log("ERROR", "Missing extension modules argument", ("_init_opts", self))
 			## todo
 
 		self._salt_opts['extension_modules'] = config['extension_modules']
 
 		if not self.__mkdir(config['cachedir']):
-			print "ERROR: Missing cachedir argument"
+			utils.log("ERROR", "Missing cachedir argument", ("_init_opts", self))
 			## todo
 		self._salt_opts['cachedir'] = config['cachedir']
 
@@ -113,7 +116,7 @@ class StateRunner(object):
 			try:
 				os.makedirs(path)
 			except OSError, e:
-				print "Create directory %s failed" % path
+				utils.log("ERROR", "Create directory %s failed" % path, ("__mkdir", self))
 				return False
 
 		return True

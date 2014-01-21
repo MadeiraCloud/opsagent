@@ -12,8 +12,8 @@ import hashlib
 import collections
 
 # Internal imports
-#from opsagent.exception import StatePrepareExcepton,OpsAgentException
-
+from opsagent import utils
+from opsagent.exception import StatePrepareExcepton,OpsAgentException
 
 class StateAdaptor(object):
 
@@ -21,7 +21,7 @@ class StateAdaptor(object):
 
 	salt_map = {
 		## package
-		'linux.apt.cdpackage'	: {
+		'linux.apt.package'	: {
 			'attributes' : {
 				'name'			: 'names',
 				'fromrepo'		: 'fromrepo',
@@ -523,51 +523,52 @@ class StateAdaptor(object):
 			Transfer the module json data to salt states.
 		"""
 
+		utils.log("DEBUG", "Begin to transfer module json data ...", ("transfer", self))
+
 		if not isinstance(module, basestring) or not isinstance(parameter, dict):
-			print "invalid input parameter"
+			utils.log("ERROR", "Invalid input parameter: %s, %s" % (module, parameter), ("transfer", self))
 			return
 
-		# if self.__check_module(module) != 0:
-		# 	print "not supported module %s" % module
-		# 	return
-
-		# convert from unicode to string
-		parameter = self.__convert(parameter)
-
-		# get present state(default the first one)
+		# check module
 		if module not in self.salt_map:
-			print "not supported module %s" % module
+			utils.log("WARNING", "Not supported module %s" % module, ("transfer", self))
 			return
 
-		if module in ['linux.apt.package', 'linux.yum.package', 'common.gem.package', 'common.npm.package', 'common.pecl.package', 'common.pip.package']:
-			state = self._package(step, module, parameter)
-		else:
-			state = self._transfer(module, parameter, step)
-		if not state or not isinstance(state, dict):
-			print "Transfer json to salt state failed"
-			return
-
-		self.states = state
-		return state
-
-	def _transfer(self, module, parameter, step=None):
-
-		salt_state = {}
-
-		# get state
+		## state(update later)
 		state = self.salt_map[module]['states'][0]
 		# check state
 		if self.__check_state(module, state) != 0:
-			print "not supported state"
-			return salt_state
+			utils.log("WARNING", "Not supported state %s" % state, ("transfer", self))
+			return
+
+		# convert from unicode to string
+		utils.log("DEBUG", "Begin to convert unicode parameter to string ...", ("transfer", self))
+		parameter = self.__convert(parameter)
+
+		# transfer
+		if module in ['linux.apt.package', 'linux.yum.package', 'common.gem.package', 'common.npm.package', 'common.pecl.package', 'common.pip.package']:
+			salt_state = self._package(step, module, parameter)
+		else:
+			salt_state = self._transfer(step, module, parameter, state)
+		if not salt_state or not isinstance(salt_state, dict):
+			utils.log("ERROR", "Transfer json to salt state failed", ("transfer", self))
+			return
+
+		self.states = salt_state
+		return salt_state
+
+	def _transfer(self, step, module, parameter, state):
+
+		salt_state = {}
 
 		# generate addin
 		addin = self.__init_addin(module, parameter)
 		if not addin:
-			print "invalid parameters"
+			utils.log("ERROR", "Transfer module parameters failed: %s, %s" % (module, parameter), ("_transfer", self))
 			return salt_state
 
 		# add require
+		utils.log("DEBUG", "Begin to generate requirity ...", ("_transfer", self))
 		require = []
 		if 'require' in self.salt_map[module]:
 			req_state = self.__get_require(self.salt_map[module]['require'])
@@ -578,6 +579,7 @@ class StateAdaptor(object):
 					require.append({ next(iter(req_value)) : req_tag })
 
 		# add require in
+		utils.log("DEBUG", "Begin to generate require-in ...", ("_transfer", self))
 		require_in = []
 		if 'require_in' in self.salt_map[module]:
 			req_in_state = self.__get_require_in(self.salt_map[module]['require_in'], parameter)
@@ -601,6 +603,7 @@ class StateAdaptor(object):
 		# tag
 		#name = addin['names'] if 'names' in addin else addin['name']
 		tag = self.__get_tag(module, None, step, None, state)
+		utils.log("DEBUG", "Generated tag is %s" % tag, ("_transfer", self))
 
 		type = self.salt_map[module]['type']
 
