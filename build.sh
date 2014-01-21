@@ -11,6 +11,7 @@
 USAGE="$0 tree | (userdata APT|YUM {app_id} {token} {instance_id})"
 
 VIRTUALENV_VERSION=1.9
+BOOTSTRAP_DIR=bootstrap
 BUILD_DIR=build
 TREE_DIR=$BUILD_DIR/tree
 USER_DIR=$BUILD_DIR/userdata
@@ -65,6 +66,10 @@ function tree() {
     # Copy config files
     cp ../../conf/* madeira/env/etc/ #TODO change * to opsagent.conf
     tar cfvz ../agent.tgz madeira
+    cd ..
+    CRC="$(cksum agent.tgz)"
+    cd ..
+    sed -e "s/%CRC%/${CRC}/g" < ${BOOTSTRAP_DIR}/bootstrap.tpl.sh > ${BOOTSTRAP_DIR}/bootstrap.sh
 }
 
 function userdata() {

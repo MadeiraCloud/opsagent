@@ -12,7 +12,7 @@ UPDATERC_CMD=$(which update-rc.d)
 CHKCONFIG_CMD=$(which chkconfig)
 
 # reference checksum
-REF_CRC="2460108212 3531675 agent.tgz"
+REF_CRC="%CRC%"
 
 # locate in root home directory
 cd /root
