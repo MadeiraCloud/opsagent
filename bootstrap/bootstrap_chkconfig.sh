@@ -5,7 +5,7 @@
 ##
 
 # copy daemon file
-cp /madeira/bootstrap/daemon_chkconfig.sh /etc/init.d/opsagentd
+cp /madeira/bootstrap/daemon.sh /etc/init.d/opsagentd
 chkconfig --add opsagentd
 chkconfig --level 345 opsagentd on
 # EOF
