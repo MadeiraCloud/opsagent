@@ -65,14 +65,22 @@ def app_id(config):
         return app_id(config)
     return app_id
 
-# TODO: token
+# Get token from disk
 def token(config):
-    return ('token')
+    file = config['global'].get('token')
+    utils.log("DEBUG", "Getting token located in %s."%(file),('token','aws'))
+    token = ''
+    try:
+        with open(file, 'r') as f:
+            token = f.read()
+    except Exception as e:
+        utils.log("ERROR", "Can't get retreive token file (%s): %s."%(file,e),('token','aws'))
+    return token
 
-# TODO: delete
-def app_id_t(config):
-    return ('ethylic')
-def isntance_id_t(config):
-    return ('slurry')
-def token_t(config):
-    return ('token')
+## TODO: remove
+#def app_id_t(config):
+#    return ('ethylic')
+#def isntance_id_t(config):
+#    return ('slurry')
+#def token_t(config):
+#    return ('token')

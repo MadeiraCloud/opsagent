@@ -28,8 +28,9 @@ class Config():
         'global': {
             'loglvl': 'WARNING',
             'proc': '/proc',
-            'watch': '/tmp/madeira/opsagent/watch',
+            'watch': '/tmp/opsagent/opsagent/watch',
             'pidfile': '/tmp/opsagentd.pid'
+            'token': '/etc/opsagent.d/token'
             },
         'runtime': {
             'proc': False,
@@ -40,9 +41,9 @@ class Config():
             'user_data': "http://169.254.169.254/latest/user-data",
             },
         'salt': {
-            'file_roots': '/madeira/env/srv/salt',
-            'extension_modules': '/madeira/env/var/cache/salt/minion/extmods',
-            'cachedir': '/madeira/env/var/cache/madeira',
+            'file_roots': '/opsagent/env/srv/salt',
+            'extension_modules': '/opsagent/env/var/cache/salt/minion/extmods',
+            'cachedir': '/opsagent/env/var/cache/madeira',
             'delay': 1,
             'timeout': 30,
             }

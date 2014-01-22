@@ -4,6 +4,17 @@
 ## (c) 2014 MadeiraCloud LTD.
 ##
 
+# define variables
+OA_HOME="/root"
+OA_USER="root"
+OA_ROOT="/opsagent"
+
+if [ -d "$OA_ROOT" ]; then
+    # TODO remove
+    echo "$OA_ROOT exists"
+    exit 0
+fi
+
 # define vendor
 YUM_CMD=$(which yum)
 APT_CMD=$(which apt-get)
@@ -11,15 +22,15 @@ APT_CMD=$(which apt-get)
 UPDATERC_CMD=$(which update-rc.d)
 CHKCONFIG_CMD=$(which chkconfig)
 
-# reference checksum
-REF_CRC="4240808134 3531685 agent.tgz"
 
-# locate in root home directory
-cd /root
+# locate in home directory
+cd $OA_HOME
 # get agent
 CRC=""
 while true; do
+    curl -sSLO https://s3.amazonaws.com/visualops/agent.cksum
     curl -sSLO https://s3.amazonaws.com/visualops/agent.tgz
+    REF_CRC="$(cat agent.cksum)"
     CRC="$(cksum agent.tgz)"
     if [ "$CRC" = "$REF_CRC" ]; then
         break
@@ -29,34 +40,34 @@ while true; do
     fi
 done
 cd /
-tar xfz /root/agent.tgz
+tar xfz $OA_HOME/agent.tgz
 # setup dependencies
 if [ $APT_CMD ]; then
-    source /madeira/bootstrap/bootstrap_apt.sh
+    source $OA_ROOT/bootstrap/bootstrap_apt.sh
 elif [ $YUM_CMD ]; then
-    source /madeira/bootstrap/bootstrap_yum.sh
+    source $OA_ROOT/bootstrap/bootstrap_yum.sh
 fi
 # create virtualenv
-python2.7 /madeira/bootstrap/virtualenv/virtualenv.py /madeira/env
+python2.7 $OA_ROOT/bootstrap/virtualenv/virtualenv.py $OA_ROOT/env
 # copy websocket libs
-cp -r /madeira/sources/ws4py /madeira/env/lib/python2.7/site-packages/
+cp -r $OA_ROOT/sources/ws4py $OA_ROOT/env/lib/python2.7/site-packages/
 # copy salt libs
-cp -r /madeira/sources/{msgpack,yaml,jinja2,markupsafe,salt} /madeira/env/lib/python2.7/site-packages/
+cp -r $OA_ROOT/sources/{msgpack,yaml,jinja2,markupsafe,salt} $OA_ROOT/env/lib/python2.7/site-packages/
 # copy opsagent sources
-cp -r /madeira/sources/opsagent /madeira/env/lib/python2.7/site-packages/
+cp -r $OA_ROOT/sources/opsagent $OA_ROOT/env/lib/python2.7/site-packages/
 # set ownership to root
-chown -R root:root /madeira
-# create log directory
-mkdir -p /var/log/madeira
+chown -R $OA_USER:root $OA_ROOT
 # link config file
-mv /etc/opsagent.conf /etc/opsagent.old.conf
-ln -s /madeira/env/etc/opsagent.conf /etc/opsagent.conf
+if [ -f "/etc/opsagent.conf" ]; then
+    mv /etc/opsagent.conf /etc/opsagent.old.conf
+fi
+ln -s $OA_ROOT/env/etc/opsagent.conf /etc/opsagent.conf
 
 # create service
 if [ $CHKCONFIG_CMD ]; then
-    source /madeira/bootstrap/bootstrap_chkconfig.sh
+    source $OA_ROOT/bootstrap/bootstrap_chkconfig.sh
 elif [ $UPDATERC_CMD ]; then
-    source /madeira/bootstrap/bootstrap_updaterc.sh
+    source $OA_ROOT/bootstrap/bootstrap_updaterc.sh
 fi
 
 
@@ -69,7 +80,10 @@ fi
 
 
 # start service
-chmod +x /etc/init.d/opsagentd
+chown root:root /etc/init.d/opsagentd
+chmod 554 /etc/init.d/opsagentd
 service opsagentd start
+
+exit 0
 
 # EOF
