@@ -10,7 +10,7 @@
 # Required-Stop:
 # Should-Stop:
 # Default-Start:  3 4 5
-# Default-Stop:   0 1 2 6
+# Default-Stop:   0 6
 # Short-Description: Opsagent Daemon
 # Description: Runs opsagent
 ### END INIT INFO

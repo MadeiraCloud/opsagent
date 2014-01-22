@@ -9,6 +9,10 @@ OA_HOME="/root"
 OA_USER="root"
 OA_ROOT="/opsagent"
 
+# defin path
+PATH=$PATH:/sbin:/usr/bin:/usr/sbin
+
+# if exists
 if [ -d "$OA_ROOT" ]; then
     # TODO remove
     echo "$OA_ROOT exists"
