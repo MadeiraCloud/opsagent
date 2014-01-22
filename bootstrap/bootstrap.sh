@@ -68,6 +68,7 @@ fi
 ln -s $OA_ROOT/env/etc/opsagent.conf /etc/opsagent.conf
 
 # create service
+cp $OA_ROOT/bootstrap/daemon.sh /etc/init.d/opsagentd
 if [ $CHKCONFIG_CMD ]; then
     source $OA_ROOT/bootstrap/bootstrap_chkconfig.sh
 elif [ $UPDATERC_CMD ]; then

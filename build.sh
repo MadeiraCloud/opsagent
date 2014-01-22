@@ -33,7 +33,7 @@ function tree() {
     # Copy services install scripts
     cp ../../bootstrap/bootstrap_{chkconfig,updaterc}.sh $OA_ROOT/bootstrap/
     # Copy services launchers
-    cp ../../bootstrap/daemon_{chkconfig,updaterc}.sh $OA_ROOT/bootstrap/
+    cp ../../bootstrap/daemon.sh $OA_ROOT/bootstrap/
     # Copy virtualenv
     cp -r ../../libs/virtualenv $OA_ROOT/bootstrap/
     # Copy ws4py sources
