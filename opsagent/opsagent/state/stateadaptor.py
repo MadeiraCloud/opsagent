@@ -98,27 +98,27 @@ class StateAdaptor(object):
 		},
 
 		## repo
-		'package.apt.repo'	: {
+		'linux.apt.repo'	: {
 			'attributes' : {
-				'name' : 'path',
-				'contents' : 'content'
+				'name' 		: 'name',
+				'contents' 	: 'content'
 			},
 			'states' : [
 				'managed'
 			],
 			'type' : 'file',
 		},
-		'package.yum.repo' : {
+		'linux.yum.repo' : {
 			'attributes' : {
-				'name' : 'path',
-				'contents' : 'content'
+				'name' 		: 'name',
+				'contents' 	: 'content'
 			},
 			'states' : [
 				'managed'
 			],
 			'type' : 'file'
 		},
-		'package.gem.source' : {
+		'common.gem.source' : {
 			'attributes' : {
 				'url' : 'name'
 			},
@@ -480,42 +480,6 @@ class StateAdaptor(object):
 
 	def __init__(self):
 
-		self.pre_mapping = {
-			'package.pkg.package'	:	self._package,
-			'package.apt.package'	:	self._package,
-			'package.yum.package'	:	self._package,
-			'package.gem.package'	:	self._package,
-			'package.npm.package'	:	self._package,
-			'package.pecl.package'	:	self._package,
-			'package.pip.package'	:	self._package,
-			'package.zypper.package':	self._repo,
-			'package.yum.repo'		:	self._repo,
-			'package.apt.repo'		:	self._repo,
-			'package.gem.source'	:	self._repo,
-			'path.file'				:	self._file,
-			'path.dir'				:	self._file,
-			'path.symlink'			:	self._file,
-			'scm.git'				:	self._scm,
-			'scm.svn'				:	self._scm,
-			'scm.hg'				:	self._scm,
-			'service.supervisord'	:	self._service,
-			'service.sysvinit'		:	self._service,
-			'service.upstart'		:	self._service,
-			'sys.cmd'				:	self._sys_cmd,
-			'sys.script'			:	self._sys_script,
-			'sys.cron'				:	self._sys_cron,
-			'sys.user'				:	self._sys_user,
-			'sys.group'				:	self._sys_group,
-			'sys.hostname'			:	self._sys_hostname,
-			'sys.hosts'				:	self._sys_hosts,
-			'sys.mount'				:	self._sys_mount,
-			'sys.ntp'				:	self._sys_ntp,
-			'sys.selinux'			:	self._sys_selinux,
-			'sys.timezone'			:	self._sys_timezone,
-			'system.ssh.auth'		:	self._system_ssh_auth,
-			'system.ssh.known_host' :	self._system_ssh_known_host,
-		}
-
 		self.states = None
 
 	def transfer(self, step, module, parameter):
@@ -538,10 +502,6 @@ class StateAdaptor(object):
 		utils.log("DEBUG", "Begin to convert unicode parameter to string ...", ("transfer", self))
 		parameter = self.__convert(parameter)
 
-		# transfer
-		# if module in ['linux.apt.package', 'linux.yum.package', 'common.gem.package', 'common.npm.package', 'common.pecl.package', 'common.pip.package']:
-		# 	salt_state = self._package(step, module, parameter)
-		# else:
 		salt_state = self._transfer(step, module, parameter)
 		if not salt_state or not isinstance(salt_state, dict):
 			utils.log("ERROR", "Transfer json to salt state failed", ("transfer", self))
@@ -665,6 +625,23 @@ class StateAdaptor(object):
 		elif module in ['common.git', 'common.svn', 'common.hg']:
 			if 'name' in addin:
 				module_state[default_state]['name'] = addin['name'].split('-')[1].strip()
+
+		elif module in ['linux.apt.repo', 'linux.yum.repo']:
+			if 'name' in addin:
+				filename = addin['name']
+				obj_dir =  None
+
+				if module == 'linux.apt.repo':
+					obj_dir = '/etc/apt/sources.list.d/'
+					if not filename.endswith('.list'):
+						filename += '.list'
+				elif module == 'linux.yum.repo':
+					obj_dir = '/etc/yum.repos.d/'
+					if not filename.endswith('repo'):
+						filename += '.repo'
+
+				if filename and obj_dir:
+					module_state[default_state]['name'] = obj_dir + filename
 
 		return module_state
 
