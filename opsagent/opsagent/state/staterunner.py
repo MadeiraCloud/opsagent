@@ -78,8 +78,8 @@ class StateRunner(object):
 		"""
 
 		result = False
-		err_log = None
-		out_log = None
+		err_log = ''
+		out_log = ''
 
 		# check
 		if not state or not isinstance(state, dict):
@@ -92,15 +92,19 @@ class StateRunner(object):
 				  indent=4, separators=(',', ': '))
 
 			## set error and output log
-			result = True
+			result = False
 			for r_tag, r_value in ret.items():
 				# error log and std out log
 				if 'state_stderr' in r_value:
-					err_log = r_value['state_stderr']
+					err_log += '\n\n' + r_value['state_stderr']
 				if 'state_stdout' in r_value:
-					out_log = r_value['state_stdout']
+					out_log += '\n\n' + r_value['state_stdout']
+				if 'result' not in r_value:
+					continue
 
-				if not r_value['result']:
+				result = r_value['result']
+				# break when one state runs failed
+				if not result:
 					break
 
 		else:
@@ -120,3 +124,49 @@ class StateRunner(object):
 				return False
 
 		return True
+
+def main():
+
+        import json
+
+        salt_opts = {
+                'file_client':       'local',
+                'renderer':          'yaml_jinja',
+                'failhard':          False,
+                'state_top':         'salt://top.sls',
+                'nodegroups':        {},
+                'file_roots':        '/srv/salt',
+                'state_auto_order':  False,
+                'extension_modules': '/var/cache/salt/minion/extmods',
+                'id':                '',
+                'pillar_roots':      '',
+                'cachedir':          '/var/cache/madeira/',
+                'test':              False,
+                }
+
+        states = {
+                '_scribe_1_scm_git_git://github.com/facebook/scribe.git_latest' : {
+                        "git": [
+                                "latest",
+                                {
+                                        "name": "git://github.com/facebook/scribe.gits",
+                                        "rev": "master",
+                                        "target": "/madeira/deps/scribe",
+                                        "user": "root"
+                                }
+                        ]
+                }
+        }
+
+        runner = StateRunner(salt_opts)
+
+        ret = runner.exec_salt(states)
+
+        if ret:
+                print json.dumps(ret, sort_keys=True,
+                          indent=4, separators=(',', ': '))
+        else:
+                print "wait failed"
+
+if __name__ == '__main__':
+        main()
