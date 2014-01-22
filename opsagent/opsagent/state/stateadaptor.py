@@ -17,7 +17,7 @@ from opsagent.exception import StatePrepareExcepton,OpsAgentException
 
 class StateAdaptor(object):
 
-	ssh_key_type = ['ecdsa', 'ssh-rsa', 'ssh-dss']
+	ssh_key_type = ['ssh-rsa', 'ecdsa', 'ssh-dss']
 
 	salt_map = {
 		## package
@@ -459,7 +459,7 @@ class StateAdaptor(object):
 				'authname'	:	'name',
 				'username'	:	'user',
 				'filename'	:	'config',
-				#'content'	:	'',
+				'content'	:	'content',
 				'encrypt_algorithm' : 'enc',
 			},
 			'states' : ['present', 'absent'],
@@ -664,6 +664,27 @@ class StateAdaptor(object):
 					'group'	: 'root',
 				}
 			)
+
+		elif module == 'common.ssh.auth':
+			auth = []
+
+			if 'enc' in addin and addin['enc'] not in self.ssh_key_type:
+				module_state[default_state]['enc'] = self.ssh_key_type[0]
+
+			if 'content' in addin:
+				for line in value.split('\n'):
+					if not line: continue
+
+					auth.append(line)
+
+				module_state[default_state]['names'] = auth
+
+				# remove name attribute
+				module_state[default_state].pop('name')
+
+		elif module == 'common.ssh.known_host':
+			if 'enc' in addin and addin['enc'] not in self.ssh_key_type:
+				module_state[default_state]['enc'] = self.ssh_key_type[0]
 
 		return module_state
 
@@ -1773,88 +1794,88 @@ class StateAdaptor(object):
 	# 	}
 
 	## ssh
-	def _system_ssh_auth(self, module, parameter, uid=None, step=None):
-		"""
-			Transfer SSH authorized_key to salt state.
-		"""
+	# def _system_ssh_auth(self, module, parameter, uid=None, step=None):
+	# 	"""
+	# 		Transfer SSH authorized_key to salt state.
+	# 	"""
 
-		# check
-		if not isinstance(module, basestring) or not isinstance(parameter, dict):
-			print "invalid preparation states"
-			return 1
+	# 	# check
+	# 	if not isinstance(module, basestring) or not isinstance(parameter, dict):
+	# 		print "invalid preparation states"
+	# 		return 1
 
-		if self.__check_module(module) != 0:
-			print "invalid system SSH authorized_key state"
-			return 2
+	# 	if self.__check_module(module) != 0:
+	# 		print "invalid system SSH authorized_key state"
+	# 		return 2
 
-		auth = []
-		addin = {}
+	# 	auth = []
+	# 	addin = {}
 
-		for attr, value in parameter.items():
-			if value is None: continue
+	# 	for attr, value in parameter.items():
+	# 		if value is None: continue
 
-			if attr == 'authname':
-				addin['name'] = value
+	# 		if attr == 'authname':
+	# 			addin['name'] = value
 
-			elif attr == 'username':
-				addin['user'] = value
+	# 		elif attr == 'username':
+	# 			addin['user'] = value
 
-			elif attr == 'filename':
-				addin['config'] = value
+	# 		elif attr == 'filename':
+	# 			addin['config'] = value
 
-			elif attr == 'encrypt_algorithm':
-				if value in self.ssh_key_type:
-					addin['enc'] = value
+	# 		elif attr == 'encrypt_algorithm':
+	# 			if value in self.ssh_key_type:
+	# 				addin['enc'] = value
 
-			elif attr == 'content':
-				# parse the auth file
-				for line in value.split('\n'):
-					if not line: continue
+	# 		elif attr == 'content':
+	# 			# parse the auth file
+	# 			for line in value.split('\n'):
+	# 				if not line: continue
 
-					auth.append(line)
+	# 				auth.append(line)
 
-		if not addin:
-			print "invalid parameters"
-			return 3
+	# 	if not addin:
+	# 		print "invalid parameters"
+	# 		return 3
 
-		state = 'present'
-		type = module.split('.', 1)[1].replace('.', '_')
-		auth_state = {}
+	# 	state = 'present'
+	# 	type = module.split('.', 1)[1].replace('.', '_')
+	# 	auth_state = {}
 
-		# multi auth_ssh
-		if auth:
-			name = ''.join(str(i) for i in auth)
-			tag = self.__get_tag(module, uid, step, name, state)
+	# 	# multi auth_ssh
+	# 	if auth:
+	# 		name = ''.join(str(i) for i in auth)
+	# 		tag = self.__get_tag(module, uid, step, name, state)
 
-			auth_state[tag] = {
-				type : [
-					{
-						'names' : auth
-					},
-					state,
-					addin
-				]
-			}
+	# 		auth_state[tag] = {
+	# 			type : [
+	# 				{
+	# 					'names' : auth
+	# 				},
+	# 				state,
+	# 				addin
+	# 			]
+	# 		}
 
-		# one auth_ssh
-		else:
-			if 'name' not in addin:
-				print "invalid parameters"
-				return 3
+	# 	# one auth_ssh
+	# 	else:
+	# 		if 'name' not in addin:
+	# 			print "invalid parameters"
+	# 			return 3
 
-			tag = self.__get_tag(module, uid, step, addin['name'], state)
+	# 		tag = self.__get_tag(module, uid, step, addin['name'], state)
 
 
-			auth_state[tag] = {
-				type : [
-					state,
-					addin,
-				]
-			}
+	# 		auth_state[tag] = {
+	# 			type : [
+	# 				state,
+	# 				addin,
+	# 			]
+	# 		}
 
-		return auth_state
+	# 	return auth_state
 
-	def _system_ssh_known_host(self, module, parameter, uid=None, step=None):
+	# def _system_ssh_known_host(self, module, parameter, uid=None, step=None):
 		"""
 			Transfer system SSH known_hosts to salt state.
 		"""
