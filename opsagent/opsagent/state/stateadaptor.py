@@ -55,7 +55,7 @@ class StateAdaptor(object):
 			],
 			'type'	: 'gem',
 			'require'	: {
-				'linux.yum.package' : { 'name' : ['rubygems'] },
+				'linux.apt.package' : { 'name' : ['rubygems'] },
 			},
 		},
 		'common.npm.package'	: {
@@ -69,7 +69,7 @@ class StateAdaptor(object):
 			],
 			'type'	: 'npm',
 			'require'	: {
-				'linux.yum.package' : { 'name' : ['npm'] },
+				'linux.apt.package' : { 'name' : ['npm'] },
 			}
 		},
 		'common.pecl.package'	: {
@@ -81,7 +81,7 @@ class StateAdaptor(object):
 			],
 			'type'	: 'pecl',
 			'require'	: {
-				'linux.yum.package' : { 'name' : ['php-pear'] }
+				'linux.apt.package' : { 'name' : ['php-pear'] },
 			}
 		},
 		'common.pip.package'	: {
@@ -93,7 +93,7 @@ class StateAdaptor(object):
 			],
 			'type'	: 'pip',
 			'require' : {
-				'linux.yum.package' : { 'name' : ['python-pip'] }
+				'linux.apt.package' : { 'name' : ['python-pip'] },
 			}
 		},
 
@@ -135,8 +135,8 @@ class StateAdaptor(object):
 				'user' : 'user',
 				'group' : 'group',
 				'mode' : 'mode',
-				##'recursive' : { 'recurse' : ['user', 'group', 'mode'] },
-				##'absent' : 'absent',
+				'recursive' : 'recurse',
+				'absent' : 'absent',
 			},
 			'states' : [
 				'directory', 'absent'
@@ -150,7 +150,7 @@ class StateAdaptor(object):
 				'group' : 'group',
 				'mode' : 'mode',
 				'content' : 'contents',
-				## 'absent' : 'absent',
+				'absent' : 'absent',
 			},
 			'states' : [
 				'managed', 'absent'
@@ -161,7 +161,7 @@ class StateAdaptor(object):
 			'attributes' : {
 				'source' : 'name',
 				'target' : 'target',
-				## 'absent' : 'absent'
+				'absent' : 'absent'
 			},
 			'states' : [
 				'symlink', 'absent'
@@ -685,6 +685,30 @@ class StateAdaptor(object):
 		elif module == 'common.ssh.known_host':
 			if 'enc' in addin and addin['enc'] not in self.ssh_key_type:
 				module_state[default_state]['enc'] = self.ssh_key_type[0]
+
+		elif module in ['linux.dir', 'linux.file', 'linux.symlink']:
+			# set absent
+			if 'absent' in addin and addin['absent']:
+				module_state.pop(default_state)
+				module_state['absent'] = {
+					'name' : addin['name']
+				}
+
+			# set recurse
+			elif 'recurse' in addin and addin['recurse']:
+				module_state[default_state]['recurse'] = []
+				if 'user' in addin and addin['user']:
+					module_state[default_state]['recurse'].append('user')
+				if 'group' in addin and addin['group']:
+					module_state[default_state]['recurse'].append('group')
+				if 'mode' in addin and addin['mode']:
+					module_state[default_state]['recurse'].append('mode')
+
+			if module == 'linux.dir':
+				module_state[default_state]['mkdirs'] = True
+
+
+
 
 		return module_state
 
