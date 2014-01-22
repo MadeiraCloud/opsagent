@@ -858,8 +858,8 @@ class StateAdaptor(object):
 			return str(data)
 		elif isinstance(data, collections.Mapping):
 			return dict(map(self.__convert, data.iteritems()))
-		elif isinstance(data, collections.Iterable):
-			return type(data)(map(self.__convert, data))
+		# elif isinstance(data, collections.Iterable):
+		# 	return type(data)(map(self.__convert, data))
 		else:
 			return data
 
