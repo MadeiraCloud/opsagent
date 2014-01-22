@@ -375,7 +375,7 @@ def install(name=None,
                        'new': '<new-version>'}}
     '''
     if salt.utils.is_true(refresh):
-        refresh_db(kwargs)
+        refresh_db(**kwargs)
 
     if debconf:
         __salt__['debconf.set_file'](debconf)
