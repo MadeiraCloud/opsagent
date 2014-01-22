@@ -50,7 +50,7 @@ function tree() {
         cp -f ${file} "$OA_ROOT/sources/${dir}"
     done
     # Copy launch script editing shebang
-    sed -e "s/#!\/usr\/bin\/python/#!\/madeira\/env\/bin\/python/g" < ../../opsagent/opsagent.py > $OA_ROOT/env/bin/opsagent
+    sed -e "s/#!\/usr\/bin\/python/#!\/${OA_ROOT}\/env\/bin\/python/g" < ../../opsagent/opsagent.py > $OA_ROOT/env/bin/opsagent
     chmod +x $OA_ROOT/env/bin/opsagent
     # Copy config files
     cp ../../conf/* $OA_ROOT/env/etc/ #TODO change * to opsagent.conf

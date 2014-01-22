@@ -15,26 +15,28 @@
 # Description: Runs opsagent
 ### END INIT INFO
 
+OA_ROOT="/opsagent"
+
 case "$1" in
   start)
     echo "Starting opsagent"
-    /madeira/env/bin/opsagent -c /etc/opsagent.conf start
+    ${OA_ROOT}/env/bin/opsagent -c /etc/opsagent.conf start
     ;;
   stop)
     echo "Stopping opsagent"
-    /madeira/env/bin/opsagent stop
+    ${OA_ROOT}/env/bin/opsagent stop
     ;;
   stop-wait)
     echo "Stopping opsagent"
-    /madeira/env/bin/opsagent stop-wait
+    ${OA_ROOT}/env/bin/opsagent stop-wait
     ;;
   restart-wait)
     echo "Restarting opsagent"
-    /madeira/env/bin/opsagent restart-wait
+    ${OA_ROOT}/env/bin/opsagent restart-wait
     ;;
   restart)
     echo "Restarting opsagent"
-    /madeira/env/bin/opsagent /etc/opsagent.conf restart
+    ${OA_ROOT}/env/bin/opsagent /etc/opsagent.conf restart
     ;;
   *)
     echo "Usage: $0 {start|stop|restart|stop-wait|restart-wait}"

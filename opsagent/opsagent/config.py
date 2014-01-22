@@ -29,7 +29,7 @@ class Config():
             'loglvl': 'WARNING',
             'proc': '/proc',
             'watch': '/tmp/opsagent/opsagent/watch',
-            'pidfile': '/tmp/opsagentd.pid'
+            'pidfile': '/tmp/opsagentd.pid',
             'token': '/etc/opsagent.d/token'
             },
         'runtime': {

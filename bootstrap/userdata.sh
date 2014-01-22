@@ -12,4 +12,9 @@ chmod 400 $OA_DIR/token
 curl -sSL https://s3.amazonaws.com/visualops/bootstrap.sh > $OA_DIR/bootstrap.sh
 chown root:root $OA_DIR/bootstrap.sh
 chmod 500 $OA_DIR/bootstrap.sh
+if [ ! -f ${OA_LOG}/bootstrap.log ]; then
+    touch ${OA_LOG}/bootstrap.log
+    chown root:root ${OA_LOG}/bootstrap.log
+    chmod 640 ${OA_LOG}/bootstrap.log
+fi
 echo "*/5 * * * * ${OA_DIR}/bootstrap.sh >> ${OA_LOG}/bootstrap.log 2>&1" | crontab
