@@ -78,8 +78,8 @@ class StateRunner(object):
 		"""
 
 		result = False
-		err_log = None
-		out_log = None
+		err_log = ''
+		out_log = ''
 
 		# check
 		if not state or not isinstance(state, dict):
@@ -96,9 +96,9 @@ class StateRunner(object):
 			for r_tag, r_value in ret.items():
 				# error log and std out log
 				if 'state_stderr' in r_value:
-					err_log = r_value['state_stderr']
+					err_log += '\n\n' + r_value['state_stderr']
 				if 'state_stdout' in r_value:
-					out_log = r_value['state_stdout']
+					out_log += '\n\n' + r_value['state_stdout']
 				if 'result' not in r_value:
 					continue
 
