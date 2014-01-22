@@ -9,7 +9,7 @@ OA_HOME="/root"
 OA_USER="root"
 OA_ROOT="/opsagent"
 
-# defin path
+# define path
 PATH=$PATH:/sbin:/usr/bin:/usr/sbin
 
 # if exists
