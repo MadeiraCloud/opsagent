@@ -534,22 +534,15 @@ class StateAdaptor(object):
 			utils.log("WARNING", "Not supported module %s" % module, ("transfer", self))
 			return
 
-		## state(update later)
-		state = self.salt_map[module]['states'][0]
-		# check state
-		if self.__check_state(module, state) != 0:
-			utils.log("WARNING", "Not supported state %s" % state, ("transfer", self))
-			return
-
 		# convert from unicode to string
 		utils.log("DEBUG", "Begin to convert unicode parameter to string ...", ("transfer", self))
 		parameter = self.__convert(parameter)
 
 		# transfer
-		if module in ['linux.apt.package', 'linux.yum.package', 'common.gem.package', 'common.npm.package', 'common.pecl.package', 'common.pip.package']:
-			salt_state = self._package(step, module, parameter)
-		else:
-			salt_state = self._transfer(step, module, parameter, state)
+		# if module in ['linux.apt.package', 'linux.yum.package', 'common.gem.package', 'common.npm.package', 'common.pecl.package', 'common.pip.package']:
+		# 	salt_state = self._package(step, module, parameter)
+		# else:
+		salt_state = self._transfer(step, module, parameter)
 		if not salt_state or not isinstance(salt_state, dict):
 			utils.log("ERROR", "Transfer json to salt state failed", ("transfer", self))
 			return
@@ -557,7 +550,7 @@ class StateAdaptor(object):
 		self.states = salt_state
 		return salt_state
 
-	def _transfer(self, step, module, parameter, state):
+	def _transfer(self, step, module, parameter):
 
 		salt_state = {}
 
@@ -567,54 +560,62 @@ class StateAdaptor(object):
 			utils.log("ERROR", "Transfer module parameters failed: %s, %s" % (module, parameter), ("_transfer", self))
 			return salt_state
 
-		# add require
-		utils.log("DEBUG", "Begin to generate requirity ...", ("_transfer", self))
-		require = []
-		if 'require' in self.salt_map[module]:
-			req_state = self.__get_require(self.salt_map[module]['require'])
-			if req_state:
-				for req_tag, req_value in req_state.items():
-					salt_state[req_tag] = req_value
+		# process
+		module_states = self.__build_up(module, addin)
+		if not module_states:
+			utils.log("ERROR", "Build up module state failed: %s" % module, ("_transfer", self))
+			return salt_state
 
-					require.append({ next(iter(req_value)) : req_tag })
+		for state, addin in module_states.items():
 
-		# add require in
-		utils.log("DEBUG", "Begin to generate require-in ...", ("_transfer", self))
-		require_in = []
-		if 'require_in' in self.salt_map[module]:
-			req_in_state = self.__get_require_in(self.salt_map[module]['require_in'], parameter)
-			if req_in_state:
-				for req_in_tag, req_in_value in req_in_state.items():
-					salt_state[req_in_tag] = req_in_value
+			# add require
+			utils.log("DEBUG", "Begin to generate requirity ...", ("_transfer", self))
+			require = []
+			if 'require' in self.salt_map[module]:
+				req_state = self.__get_require(self.salt_map[module]['require'])
+				if req_state:
+					for req_tag, req_value in req_state.items():
+						salt_state[req_tag] = req_value
 
-					require_in.append({ next(iter(req_in_value)) : req_in_tag })
+						require.append({ next(iter(req_value)) : req_tag })
 
-		# build up
-		module_state = [
-			state,
-			addin
-		]
+			# add require in
+			utils.log("DEBUG", "Begin to generate require-in ...", ("_transfer", self))
+			require_in = []
+			if 'require_in' in self.salt_map[module]:
+				req_in_state = self.__get_require_in(self.salt_map[module]['require_in'], parameter)
+				if req_in_state:
+					for req_in_tag, req_in_value in req_in_state.items():
+						salt_state[req_in_tag] = req_in_value
 
-		if require:
-			module_state.append({ 'require' : require })
-		if require_in:
-			module_state.append({ 'require_in' : require_in })
+						require_in.append({ next(iter(req_in_value)) : req_in_tag })
 
-		# tag
-		#name = addin['names'] if 'names' in addin else addin['name']
-		tag = self.__get_tag(module, None, step, None, state)
-		utils.log("DEBUG", "Generated tag is %s" % tag, ("_transfer", self))
+			# build up
+			module_state = [
+				state,
+				addin
+			]
 
-		type = self.salt_map[module]['type']
+			if require:
+				module_state.append({ 'require' : require })
+			if require_in:
+				module_state.append({ 'require_in' : require_in })
 
-		salt_state[tag] = {
-			type : module_state
-		}
+			# tag
+			#name = addin['names'] if 'names' in addin else addin['name']
+			tag = self.__get_tag(module, None, step, None, state)
+			utils.log("DEBUG", "Generated tag is %s" % tag, ("_transfer", self))
 
-		# add env and sls
-		if 'require_in' in self.salt_map[module]:
-			salt_state[tag]['__env__'] = 'base'
-			salt_state[tag]['__sls__'] = 'madeira'
+			type = self.salt_map[module]['type']
+
+			salt_state[tag] = {
+				type : module_state
+			}
+
+			# add env and sls
+			if 'require_in' in self.salt_map[module]:
+				salt_state[tag]['__env__'] = 'base'
+				salt_state[tag]['__sls__'] = 'madeira'
 
 		return salt_state
 
@@ -639,11 +640,33 @@ class StateAdaptor(object):
 				else:
 					addin[key] = value
 
-					## todo
-					if module in ['common.git', 'common.svn', 'common.hg'] and key == 'name':
-						addin[key] = value.split('-')[1].strip()
-
 		return addin
+
+	def __build_up(self, module, addin):
+
+		default_state = self.salt_map[module]['states'][0]
+
+		module_state = {
+			default_state : addin
+		}
+
+		if module in ['linux.apt.package', 'linux.yum.package', 'common.gem.package', 'common.npm.package', 'common.pecl.package', 'common.pip.package']:
+			for item in addin['names']:
+				if not isinstance(item, dict):	continue	# filter default state
+
+				for k, v in item.items():
+					if v in self.salt_map[module]['states']:
+						if 'names' not in module_state[v]:
+							module_state[v] = addin
+							module_state[v]['names'] = []
+
+						module_state[v]['names'].append(k)
+
+		elif module in ['common.git', 'common.svn', 'common.hg']:
+			if 'name' in addin:
+				module_state[default_state]['name'] = addin['name'].split('-')[1].strip()
+
+		return module_state
 
 	def __get_tag(self, module, uid=None, step=None, name=None, state=None):
 		"""

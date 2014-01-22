@@ -92,15 +92,19 @@ class StateRunner(object):
 				  indent=4, separators=(',', ': '))
 
 			## set error and output log
-			result = True
+			result = False
 			for r_tag, r_value in ret.items():
 				# error log and std out log
 				if 'state_stderr' in r_value:
 					err_log = r_value['state_stderr']
 				if 'state_stdout' in r_value:
 					out_log = r_value['state_stdout']
+				if 'result' not in r_value:
+					continue
 
-				if not r_value['result']:
+				result = r_value['result']
+				# break when one state runs failed
+				if not result:
 					break
 
 		else:
