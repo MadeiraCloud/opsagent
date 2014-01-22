@@ -450,10 +450,11 @@ def installed(
                       'installed/updated: {0}.'.format(summary)
         else:
             comment = ''
-        return ret.update({'name': name,
-                'changes': {},
-                'result': None,
-                'comment': comment})
+        ret.update({'name': name,
+            'changes': {},
+            'result': None,
+            'comment': comment})
+        return ret
 
     comment = []
     try:
@@ -470,11 +471,12 @@ def installed(
         if os.path.isfile(rtag):
             os.remove(rtag)
     except CommandExecutionError as exc:
-        return ret.update({'name': name,
-                'changes': {},
-                'result': False,
-                'comment': 'An error was encountered while installing '
-                           'package(s): {0}'.format(exc)})
+        ret.update({'name': name,
+            'changes': {},
+            'result': False,
+            'comment': 'An error was encountered while installing '
+                       'package(s): {0}'.format(exc)})
+        return ret
 
     if isinstance(pkg_ret, dict):
         changes = pkg_ret
@@ -542,15 +544,17 @@ def installed(
                                  for x in failed])
         comment.insert(0, 'The following packages failed to '
                           'install/update: {0}.'.format(summary))
-        return ret.update({'name': name,
-                'changes': changes,
-                'result': False,
-                'comment': ' '.join(comment)})
+        ret.update({'name': name,
+            'changes': changes,
+            'result': False,
+            'comment': ' '.join(comment)})
+        return ret
     else:
-        return ret.update({'name': name,
-                'changes': changes,
-                'result': True,
-                'comment': ' '.join(comment)})
+        ret.update({'name': name,
+            'changes': changes,
+            'result': True,
+            'comment': ' '.join(comment)})
+        return ret
 
 
 def latest(
@@ -600,19 +604,21 @@ def latest(
     ret = {'state_stdout': '', 'state_stderr': ''}
 
     if kwargs.get('sources'):
-        return ret.update({'name': name,
-                'changes': {},
-                'result': False,
-                'comment': 'The "sources" parameter is not supported.'})
+        ret.update({'name': name,
+            'changes': {},
+            'result': False,
+            'comment': 'The "sources" parameter is not supported.'})
+        return ret
     elif pkgs:
         desired_pkgs = _repack_pkgs(pkgs).keys()
         if not desired_pkgs:
             # Badly-formatted SLS
-            return ret.update({'name': name,
-                    'changes': {},
-                    'result': False,
-                    'comment': 'Invalidly formatted "pkgs" parameter. See '
-                               'minion log.'})
+            ret.update({'name': name,
+                'changes': {},
+                'result': False,
+                'comment': 'Invalidly formatted "pkgs" parameter. See '
+                           'minion log.'})
+            return ret
     else:
         desired_pkgs = [name]
 
@@ -655,10 +661,11 @@ def latest(
             targets[pkg] = avail[pkg]
 
     if problems:
-        return ret.update({'name': name,
-                'changes': {},
-                'result': False,
-                'comment': ' '.join(problems)})
+        ret.update({'name': name,
+            'changes': {},
+            'result': False,
+            'comment': ' '.join(problems)})
+        return ret
 
     if targets:
         # Find up-to-date packages
@@ -683,10 +690,11 @@ def latest(
                     comment += ' {0} packages are already up-to-date.'.format(
                         len(up_to_date))
 
-            return ret.update({'name': name,
-                    'changes': {},
-                    'result': None,
-                    'comment': comment})
+            ret.update({'name': name,
+                'changes': {},
+                'result': None,
+                'comment': comment})
+            return ret
 
         # Build updated list of pkgs to exclude non-targeted ones
         targeted_pkgs = targets.keys() if pkgs else None
@@ -702,11 +710,12 @@ def latest(
                                               state_ret=ret,
                                               **kwargs)
         except CommandExecutionError as exc:
-            return ret.update({'name': name,
+            ret.update({'name': name,
                     'changes': {},
                     'result': False,
                     'comment': 'An error was encountered while installing '
                                'package(s): {0}'.format(exc)})
+            return ret
 
         if changes:
             # Find failed and successful updates
@@ -733,10 +742,11 @@ def latest(
                         len(up_to_date))
                 comments.append(msg)
 
-            return ret.update({'name': name,
+            ret.update({'name': name,
                     'changes': changes,
                     'result': False if failed else True,
                     'comment': ' '.join(comments)})
+            return ret
         else:
             if len(targets) > 10:
                 comment = ('{0} targeted packages failed to update. '
@@ -757,10 +767,11 @@ def latest(
                     comment += '{0} packages were already ' \
                         'up-to-date.'.format(len(up_to_date))
 
-            return ret.update({'name': name,
+            ret.update({'name': name,
                     'changes': changes,
                     'result': False,
                     'comment': comment})
+            return ret
     else:
         if len(desired_pkgs) > 10:
             comment = 'All {0} packages are up-to-date.'.format(
@@ -772,10 +783,11 @@ def latest(
             comment = 'Package {0} is already ' \
                 'up-to-date.'.format(desired_pkgs[0])
 
-        return ret.update({'name': name,
+        ret.update({'name': name,
                 'changes': {},
                 'result': True,
                 'comment': comment})
+        return ret
 
 
 def _uninstall(action='remove', name=None, pkgs=None, **kwargs):
@@ -875,10 +887,11 @@ def removed(name, pkgs=None, **kwargs):
     try:
         return _uninstall(action='remove', name=name, pkgs=pkgs, state_ret=ret, **kwargs)
     except CommandExecutionError as exc:
-        return ret.update({'name': name,
+        ret.update({'name': name,
                 'changes': {},
                 'result': False,
                 'comment': str(exc)})
+        return ret
 
 
 def purged(name, pkgs=None, **kwargs):
