@@ -30,7 +30,7 @@ class Config():
             'proc': '/proc',
             'watch': '/tmp/opsagent/opsagent/watch',
             'pidfile': '/tmp/opsagentd.pid',
-            'token': '/etc/opsagent.d/token'
+            'token': '/etc/opsagent.d/token',
             },
         'runtime': {
             'proc': False,
