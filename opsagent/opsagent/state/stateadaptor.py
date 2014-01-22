@@ -643,6 +643,16 @@ class StateAdaptor(object):
 				if filename and obj_dir:
 					module_state[default_state]['name'] = obj_dir + filename
 
+		elif module in ['common.gem.source']:
+			module_state[default_state].update(
+				{
+					'name'	: 'gem source --add ' + addin['name'],
+					'shell'	: '/bin/bash',
+					'user'	: 'root',
+					'group'	: 'root',
+				}
+			)
+
 		return module_state
 
 	def __get_tag(self, module, uid=None, step=None, name=None, state=None):
