@@ -705,7 +705,7 @@ class StateAdaptor(object):
 					module_state[default_state]['recurse'].append('mode')
 
 			if module == 'linux.dir':
-				module_state[default_state]['mkdirs'] = True
+				module_state[default_state]['makedirs'] = True
 
 
 
