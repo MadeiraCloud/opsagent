@@ -12,15 +12,21 @@ UPDATERC_CMD=$(which update-rc.d)
 CHKCONFIG_CMD=$(which chkconfig)
 
 # reference checksum
-REF_CRC="2460108212 3531675 agent.tgz"
+REF_CRC="4240808134 3531685 agent.tgz"
 
 # locate in root home directory
 cd /root
 # get agent
 CRC=""
-while [ $CRC != $REF_CRC ]; do
+while true; do
     curl -sSLO https://s3.amazonaws.com/visualops/agent.tgz
     CRC="$(cksum agent.tgz)"
+    if [ "$CRC" = "$REF_CRC" ]; then
+        break
+    else
+        echo "Checksum check failed, retryind in 1 second" >&2
+        sleep 1
+    fi
 done
 cd /
 tar xfz /root/agent.tgz
