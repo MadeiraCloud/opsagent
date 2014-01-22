@@ -124,3 +124,49 @@ class StateRunner(object):
 				return False
 
 		return True
+
+def main():
+
+        import json
+
+        salt_opts = {
+                'file_client':       'local',
+                'renderer':          'yaml_jinja',
+                'failhard':          False,
+                'state_top':         'salt://top.sls',
+                'nodegroups':        {},
+                'file_roots':        '/srv/salt',
+                'state_auto_order':  False,
+                'extension_modules': '/var/cache/salt/minion/extmods',
+                'id':                '',
+                'pillar_roots':      '',
+                'cachedir':          '/var/cache/madeira/',
+                'test':              False,
+                }
+
+        states = {
+                '_scribe_1_scm_git_git://github.com/facebook/scribe.git_latest' : {
+                        "git": [
+                                "latest",
+                                {
+                                        "name": "git://github.com/facebook/scribe.gits",
+                                        "rev": "master",
+                                        "target": "/madeira/deps/scribe",
+                                        "user": "root"
+                                }
+                        ]
+                }
+        }
+
+        runner = StateRunner(salt_opts)
+
+        ret = runner.exec_salt(states)
+
+        if ret:
+                print json.dumps(ret, sort_keys=True,
+                          indent=4, separators=(',', ': '))
+        else:
+                print "wait failed"
+
+if __name__ == '__main__':
+        main()
