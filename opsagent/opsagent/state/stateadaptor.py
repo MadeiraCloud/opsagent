@@ -161,12 +161,13 @@ class StateAdaptor(object):
 			'attributes' : {
 				'source' : 'name',
 				'target' : 'target',
+				'user'	 : 'user',
 				'absent' : 'absent'
 			},
 			'states' : [
 				'symlink', 'absent'
 			],
-			'type' : 'symlink'
+			'type' : 'file'
 		},
 
 		## scm
