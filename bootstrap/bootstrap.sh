@@ -12,20 +12,12 @@ OA_ROOT="/opsagent"
 # define path
 PATH=$PATH:/sbin:/usr/bin:/usr/sbin
 
-# if exists
-if [ -d "$OA_ROOT" ]; then
-    # TODO remove
-    echo "$OA_ROOT exists"
-    exit 0
-fi
-
 # define vendor
 YUM_CMD=$(which yum)
 APT_CMD=$(which apt-get)
 # define service utility
 UPDATERC_CMD=$(which update-rc.d)
 CHKCONFIG_CMD=$(which chkconfig)
-
 
 # locate in home directory
 cd $OA_HOME
