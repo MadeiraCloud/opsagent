@@ -2,7 +2,7 @@
 #app_id=@{app_id}
 OA_USER="root"
 OA_DIR="/etc/opsagent.d"
-OA_LOG="/var/log/opsagent"
+OA_LOG="/var/log/madeira"
 OA_ROOT="/opt/madeira"
 mkdir -p $OA_DIR
 mkdir -p $OA_LOG
@@ -41,16 +41,21 @@ if [ -d "$OA_ROOT" ]; then
     fi
 fi
 curl -sSL https://s3.amazonaws.com/visualops/bootstrap.sh | bash
-echo "opsagent installed"
-sleep 1
-service opsagentd start
-exit 0
+if [ $? -eq 0 ]; then
+    echo "opsagent installed"
+    sleep 1
+    service opsagentd start
+    exit 0
+else
+    echo "failed installing opsagent"
+    exit 1
+fi
 EOF
 chown root:root $OA_DIR/bootstrap.sh
 chmod 500 $OA_DIR/bootstrap.sh
 CRON=$(crontab -l | grep bootstrap.sh | wc -l)
 if [ $CRON -eq 0 ]; then
-    echo "*/5 * * * * ${OA_DIR}/bootstrap.sh >> ${OA_LOG}/bootstrap.log 2>&1" | crontab
+    echo "*/1 * * * * ${OA_DIR}/bootstrap.sh >> ${OA_LOG}/bootstrap.log 2>&1" | crontab
 fi
 exit 0
 # EOF

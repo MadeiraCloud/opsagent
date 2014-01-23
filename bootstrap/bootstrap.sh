@@ -56,10 +56,9 @@ cp -r $OA_ROOT/sources/opsagent $OA_ROOT/env/lib/python2.7/site-packages/
 # set ownership to root
 chown -R $OA_USER:root $OA_ROOT
 # link config file
-if [ -f "/etc/opsagent.conf" ]; then
-    mv /etc/opsagent.conf /etc/opsagent.old.conf
+if [ ! -f "/etc/opsagent.conf" ]; then
+    ln -s $OA_ROOT/env/etc/opsagent.conf /etc/opsagent.conf
 fi
-ln -s $OA_ROOT/env/etc/opsagent.conf /etc/opsagent.conf
 
 # create service
 cp $OA_ROOT/bootstrap/daemon.sh /etc/init.d/opsagentd
