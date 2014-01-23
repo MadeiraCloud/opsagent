@@ -29,8 +29,10 @@ if [ -d "$OA_ROOT" ]; then
     # TODO remove
     echo "$OA_ROOT exists"
     CUR_VERSION="$OA_DIR/agent.cksum"
-    VERSION="$(curl -sSL https://s3.amazonaws.com/visualops/agent.cksum)"
-    if [ "CUR_VERSION" != "VERSION" ]; then
+    curl -sSL https://s3.amazonaws.com/visualops/agent.cksum > /tmp/opsagent.ver
+    RETVAL=$?
+    VERSION="$(cat /tmp/opsagent.ver)"
+    if [ $RETVAL -eq 0 ] && [ $(echo VERSION | grep agent.tgz | wc -l) -eq 1 ] && [ "$CUR_VERSION" != "$VERSION" ]; then
         echo "new version found, updating"
         service opsagentd stop-wait
         rm -rf ${OA_ROOT}
