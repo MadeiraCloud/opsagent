@@ -290,8 +290,8 @@ class StateAdaptor(object):
 				'group'			: 'group',
 				'timeout'		: 'timeout',
 				'env'			: 'env',
-				#'with_path'		: '',
-				#'without_path'	: '',
+				'with_path'		: 'onlyif',
+				'without_path'	: 'unless',
 			},
 			'states' : [
 				'run', 'call', 'wait', 'script'
@@ -711,8 +711,12 @@ class StateAdaptor(object):
 			if module == 'linux.dir':
 				module_state[default_state]['makedirs'] = True
 
+		elif module in ['sys.cmd']:
+			if 'onlyif' in addin:
+				module_state[default_state]['onlyif'] = "[ -d " + addin['onlyif'] + " ]"
 
-
+			if 'unless' in addin:
+				module_state[default_state]['unless'] = "[ -d " + addin['unless'] + " ]"
 
 		return module_state
 
