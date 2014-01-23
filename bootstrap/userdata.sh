@@ -31,8 +31,9 @@ if [ -d "$OA_ROOT" ]; then
     CUR_VERSION="$OA_DIR/agent.cksum"
     curl -sSL https://s3.amazonaws.com/visualops/agent.cksum > /tmp/opsagent.ver
     RETVAL=$?
+    VALID=$(echo VERSION | grep agent.tgz | wc -l)
     VERSION="$(cat /tmp/opsagent.ver)"
-    if [ $RETVAL -eq 0 ] && [ $(echo VERSION | grep agent.tgz | wc -l) -eq 1 ] && [ "$CUR_VERSION" != "$VERSION" ]; then
+    if [ $RETVAL -eq 0 ] && [ $VALID -eq 1 ] && [ "$CUR_VERSION" != "$VERSION" ]; then
         echo "new version found, updating"
         service opsagentd stop-wait
         rm -rf ${OA_ROOT}

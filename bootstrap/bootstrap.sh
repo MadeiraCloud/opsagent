@@ -29,7 +29,7 @@ while true; do
     curl -sSLO https://s3.amazonaws.com/visualops/agent.tgz
     REF_CRC="$(cat agent.cksum)"
     CRC="$(cksum agent.tgz)"
-    cp agent.cksum > $OA_DIR/agent.cksum
+    cp agent.cksum $OA_DIR/agent.cksum
     if [ "$CRC" = "$REF_CRC" ]; then
         break
     else
