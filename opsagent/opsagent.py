@@ -10,22 +10,28 @@ Madeira OpsAgent launcher script
 from optparse import *
 import logging
 import time
-
+import sys
+import signal
+import re
+import threading, Queue
 
 # Custom imports
+from opsagent.daemon import Daemon
 from opsagent.config import Config
 from opsagent import utils
 from opsagent.exception import *
 from opsagent.manager import Manager
 from opsagent.state.statesworker import StatesWorker
 
-# global defines
-USAGE = 'usage: %prog [-hqvd] [-l logfile] [-c configfile]'
+
+# general defines
+USAGE = 'usage: %prog [-hqv] [-l logfile] [-c configfile] (start|stop|restart|stop-wait|restart-wait)'
 VERSION_NBR = '0.0.1a'
 VERSION = '%prog '+VERSION_NBR
 
 
 # logger settings
+LOGLVL_VALUES=['DEBUG','INFO','WARNING','ERROR']
 LOG_FORMAT = '[%(levelname)s]-%(asctime)s: %(message)s'
 def __log(lvl, file=None):
     level = logging.getLevelName(lvl)
@@ -37,62 +43,65 @@ def __log(lvl, file=None):
     logger.addHandler(handler)
 
 
-# TODO (use library?)
-def daemonize(self):
-    try:
-        """ Ref:  http://aspn.activestate.com/ASPN/Cookbook/Python/Recipe/66012 """
-        # Disable coredump
-        #"ulimit -c 0"
-
-	# First fork
+# OpsAgent safe runner
+class OpsAgentRunner(Daemon):
+    def run_manager(self):
+        utils.log("DEBUG", "Creating Network Manager ...",('run_manager','OpsAgentRunner'))
+        manager = Manager(url=self.config['network']['ws_uri'], config=self.config, statesworker=self.__sw)
+        utils.log("DEBUG", "Network Manager created.",('run_manager','OpsAgentRunner'))
         try:
-            pid = os.fork()
-            if pid > 0: 
-                # Exit first parent
-                sys.exit(0) 
-        except OSError, e:
-            # TODO
-            self.logger.error("Cannot run Karajan in daemon mode: (%d) %s\n" % (e.errno, e.strerror))
-            raise KarajanException
-	
-	# Decouple from parent environment.
-        os.chdir("/")
-        os.umask(0)
-        os.setsid() #test id
-	#suid/sgid
+            utils.log("DEBUG", "Connecting manager to backend.",('run_manager','OpsAgentRunner'))
+            manager.connect()
+            utils.log("DEBUG", "Connection done, registering to StateWorker.",('run_manager','OpsAgentRunner'))
+            self.__sw.set_manager(manager)
+            utils.log("DEBUG", "Registration done, running forever ...",('run_manager','OpsAgentRunner'))
+            manager.run_forever()
+            utils.log("DEBUG", "Network connection lost/aborted.",('run_manager','OpsAgentRunner'))
+        except Exception as e:
+            utils.log("ERROR", "Network error: '%s'"%(e),('run_manager','OpsAgentRunner'))
+            if manager.connected():
+                utils.log("INFO", "Connection not closed. Closing ...",('run_manager','OpsAgentRunner'))
+                manager.close()
+                utils.log("DEBUG", "Connection closed.",('run_manager','OpsAgentRunner'))
+            else:
+                utils.log("DEBUG", "Connection already closed.",('run_manager','OpsAgentRunner'))
 
-	# Second fork
-        try:
-            pid = os.fork()
-            if pid > 0: 
-                # Exit second parent.
-                sys.exit(0)
-        except OSError, e:
-            # TODO
-            self.logger.error("Cannot run Karajan in daemon mode: (%d) %s\n" % (e.errno, e.strerror))
-            raise KarajanException
-			
-        # Open file descriptors and print start message
-        si = file(Default.Forge.Karajan.stdin, 'r')
-        so = file(Default.Forge.Karajan.stdout, 'a+')
-        se = file(Default.Forge.Karajan.stderr, 'a+', 0)
-        pid = os.getpid()
-        sys.stderr.write("\nStarted Karajan with pid %i\n\n" % pid)
-        sys.stderr.flush()
-        if not os.path.exists(os.path.dirname(self.config.pidfile)):
-            os.mkdir(os.path.dirname(self.config.pidfile))
-        file(self.config.pidfile,'w+').write("%i\n" % pid)
-		
-        # Redirect standard file descriptors.
-        os.close(sys.stdin.fileno())
-        os.close(sys.stdout.fileno())
-        os.close(sys.stderr.fileno())
-        os.dup2(si.fileno(), sys.stdin.fileno())
-        os.dup2(so.fileno(), sys.stdout.fileno())
-        os.dup2(se.fileno(), sys.stderr.fileno())
-    except OSError, msg:
-        self.logger.error("Cannot run Karajan in daemon mode: %s" % msg)
-        raise KarajanException
+    def run(self):
+        # init
+        self.__sw = StatesWorker(config=self.config)
+
+        # terminating process
+        def handler(signum=None, frame=None):
+            utils.log("WARNING", "Signal handler called with signal %s"%signum,('handler','OpsAgentRunner'))
+            self.__sw.abort()
+
+        # handle termination
+        for sig in [signal.SIGTERM, signal.SIGINT, signal.SIGHUP, signal.SIGQUIT]:
+            try: signal.signal(sig, handler)
+            except: pass #pass some signals if not POSIX
+
+        # start
+        self.__sw.start()
+
+        # run forever
+        while not self.__sw.aborted():
+            try:
+#                # states worker dead
+#                if not sw.is_alive():
+#                    del sw
+#                    sw = StatesWorker(config=config)
+#                    sw.start()
+                # run manager
+                self.run_manager()
+            except Exception as e:
+                utils.log("ERROR", "Unexpected error: '%s'"%(e),('run','OpsAgentRunner'))
+                time.sleep(0.1)
+                utils.log("WARNING", "Conenction aborted, retrying ...",('run','OpsAgentRunner'))
+
+        # end properly
+        if self.__sw.is_alive():
+            self.__sw.join()
+        self.__sw = None
 
 
 # option parser
@@ -110,43 +119,12 @@ def optParse():
     parser.add_option("-v", "--verbose", action="store_true", dest="verbose", default=False,
                       help="verbose mode (log debug -all- info)"
                       )
-    parser.add_option("-d", "--daemon", action="store_true", dest="daemon", default=False,
-                      help="start in daemon mode"
-                      )
     return parser.parse_args()
-
-
-def run(config, sw):
-    utils.log("DEBUG", "Creating Network Manager ...",('run',None))
-    manager = Manager(url=config['network']['ws_uri'], config=config, statesworker=sw)
-    utils.log("DEBUG", "Network Manager created.",('run',None))
-    try:
-        utils.log("DEBUG", "Connecting manager to backend.",('run',None))
-        manager.connect()
-        utils.log("DEBUG", "Connection done, registering to StateWorker.",('run',None))
-        sw.set_manager(manager)
-        utils.log("DEBUG", "Registration done, running forever ...",('run',None))
-        manager.run_forever()
-        utils.log("DEBUG", "Network connection lost/aborted.",('run',None))
-    except Exception as e:
-        utils.log("ERROR", "Network error: '%s'"%(e),('run',None))
-        if manager.connected():
-            utils.log("INFO", "Connection not closed. Closing ...",('run',None))
-            manager.close()
-            utils.log("DEBUG", "Connection closed.",('run',None))
-        else:
-            utils.log("DEBUG", "Connection already closed.",('run',None))
 
 
 def main():
     # options parsing
     options, args = optParse()
-
-    # set log level
-    loglvl = 'INFO'
-    if options.verbose: loglvl = 'DEBUG'
-    elif options.quiet: loglvl = 'ERROR'
-    __log(loglvl, options.log_file)
 
     # config parser
     try:
@@ -154,25 +132,35 @@ def main():
     except ConfigFileException:
         config = Config().getConfig()
     except Exception as e:
-        utils.log("ERROR", "Unknown fatal config exception: %s."%(e),('main',self))
+        sys.stderr.write("ERROR: Unknown fatal config exception: %s, loading default.\n"%(e),('main',self))
         config = Config().getConfig()
 
-    # start daemon
-#    if options.daemon:
-#        loadAsDaemon()
+    # set log level
+    loglvl = config['global']['loglvl']
+    if loglvl and loglvl not in LOGLVL_VALUES:
+        sys.stderr.write("WARNING: Wrong loglvl '%s' (check config file). Loading in default mode (INFO).\n"%(loglvl),('main',self))
+        loglvl = 'INFO'
+    if options.verbose: loglvl = 'DEBUG'
+    elif options.quiet: loglvl = 'ERROR'
+    __log(loglvl,
+          (options.log_file if options.log_file else config['global'].get('logfile')))
 
-    # start
-    sw = StatesWorker(config=config)
-    sw.start()
-    while True:
-# TODO delete (DEBUG)
-#    if True:
-        try:
-            run(config, sw)
-        except Exception as e:
-            utils.log("ERROR", "Unexpected error: '%s'"%(e),('main',None))
-        time.sleep(0.1)
-        utils.log("WARNING", "Conenction aborted, retrying ...",('main',None))
+    # run
+    runner = OpsAgentRunner(config)
+    command = sys.argv[-1]
+    if command == "start":
+        runner.start()
+    elif command == "stop":
+        runner.stop()
+    elif command == "restart":
+        runner.restart()
+    elif command == "stop-wait":
+        runner.stop(wait=True)
+    elif command == "restart-wait":
+        runner.restart(wait=True)
+    else:
+        runner.run()
+
 
 
 if __name__ == '__main__':

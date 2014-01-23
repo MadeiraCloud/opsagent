@@ -17,7 +17,8 @@ from opsagent import utils
 from opsagent.objects import send
 from opsagent.exception import *
 
-from statepreparation import StatePreparation
+from stateadaptor import StateAdaptor
+from staterunner import StateRunner
 ##
 
 ## DEFINES
@@ -42,7 +43,10 @@ class StatesWorker(threading.Thread):
         self.__manager = None
 
         # state transfer
-        self.__stateprepare = StatePreparation(config=config['salt'])
+        self.__state_adaptor = StateAdaptor()
+
+        # state runner
+        self.__state_runner = StateRunner(config=config['salt'])
 
         # events
         self.__cv = threading.Condition()
@@ -57,6 +61,7 @@ class StatesWorker(threading.Thread):
         # flags
         self.__run = False
         self.__waiting = False
+        self.__abort = False
 
         # builtins methods map
         self.__builtins = {
@@ -104,6 +109,33 @@ class StatesWorker(threading.Thread):
     # Reset states status
     def reset(self):
         self.__status = 0
+        self.__done[:] = []
+        self.__run = False
+        self.__waiting = False
+        self.__wait_event.clear()
+
+    # End program
+    def abort(self, kill=False):
+        if self.__abort:
+            utils.log("DEBUG", "Already aborting ...",('abort',self))
+            return
+        self.__abort = True
+        self.__run = False
+        if kill:
+            self.kill()
+
+        utils.log("DEBUG", "Aquire conditional lock ...",('abort',self))
+        self.__cv.acquire()
+        utils.log("DEBUG", "Conditional lock acquired.",('abort',self))
+        utils.log("DEBUG", "Notify execution thread.",('abort',self))
+        self.__cv.notify()
+        utils.log("DEBUG", "Release conditional lock.",('abort',self))
+        self.__cv.release()
+
+
+    # Program status
+    def aborted(self):
+        return self.__abort
     ##
 
 
@@ -164,8 +196,8 @@ class StatesWorker(threading.Thread):
             self.__states = states
         else:
             utils.log("INFO", "No change in states.",('load',self))
-        utils.log("DEBUG", "Reseting status.",('load',self))
-        self.reset()
+#        utils.log("DEBUG", "Reseting status.",('load',self))
+#        self.reset()
         utils.log("DEBUG", "Allow to run.",('load',self))
         self.__run = True
         utils.log("DEBUG", "Notify execution thread.",('load',self))
@@ -207,9 +239,8 @@ class StatesWorker(threading.Thread):
     # Write hash
     def __create_hash(self, target, hash, file):
         utils.log("DEBUG", "Writing new hash for file '%s' in '%s': '%s'"%(file, target, hash),('__create_hash',self))
-        f = open(target, 'w')
-        f.write(hash)
-        f.close()
+        with open(target, 'w') as f:
+            f.write(hash)
 
     # Call salt library
     def __exec_salt(self, id, module, parameter):
@@ -217,7 +248,7 @@ class StatesWorker(threading.Thread):
         first = True
 
         # Watch process
-        if type(parameter) is dict and parameter.get("watch"):
+        if parameter and type(parameter) is dict and parameter.get("watch"):
             utils.log("DEBUG", "Watched state detected."%(watch),('__exec_salt',self))
             watch = parameter.get("watch")
             del parameter["watch"]
@@ -257,8 +288,11 @@ class StatesWorker(threading.Thread):
 #        (out_log,err_log) = p.communicate()
         # /TODO
 
-        # Salt call
-        (result, err_log, out_log) = self.__stateprepare.prepare(id, module, parameter)
+        # state transfer
+        salt_state = self.__state_adaptor.transfer(id, module, parameter)
+
+        # exec salt state
+        (result, err_log, out_log) = self.__state_runner.exec_salt(salt_state)
 
         utils.log("INFO", "State ID '%s' from module '%s' done, result '%s'."%(id,module,result),('__exec_salt',self))
         utils.log("DEBUG", "State out log='%s'"%(out_log),('__exec_salt',self))
@@ -267,29 +301,24 @@ class StatesWorker(threading.Thread):
 
     # Delay at the end of the states
     def __recipe_delay(self):
-        utils.log("INFO", "Last state reached, execution paused for %s minutes."%(self.__config['salt']['delay']),('run',self))
+        utils.log("INFO", "Last state reached, execution paused for %s minutes."%(self.__config['salt']['delay']),('__recipe_delay',self))
         pid = os.fork()
         if (pid == 0):
             time.sleep(self.__config['salt']['delay']*60)
         else:
-            os.waitpid(pid)
-        utils.log("INFO", "Delay passed, execution restarting...",('run',self))
+            os.waitpid(pid,0)
+        utils.log("INFO", "Delay passed, execution restarting...",('__recipe_delay',self))
 
-    # Callback on start
-    def run(self):
-        utils.log("INFO", "Running StatesWorker ...",('run',self))
-        utils.log("DEBUG", "Waiting for recipes ...",('run',self))
-        self.__cv.acquire()
-        while not self.__run:
-            self.__cv.wait()
-        utils.log("DEBUG", "Ready to go ...",('run',self))
+    # Render recipes
+    def __runner(self):
+        utils.log("INFO", "Running StatesWorker ...",('__runner',self))
         while self.__run:
             if not self.__states:
-                utils.log("WARNING", "Empty states list.",('run',self))
+                utils.log("WARNING", "Empty states list.",('__runner',self))
                 self.__run = False
                 continue
             state = self.__states[self.__status]
-            utils.log("INFO", "Running state '%s', #%s"%(state['stateid'], self.__status),('run',self))
+            utils.log("INFO", "Running state '%s', #%s"%(state['stateid'], self.__status),('__runner',self))
             try:
                 if state.get('module') in self.__builtins:
                     (result,err_log,out_log) = self.__builtins[state['module']](state['stateid'],
@@ -300,18 +329,18 @@ class StatesWorker(threading.Thread):
                                                                 state['module'],
                                                                 state['parameter'])
             except SWWaitFormatException:
-                utils.log("ERROR", "Wrong wait request",('run',self))
+                utils.log("ERROR", "Wrong wait request",('__runner',self))
                 result = FAIL
                 err_log = "Wrong wait request"
                 out_log = None
             except Exception as e:
-                utils.log("ERROR", "Unknown exception: '%s'."%(e),('run',self))
+                utils.log("ERROR", "Unknown exception: '%s'."%(e),('__runner',self))
                 result = FAIL
                 err_log = "Unknown exception: '%s'."%(e)
                 out_log = None
             self.__waiting = False
             if self.__run:
-                utils.log("INFO", "Execution complete, reporting logs to backend.",('run',self))
+                utils.log("INFO", "Execution complete, reporting logs to backend.",('__runner',self))
                 self.__send(send.statelog(init=self.__config['init'],
                                           version=self.__version,
                                           id=state['stateid'],
@@ -322,17 +351,37 @@ class StatesWorker(threading.Thread):
                     # global status iteration
                     self.__status += 1
                     if self.__status >= len(self.__states):
-                        utils.log("INFO", "All good, last state succeed! Back to first one.",('run',self))
+                        utils.log("INFO", "All good, last state succeed! Back to first one.",('__runner',self))
                         self.__recipe_delay()
                         self.__status = 0
                     else:
-                        utils.log("INFO", "All good, switching to next state.",('run',self))
+                        utils.log("INFO", "All good, switching to next state.",('__runner',self))
                 else:
-                    utils.log("WARNING", "Something went wrong, retrying current state in %s seconds"%(WAIT_STATE_RETRY),('run',self))
+                    utils.log("WARNING", "Something went wrong, retrying current state in %s seconds"%(WAIT_STATE_RETRY),('__runner',self))
                     time.sleep(WAIT_STATE_RETRY)
             else:
-                utils.log("WARNING", "Execution aborted.",('run',self))
-        self.__cv.release()
-        self.run()
+                utils.log("WARNING", "Execution aborted.",('__runner',self))
+
+    # Callback on start
+    def run(self):
+        while not self.__abort:
+            self.__cv.acquire()
+            try:
+                if not self.__run:
+                    utils.log("INFO", "Waiting for recipes ...",('run',self))
+                    # TODO while not run?
+                    self.__cv.wait()
+                utils.log("DEBUG", "Ready to go ...",('run',self))
+                self.__runner()
+            except Exception as e:
+                utils.log("ERROR", "Unexpected error: %s."%(e),('run',self))
+            self.reset()
+            self.__cv.release()
+        utils.log("WARNING", "Exiting...",('run',self))
+        if self.__manager:
+            utils.log("INFO", "Stopping manager...",('run',self))
+            self.__manager.stop()
+            utils.log("INFO", "Manager stopped.",('run',self))
+        utils.log("WARNING", "Terminated.",('run',self))
     ##
 ##

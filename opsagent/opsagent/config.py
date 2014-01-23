@@ -9,7 +9,7 @@ Madeira OpsAgent configuration manager class
 import ConfigParser
 from ConfigParser import SafeConfigParser
 from copy import deepcopy
-
+import sys
 
 # Custon imports
 import utils
@@ -26,24 +26,24 @@ class Config():
 
     defaultValues = {
         'global': {
+            'loglvl': 'WARNING',
             'proc': '/proc',
-            'watch': '/tmp/madeira/opsagent/watch',
+            'watch': '/tmp/opsagent/opsagent/watch',
+            'pidfile': '/tmp/opsagentd.pid',
+            'token': '/etc/opsagent.d/token',
             },
         'runtime': {
             'proc': False,
             },
-        'toto': {
-            'tata': "tutu",
-            },
         'network': {
-            'ws_uri': "ws://localhost:8964/agent/",
+            'ws_uri': "wss://api.madeiracloud.com/agent/",
             'instance_id': "http://169.254.169.254/latest/meta-data/instance-id",
             'user_data': "http://169.254.169.254/latest/user-data",
             },
         'salt': {
-            'file_roots': '/srv/salt',
-            'extension_modules': '/var/cache/salt/minion/extmods',
-            'cachedir': '/var/cache/madeira/',
+            'file_roots': '/opsagent/env/srv/salt',
+            'extension_modules': '/opsagent/env/var/cache/salt/minion/extmods',
+            'cachedir': '/opsagent/env/var/cache/madeira',
             'delay': 1,
             'timeout': 30,
             }
@@ -60,21 +60,21 @@ class Config():
                 self.parse_file()
                 self.check_required(Config.requiredKeys)
             except Exception as e:
-                utils.log("ERROR", "Invalid config file '%s': %s"%(file,e),('__init__',self))
+                sys.stderr.write("ERROR: Invalid config file '%s': %s\n"%(file,e))
                 raise ConfigFileException
             except ConfigFileFormatException:
-                utils.log("ERROR", "Invalid config file '%s'."%(file),('__init__',self))
+                sys.stderr.write("ERROR: Invalid config file '%s'.\n"%(file))
                 raise ConfigFileException
             else:
-                utils.log("INFO", "Config file loaded '%s'."%(file),('__init__',self))
+                sys.stdout.write("Config file loaded '%s'.\n"%(file))
 
     def __read_file(self, file):
         try:
             self.__parser.read(file)
         except ConfigParser.ParsingError as e:
-            utils.log("ERROR", "Can't load config file %s, %s"%(file,e),('__readfile',self))
+            sys.stderr.write("ERROR: Can't load config file %s, %s.\n"%(file,e))
         else:
-            utils.log("DEBUG", "Config file parsed %s."%(file),('__readfile',self))
+            sys.stdout.write("Config file parsed '%s'.\n"%(file))
 
     def parse_file(self, file=None):
         if file:
@@ -88,15 +88,13 @@ class Config():
         valid = True
         for section in required:
             if section not in self.__c:
-                utils.log("ERROR", "Missing section '%s' in current configuration file."%(section),('check_required',self))
+                sys.stderr.write("ERROR: Missing section '%s' in current configuration file.\n"%(section))
                 valid = False
                 continue
             for key in required[section]:
                 if key not in self.__c[section]:
-                    utils.log("ERROR", "Missing key '%s' in section '%s' in current configuration file."%(key,section),('check_required',self))
+                    sys.stderr.write("ERROR: Missing key '%s' in section '%s' in current configuration file.\n"%(key,section))
                     valid = False
-                else:
-                    utils.log("DEBUG", "Required key '%s' in section '%s' in current configuration file found."%(key,section),('check_required',self))
         if not valid:
             raise ConfigFileException
 

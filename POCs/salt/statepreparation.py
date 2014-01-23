@@ -198,13 +198,16 @@ class StatePreparation(object):
 				  indent=4, separators=(',', ': '))
 
 			## set error and output log
-			result = True
+			result = False
 			for r_tag, r_value in ret.items():
 				# error log and std out log
 				if 'state_stderr' in r_value:
-					err_log = r_value['state_stderr']
+					err_log = r_value['state_stderr'] if 'state_stderr' in r_value else ""
 				if 'state_stdout' in r_value:
-					out_log = r_value['state_stdout']
+					out_log = r_value['state_stdout'] if 'state_stdout' in r_value else ""
+
+				if 'result' in r_value:
+					result = r_value['result']
 
 				if not r_value['result']:
 					break

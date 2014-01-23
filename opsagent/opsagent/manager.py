@@ -199,6 +199,11 @@ class Manager(WebSocketClient):
 
 
     ## NETWORK METHODS
+    # Stop
+    def stop(self):
+        utils.log("INFO", "Stopping manager ...",('stop',self))
+        self.__close(code=codes.C_STOP,reason=codes.M_STOP)
+
     # Close socket
     def __close(self, code=1000, reason='', reset=False):
         utils.log("INFO", "Closing connection ... (code='%s', reason='%s')"%(code,reason),('__close',self))
@@ -209,6 +214,10 @@ class Manager(WebSocketClient):
             utils.log("DEBUG", "Reset succeed",('__close',self))
         utils.log("DEBUG", "Closing socket ...",('__close',self))
         self.close(code, reason)
+        try:
+            self.terminated = True
+        except Exception as e:
+            utils.log("WARNING", "Can't set terminated attribute: %s."%e,('__close',self))
         utils.log("INFO", "Socket closed, connection terminated.",('__close',self))
 
     # Send data to backend
@@ -248,7 +257,8 @@ class Manager(WebSocketClient):
         utils.log("INFO", "Socket closed: %s, code '%s'"%(reason,code),('closed',self))
         utils.log("INFO", "Reconnection will start in '%s' seconds ..."%(WAIT_RECONNECT),('closed',self))
         self.__connected = False
-        self.__states_worker.set_manager(None)
+        if self.__states_worker and self.__states_worker.is_alive():
+            self.__states_worker.set_manager(None)
         time.sleep(WAIT_RECONNECT)
         utils.log("DEBUG", "Ready to reconnect",('closed',self))
 

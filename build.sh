@@ -11,12 +11,11 @@
 USAGE="$0 tree | (userdata APT|YUM {app_id} {token} {instance_id})"
 
 VIRTUALENV_VERSION=1.9
+BOOTSTRAP_DIR=bootstrap
 BUILD_DIR=build
 TREE_DIR=$BUILD_DIR/tree
 USER_DIR=$BUILD_DIR/userdata
-#VIRTUALENV_URI=https://pypi.python.org/packages/source/v/virtualenv/virtualenv-${VIRTUALENV_VERSION}.tar.gz
-#WS4PY_URI=https://github.com/Lawouach/WebSocket-for-Python.git
-#CONF="{aws_test.cfg,madeira_test.cfg,test.cfg}"
+OA_ROOT="opsagent"
 
 PYTHON_APT=python2.7
 PYTHON_YUM=python27
@@ -28,39 +27,38 @@ function tree() {
     mkdir -p ${TREE_DIR}
     cd ${TREE_DIR}
     # Create agent build tree
-    mkdir -p madeira/{bootstrap,sources,env/etc,env/bin}
+    mkdir -p $OA_ROOT/{bootstrap,sources,env/etc,env/bin}
     # Copy bootstrap scripts
-    cp ../../bootstrap/bootstrap_{apt,yum}.sh madeira/bootstrap/
-    # Fetch virtualenv
-#    curl -O ${VIRTUALENV_URI}
-#    tar xvfz virtualenv-${VIRTUALENV_VERSION}.tar.gz
-    # Create virtualenv directory in tree
-#    mv virtualenv-${VIRTUALENV_VERSION} madeira/bootstrap/virtualenv
-    # Fetch ws4py library
-#    git clone ${WS4PY_URI}
-    # Copy ws4py sources
-#    cp -r WebSocket-for-Python/ws4py madeira/sources/
+    cp ../../bootstrap/bootstrap_{apt,yum}.sh $OA_ROOT/bootstrap/
+    # Copy services install scripts
+    cp ../../bootstrap/bootstrap_{chkconfig,updaterc}.sh $OA_ROOT/bootstrap/
+    # Copy services launchers
+    cp ../../bootstrap/daemon.sh $OA_ROOT/bootstrap/
     # Copy virtualenv
-    cp -r ../../libs/virtualenv madeira/bootstrap/
+    cp -r ../../libs/virtualenv $OA_ROOT/bootstrap/
     # Copy ws4py sources
-    cp -r ../../libs/ws4py madeira/sources/
+    cp -r ../../libs/ws4py $OA_ROOT/sources/
     # Copy salt and dependencies
-    cp -r ../../libs/{msgpack,yaml,jinja2,markupsafe,salt} madeira/sources/
+    cp -r ../../libs/{msgpack,yaml,jinja2,markupsafe,salt} $OA_ROOT/sources/
     # Patch salt
-    cp -r ../../salt madeira/sources/
+    cp -r ../../salt $OA_ROOT/sources/
     # Copy opsagent sources
     for file in `find ../../opsagent/opsagent -type f -name '*.py'`
     do
         dir=`echo ${file} | rev | cut -d '/' -f 2-100 | rev | cut -d '/' -f 4-100 -s`
-        mkdir -p madeira/sources/${dir}
-        cp -f ${file} "madeira/sources/${dir}"
+        mkdir -p $OA_ROOT/sources/${dir}
+        cp -f ${file} "$OA_ROOT/sources/${dir}"
     done
     # Copy launch script editing shebang
-    sed -e "s/#!\/usr\/bin\/python/#!\/madeira\/env\/bin\/python/g" < ../../opsagent/opsagent.py > madeira/env/bin/opsagent
-    chmod +x madeira/env/bin/opsagent
+    sed -e "s/#!\/usr\/bin\/python/#!\/${OA_ROOT}\/env\/bin\/python/g" < ../../opsagent/opsagent.py > $OA_ROOT/env/bin/opsagent
+    chmod +x $OA_ROOT/env/bin/opsagent
     # Copy config files
-    cp ../../conf/*.cfg madeira/env/etc/
-    tar cfvz ../agent.tgz madeira
+    cp ../../conf/* $OA_ROOT/env/etc/ #TODO change * to opsagent.conf
+    tar cfvz ../agent.tgz $OA_ROOT
+    cd ..
+    CRC="$(cksum agent.tgz)"
+    echo $CRC > agent.cksum
+#    sed -e "s/%CRC%/${CRC}/g" < ${BOOTSTRAP_DIR}/bootstrap.tpl.sh > ${BOOTSTRAP_DIR}/bootstrap.sh
 }
 
 function userdata() {
