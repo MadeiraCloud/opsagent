@@ -726,6 +726,14 @@ class StateAdaptor(object):
 				if addin['nologin']:
 					module_state[default_state]['shell'] = '/sbin/nologin'
 
+		elif module in ['linux.mount']:
+			for attr in ['dump', 'pass_num']:
+				if attr in addin:
+					try:
+						module_state[default_state][attr] = int(addin['dump'])
+					except:
+						module_state[default_state][attr] = 0
+
 		return module_state
 
 	def __get_tag(self, module, uid=None, step=None, name=None, state=None):
