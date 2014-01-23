@@ -8,6 +8,7 @@ import logging
 
 # Import salt libs
 import salt.utils
+from salt.modules import state_std
 
 log = logging.getLogger(__name__)
 
@@ -97,7 +98,9 @@ def mkfs(device, fs_type, **kwargs):
             else:
                 opts += '-{0} {1} '.format(opt, kwargs[key])
     cmd = 'mke2fs -F -t {0} {1}{2}'.format(fs_type, opts, device)
-    out = __salt__['cmd.run'](cmd).splitlines()
+    result = __salt__['cmd.run_stdall'](cmd)
+    state_std(kwargs, result)
+    out = result['stdout'].splitlines()
     ret = []
     for line in out:
         if not line:
@@ -182,8 +185,9 @@ def tune(device, **kwargs):
             else:
                 opts += '-{0} {1} '.format(opt, kwargs[key])
     cmd = 'tune2fs {0}{1}'.format(opts, device)
-    out = __salt__['cmd.run'](cmd).splitlines()
-    return out
+    result = __salt__['cmd.run_stdall'](cmd)
+    state_std(kwargs, result)
+    return result['stdout'].splitlines()
 
 
 def attributes(device, args=None):
@@ -214,7 +218,7 @@ def blocks(device, args=None):
     return fsdump['blocks']
 
 
-def dump(device, args=None):
+def dump(device, args=None, **kwargs):
     '''
     Return all contents of dumpe2fs for a specified device
 
@@ -228,7 +232,9 @@ def dump(device, args=None):
     if args:
         cmd = cmd + ' -' + args
     ret = {'attributes': {}, 'blocks': {}}
-    out = __salt__['cmd.run'](cmd).splitlines()
+    result = __salt__['cmd.run_stdall'](cmd)
+    state_std(kwargs, result)
+    out = result['stdout'].splitlines()
     mode = 'opts'
     group = None
     for line in out:

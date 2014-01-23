@@ -16,6 +16,7 @@ import copy
 
 # Import salt libs
 import salt.utils
+from salt.modules import state_std
 from salt._compat import string_types
 
 log = logging.getLogger(__name__)
@@ -79,7 +80,7 @@ def add(name,
         roomnumber='',
         workphone='',
         homephone='',
-        createhome=True):
+        createhome=True, **kwargs):
     '''
     Add a user to the minion
 
@@ -128,7 +129,8 @@ def add(name,
 
     cmd.append(name)
 
-    ret = __salt__['cmd.run_all'](' '.join(cmd))
+    ret = __salt__['cmd.run_stdall'](' '.join(cmd))
+    state_std(kwargs, ret)
 
     if ret['retcode'] != 0:
         return False
@@ -174,7 +176,8 @@ def delete(name, remove=False, force=False):
 
     cmd.append(name)
 
-    ret = __salt__['cmd.run_all'](' '.join(cmd))
+    ret = __salt__['cmd.run_stdall'](' '.join(cmd))
+    state_std(kwargs, ret)
 
     if ret['retcode'] == 0:
         # Command executed with no errors
@@ -232,7 +235,8 @@ def chuid(name, uid):
     if uid == pre_info['uid']:
         return True
     cmd = 'usermod -u {0} {1}'.format(uid, name)
-    __salt__['cmd.run'](cmd)
+    result = __salt__['cmd.run_stdall'](cmd)
+    state_std(kwargs, result)
     post_info = info(name)
     if post_info['uid'] != pre_info['uid']:
         return post_info['uid'] == uid
@@ -253,7 +257,8 @@ def chgid(name, gid):
     if gid == pre_info['gid']:
         return True
     cmd = 'usermod -g {0} {1}'.format(gid, name)
-    __salt__['cmd.run'](cmd)
+    result = __salt__['cmd.run_stdall'](cmd)
+    state_std(kwargs, result)
     post_info = info(name)
     if post_info['gid'] != pre_info['gid']:
         return post_info['gid'] == gid
@@ -274,7 +279,8 @@ def chshell(name, shell):
     if shell == pre_info['shell']:
         return True
     cmd = 'usermod -s {0} {1}'.format(shell, name)
-    __salt__['cmd.run'](cmd)
+    result = __salt__['cmd.run_stdall'](cmd)
+    state_std(kwargs, result)
     post_info = info(name)
     if post_info['shell'] != pre_info['shell']:
         return post_info['shell'] == shell
@@ -299,7 +305,8 @@ def chhome(name, home, persist=False):
     if persist:
         cmd += ' -m '
     cmd += name
-    __salt__['cmd.run'](cmd)
+    result = __salt__['cmd.run_stdall'](cmd)
+    state_std(kwargs, result)
     post_info = info(name)
     if post_info['home'] != pre_info['home']:
         return post_info['home'] == home
@@ -326,7 +333,9 @@ def chgroups(name, groups, append=False):
     if append:
         cmd += '-a '
     cmd += '-G "{0}" {1}'.format(','.join(groups), name)
-    return not __salt__['cmd.retcode'](cmd)
+    result = __salt__['cmd.run_stdall'](cmd)
+    state_std(kwargs, result)
+    return not result['retcode']
 
 
 def chfullname(name, fullname):
@@ -348,7 +357,8 @@ def chfullname(name, fullname):
     gecos_field = copy.deepcopy(pre_info)
     gecos_field['fullname'] = fullname
     cmd = 'usermod -c "{0}" {1}'.format(_build_gecos(gecos_field), name)
-    __salt__['cmd.run'](cmd)
+    result = __salt__['cmd.run_stdall'](cmd)
+    state_std(kwargs, result)
     post_info = info(name)
     if post_info['fullname'] != pre_info['fullname']:
         return post_info['fullname'] == fullname
@@ -374,7 +384,8 @@ def chroomnumber(name, roomnumber):
     gecos_field = copy.deepcopy(pre_info)
     gecos_field['roomnumber'] = roomnumber
     cmd = 'usermod -c "{0}" {1}'.format(_build_gecos(gecos_field), name)
-    __salt__['cmd.run'](cmd)
+    result = __salt__['cmd.run_stdall'](cmd)
+    state_std(kwargs, result)
     post_info = info(name)
     if post_info['roomnumber'] != pre_info['roomnumber']:
         return post_info['roomnumber'] == roomnumber
@@ -400,7 +411,8 @@ def chworkphone(name, workphone):
     gecos_field = copy.deepcopy(pre_info)
     gecos_field['workphone'] = workphone
     cmd = 'usermod -c "{0}" {1}'.format(_build_gecos(gecos_field), name)
-    __salt__['cmd.run'](cmd)
+    result = __salt__['cmd.run_stdall'](cmd)
+    state_std(kwargs, result)
     post_info = info(name)
     if post_info['workphone'] != pre_info['workphone']:
         return post_info['workphone'] == workphone
@@ -426,7 +438,8 @@ def chhomephone(name, homephone):
     gecos_field = copy.deepcopy(pre_info)
     gecos_field['homephone'] = homephone
     cmd = 'usermod -c "{0}" {1}'.format(_build_gecos(gecos_field), name)
-    __salt__['cmd.run'](cmd)
+    result = __salt__['cmd.run_stdall'](cmd)
+    state_std(kwargs, result)
     post_info = info(name)
     if post_info['homephone'] != pre_info['homephone']:
         return post_info['homephone'] == homephone

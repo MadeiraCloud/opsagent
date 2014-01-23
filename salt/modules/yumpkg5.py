@@ -410,7 +410,7 @@ def refresh_db(**kwargs):
         salt '*' pkg.refresh_db
     '''
     cmd = 'yum -q clean dbcache'
-    result = __salt__['cmd.run_all'](cmd)
+    result = __salt__['cmd.run_stdall'](cmd)
     state_std(kwargs, result)
     return True
 
@@ -560,7 +560,8 @@ def install(name=None,
             gpgcheck='--nogpgcheck' if skip_verify else '',
             pkg=' '.join(targets),
         )
-        __salt__['cmd.run'](cmd, output_loglevel='debug')
+        result = __salt__['cmd.run_stdall'](cmd, output_loglevel='debug')
+        state_std(kwargs, result)
 
     if downgrade:
         cmd = 'yum -y {repo} {gpgcheck} downgrade {pkg}'.format(
@@ -568,7 +569,7 @@ def install(name=None,
             gpgcheck='--nogpgcheck' if skip_verify else '',
             pkg=' '.join(downgrade),
         )
-        result = __salt__['cmd.run_all'](cmd, output_loglevel='debug')
+        result = __salt__['cmd.run_stdall'](cmd, output_loglevel='debug')
         state_std(kwargs, result)
 
     __context__.pop('pkg.list_pkgs', None)
@@ -595,7 +596,7 @@ def upgrade(refresh=True, **kwargs):
         refresh_db(**kwargs)
     old = list_pkgs()
     cmd = 'yum -q -y upgrade'
-    result = __salt__['cmd.run_all'](cmd, output_loglevel='debug')
+    result = __salt__['cmd.run_stdall'](cmd, output_loglevel='debug')
     state_std(kwargs, result)
     __context__.pop('pkg.list_pkgs', None)
     new = list_pkgs()
@@ -639,7 +640,7 @@ def remove(name=None, pkgs=None, **kwargs):
     if not targets:
         return {}
     cmd = 'yum -q -y remove "{0}"'.format('" "'.join(targets))
-    result = __salt__['cmd.run'](cmd, output_loglevel='debug')
+    result = __salt__['cmd.run_stdall'](cmd, output_loglevel='debug')
     state_std(kwargs, result)
     __context__.pop('pkg.list_pkgs', None)
     new = list_pkgs()

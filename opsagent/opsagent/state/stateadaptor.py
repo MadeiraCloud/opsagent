@@ -162,6 +162,8 @@ class StateAdaptor(object):
 				'source' : 'name',
 				'target' : 'target',
 				'user'	 : 'user',
+				'group'	 : 'group',
+				'mode'	 : 'mode',
 				'absent' : 'absent'
 			},
 			'states' : [
@@ -174,9 +176,9 @@ class StateAdaptor(object):
 		'common.git' : {
 			'attributes' : {
 				'repo'		: 'name',
-				'branch'	: 'rev',
-				# 'version'	:,
-				# 'ssh_key'	: 'identify',
+				'branch'	: 'branch',
+				'version'	: 'rev',
+				'ssh_key'	: 'identify',
 				'path'		: 'target',
 				'user'		: 'user',
 				'force'		: 'force_checkout',
@@ -200,13 +202,13 @@ class StateAdaptor(object):
 		'common.svn' : {
 			'attributes' : {
 				'repo'		: 'name',
-				'branch'	: '',
+				'branch'	: 'branch',
 				'revision'	: 'rev',
 				'username'	: 'username',
 				'password'	: 'password',
 				'path'		: 'target',
 				'user'		: 'user',
-				'force'		: 'forge',
+				'force'		: 'force',
 			},
 			'states' : [
 				'latest', 'export'
@@ -227,7 +229,7 @@ class StateAdaptor(object):
 		'common.hg' : {
 			'attributes' : {
 				'repo'		: 'name',
-				'branch'	: '',
+				'branch'	: 'branch',
 				'revision'	: 'rev',
 				#'ssh_key'	: '',
 				'path'		: 'target',
@@ -639,6 +641,11 @@ class StateAdaptor(object):
 			if 'name' in addin:
 				module_state[default_state]['name'] = addin['name'].split('-')[1].strip()
 
+			# set revision
+			if 'branch' in addin:
+				module_state[default_state]['rev'] = addin['branch']
+				module_state[default_state].pop('branch')
+
 		elif module in ['linux.apt.repo', 'linux.yum.repo']:
 			if 'name' in addin:
 				filename = addin['name']
@@ -666,13 +673,13 @@ class StateAdaptor(object):
 				}
 			)
 
-		elif module == 'common.ssh.auth':
+		elif module in ['common.ssh.auth', 'common.ssh.known_host']:
 			auth = []
 
 			if 'enc' in addin and addin['enc'] not in self.ssh_key_type:
 				module_state[default_state]['enc'] = self.ssh_key_type[0]
 
-			if 'content' in addin:
+			if module == 'common.ssh.auth' and 'content' in addin:
 				for line in value.split('\n'):
 					if not line: continue
 
@@ -682,10 +689,6 @@ class StateAdaptor(object):
 
 				# remove name attribute
 				module_state[default_state].pop('name')
-
-		elif module == 'common.ssh.known_host':
-			if 'enc' in addin and addin['enc'] not in self.ssh_key_type:
-				module_state[default_state]['enc'] = self.ssh_key_type[0]
 
 		elif module in ['linux.dir', 'linux.file', 'linux.symlink']:
 			# set absent

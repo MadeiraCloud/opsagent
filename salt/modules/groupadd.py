@@ -41,7 +41,7 @@ def add(name, gid=None, system=False, **kwargs):
         cmd += '-r '
     cmd += name
 
-    ret = __salt__['cmd.run_all'](cmd)
+    ret = __salt__['cmd.run_stdall'](cmd)
     state_std(kwargs, ret)
 
     return not ret['retcode']
@@ -57,7 +57,7 @@ def delete(name, **kwargs):
 
         salt '*' group.delete foo
     '''
-    ret = __salt__['cmd.run_all']('groupdel {0}'.format(name))
+    ret = __salt__['cmd.run_stdall']('groupdel {0}'.format(name))
     state_std(kwargs, ret)
 
     return not ret['retcode']
@@ -125,7 +125,7 @@ def chgid(name, gid, **kwargs):
     if gid == pre_gid:
         return True
     cmd = 'groupmod -g {0} {1}'.format(gid, name)
-    result = __salt__['cmd.run_all'](cmd)
+    result = __salt__['cmd.run_stdall'](cmd)
     state_std(kwargs, result)
     post_gid = __salt__['file.group_to_gid'](name)
     if post_gid != pre_gid:

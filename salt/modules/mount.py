@@ -320,7 +320,7 @@ def mount(name, device, mkmnt=False, fstype='', opts='defaults', **kwargs):
     if fstype:
         args += ' -t {0}'.format(fstype)
     cmd = 'mount {0} {1} {2} '.format(args, device, name)
-    out = __salt__['cmd.run_all'](cmd)
+    out = __salt__['cmd.run_stdall'](cmd)
     state_std(kwargs, out)
     if out['retcode']:
         return out['stderr']
@@ -350,7 +350,7 @@ def remount(name, device, mkmnt=False, fstype='', opts='defaults', **kwargs):
         if fstype:
             args += ' -t {0}'.format(fstype)
         cmd = 'mount {0} {1} {2} '.format(args, device, name)
-        out = __salt__['cmd.run_all'](cmd)
+        out = __salt__['cmd.run_stdall'](cmd)
         state_std(kwargs, out)
         if out['retcode']:
             return out['stderr']
@@ -374,7 +374,7 @@ def umount(name, **kwargs):
         return "{0} does not have anything mounted".format(name)
 
     cmd = 'umount {0}'.format(name)
-    out = __salt__['cmd.run_all'](cmd)
+    out = __salt__['cmd.run_stdall'](cmd)
     state_std(kwargs, out)
     if out['retcode']:
         return out['stderr']
@@ -446,7 +446,7 @@ def swapon(name, priority=None, **kwargs):
     cmd = 'swapon {0}'.format(name)
     if priority:
         cmd += ' -p {0}'.format(priority)
-    result = __salt__['cmd.run_all'](cmd)
+    result = __salt__['cmd.run_stdall'](cmd)
     state_std(kwargs, result)
     on_ = swaps()
     if name in on_:
@@ -468,7 +468,7 @@ def swapoff(name, **kwargs):
     '''
     on_ = swaps()
     if name in on_:
-        result = __salt__['cmd.run_all']('swapoff {0}'.format(name))
+        result = __salt__['cmd.run_stdall']('swapoff {0}'.format(name))
         state_std(kwargs, result)
         on_ = swaps()
         if name in on_:

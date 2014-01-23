@@ -30,7 +30,7 @@ def _pecl(command, defaults=False, **kwargs):
     if salt.utils.is_true(defaults):
         cmdline = "printf '\n' | " + cmdline
 
-    ret = __salt__['cmd.run_all'](cmdline)
+    ret = __salt__['cmd.run_stdall'](cmdline)
     state_std(kwargs, ret)
 
     if ret['retcode'] == 0:

@@ -268,7 +268,7 @@ def refresh_db(**kwargs):
     '''
     ret = {}
     cmd = 'apt-get -q update'
-    result = __salt__['cmd.run_all'](cmd, output_loglevel='debug')
+    result = __salt__['cmd.run_stdall'](cmd, output_loglevel='debug')
     state_std(kwargs, result)
     out = result['stdout']
     for line in out.splitlines():
@@ -434,7 +434,7 @@ def install(name=None,
         cmd.append('install')
         cmd.extend(targets)
 
-    result = __salt__['cmd.run_all'](cmd, env=kwargs.get('env'), python_shell=False,
+    result = __salt__['cmd.run_stdall'](cmd, env=kwargs.get('env'), python_shell=False,
                         output_loglevel='debug')
     state_std(kwargs, result)
     __context__.pop('pkg.list_pkgs', None)
@@ -461,7 +461,7 @@ def _uninstall(action='remove', name=None, pkgs=None, **kwargs):
         return {}
     cmd = ['apt-get', '-q', '-y', action]
     cmd.extend(targets)
-    result = __salt__['cmd.run_all'](
+    result = __salt__['cmd.run_stdall'](
         cmd,
         env=kwargs.get('env'),
         python_shell=False,
@@ -562,7 +562,7 @@ def upgrade(refresh=True, **kwargs):
     old = list_pkgs()
     cmd = ['apt-get', '-q', '-y', '-o', 'DPkg::Options::=--force-confold',
            '-o', 'DPkg::Options::=--force-confdef', 'dist-upgrade']
-    result = __salt__['cmd.run_all'](cmd, python_shell=False, output_loglevel='debug')
+    result = __salt__['cmd.run_stdall'](cmd, python_shell=False, output_loglevel='debug')
     state_std(kwargs, result)
     __context__.pop('pkg.list_pkgs', None)
     new = list_pkgs()
@@ -1048,7 +1048,7 @@ def mod_repo(repo, saltenv='base', **kwargs):
                         cmd = 'apt-add-repository {0}'.format(repo)
                     else:
                         cmd = 'apt-add-repository -y {0}'.format(repo)
-                    result = __salt__['cmd.run_all'](
+                    result = __salt__['cmd.run_stdall'](
                         cmd, output_loglevel='debug', **kwargs
                     )
                     state_std(kwargs, result)
@@ -1162,7 +1162,7 @@ def mod_repo(repo, saltenv='base', **kwargs):
             error_str = 'both keyserver and keyid options required.'
             raise NameError(error_str)
         cmd = 'apt-key export {0}'.format(keyid)
-        result = __salt__['cmd.run_all'](
+        result = __salt__['cmd.run_stdall'](
             cmd, output_loglevel='debug', **kwargs
         )
         state_std(kwargs, result)
@@ -1172,7 +1172,7 @@ def mod_repo(repo, saltenv='base', **kwargs):
             if not imported:
                 cmd = ('apt-key adv --keyserver {0} --logger-fd 1 '
                        '--recv-keys {1}')
-                ret = __salt__['cmd.run_all'](
+                ret = __salt__['cmd.run_stdall'](
                     cmd.format(ks, keyid), output_loglevel='debug', **kwargs
                 )
                 state_std(kwargs, ret)
@@ -1186,7 +1186,7 @@ def mod_repo(repo, saltenv='base', **kwargs):
         key_url = kwargs['key_url']
         fn_ = __salt__['cp.cache_file'](key_url, saltenv)
         cmd = 'apt-key add {0}'.format(fn_)
-        result = __salt__['cmd.run_all'](
+        result = __salt__['cmd.run_stdall'](
             cmd, output_loglevel='debug', **kwargs
         )
         state_std(kwargs, result)

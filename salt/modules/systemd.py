@@ -125,7 +125,7 @@ def systemctl_reload(**kwargs):
 
         salt '*' service.systemctl_reload
     '''
-    result = __salt__['cmd.run_all']('systemctl --system daemon-reload')
+    result = __salt__['cmd.run_stdall']('systemctl --system daemon-reload')
     state_std(kwargs, result)
     retcode = result['retcode']
     if retcode != 0:
@@ -221,7 +221,7 @@ def start(name, **kwargs):
     '''
     if _untracked_custom_unit_found(name) or _unit_file_changed(name):
         systemctl_reload()
-    result = __salt__['cmd.run_all'](_systemctl_cmd('start', name))
+    result = __salt__['cmd.run_stdall'](_systemctl_cmd('start', name))
     state_std(kwargs, result)
     return not result['retcode']
 
@@ -238,7 +238,7 @@ def stop(name, **kwargs):
     '''
     if _untracked_custom_unit_found(name) or _unit_file_changed(name):
         systemctl_reload()
-    result = __salt__['cmd.run_all'](_systemctl_cmd('stop', name))
+    result = __salt__['cmd.run_stdall'](_systemctl_cmd('stop', name))
     state_std(kwargs, result)
     return not result['retcode']
 
@@ -255,7 +255,7 @@ def restart(name, **kwargs):
     '''
     if _untracked_custom_unit_found(name) or _unit_file_changed(name):
         systemctl_reload()
-    result = __salt__['cmd.run_all'](_systemctl_cmd('restart', name))
+    result = __salt__['cmd.run_stdall'](_systemctl_cmd('restart', name))
     state_std(kwargs, result)
     return not result['retcode']
 
@@ -271,7 +271,7 @@ def reload_(name, **kwargs):
     '''
     if _untracked_custom_unit_found(name) or _unit_file_changed(name):
         systemctl_reload()
-    result = __salt__['cmd.run_all'](_systemctl_cmd('reload', name))
+    result = __salt__['cmd.run_stdall'](_systemctl_cmd('reload', name))
     state_std(kwargs, result)
     return not result['retcode']
 
@@ -287,7 +287,7 @@ def force_reload(name):
     '''
     if _untracked_custom_unit_found(name) or _unit_file_changed(name):
         systemctl_reload()
-    result = __salt__['cmd.run_all'](_systemctl_cmd('force-reload', name))
+    result = __salt__['cmd.run_stdall'](_systemctl_cmd('force-reload', name))
     state_std(kwargs, result)
     return not result['retcode']
 
@@ -307,7 +307,7 @@ def status(name, sig=None):
     if _untracked_custom_unit_found(name) or _unit_file_changed(name):
         systemctl_reload()
     cmd = 'systemctl is-active {0}'.format(_canonical_unit_name(name))
-    result = __salt__['cmd.run_all'](cmd)
+    result = __salt__['cmd.run_stdall'](cmd)
     state_std(kwargs, result)
     return not result['retcode']
 
@@ -323,7 +323,7 @@ def enable(name, **kwargs):
     '''
     if _untracked_custom_unit_found(name) or _unit_file_changed(name):
         systemctl_reload()
-    result = __salt__['cmd.run_all'](_systemctl_cmd('enable', name))
+    result = __salt__['cmd.run_stdall'](_systemctl_cmd('enable', name))
     state_std(kwargs, result)
     return not result['retcode']
 
@@ -339,7 +339,7 @@ def disable(name, **kwargs):
     '''
     if _untracked_custom_unit_found(name) or _unit_file_changed(name):
         systemctl_reload()
-    result = __salt__['cmd.run_all'](_systemctl_cmd('disable', name))
+    result = __salt__['cmd.run_stdall'](_systemctl_cmd('disable', name))
     state_std(kwargs, result)
     return not result['retcode']
 
