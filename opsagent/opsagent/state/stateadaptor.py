@@ -302,10 +302,10 @@ class StateAdaptor(object):
 		## cron
 		'linux.cron' : {
 			'attributes' : {
-				'minute'	:	'minute',
-				'hour'		:	'hour',
+				'minute'		:	'minute',
+				'hour'			:	'hour',
 				'day of month'	:	'daymonth',
-				'month'		:	'month',
+				'month'			:	'month',
 				'day of week'	:	'dayweek',
 				'username'		:	'user',
 				'cmd'			:	'name'
@@ -326,7 +326,7 @@ class StateAdaptor(object):
 				'gid'		: 'gid',
 				'shell'		: 'shell',
 				'home'		: 'home',
-				#'nologin'	: '',
+				'nologin'	: 'nologin',
 				'groups'	: 'groups',
 			},
 			'states' : [ 'present', 'absent' ],
@@ -717,6 +717,14 @@ class StateAdaptor(object):
 
 			if 'unless' in addin:
 				module_state[default_state]['unless'] = "[ -d " + addin['unless'] + " ]"
+
+		elif module in ['linux.user']:
+			# set nologin shell
+			if 'nologin' in addin:
+				module_state[default_state].pop('nologin')
+
+				if addin['nologin']:
+					module_state[default_state]['shell'] = '/sbin/nologin'
 
 		return module_state
 
