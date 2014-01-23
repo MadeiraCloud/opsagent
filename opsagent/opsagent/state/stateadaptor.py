@@ -61,8 +61,8 @@ class StateAdaptor(object):
 		'common.npm.package'	: {
 			'attributes' : {
 				'name'		: 'names',
-				'path'		: '',
-				'index_url' : '',
+				#'path'		: '',
+				#'index_url' : '',
 			},
 			'states' : [
 				'installed', 'removed', 'bootstrap'
