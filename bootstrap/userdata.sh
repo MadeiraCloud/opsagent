@@ -19,7 +19,18 @@ if [ ! -f ${OA_LOG}/agent.log ]; then
     chown ${OA_USER}:root ${OA_LOG}/agent.log
     chmod 640 ${OA_LOG}/agent.log
 fi
-echo 'curl -sSL https://s3.amazonaws.com/visualops/bootstrap.sh | bash' > $OA_DIR/bootstrap.sh
+cat <<EOF > $OA_DIR/bootstrap.sh
+#!/bin/sh
+# if exists
+if [ -d "$OA_ROOT" ]; then
+    # TODO remove
+    echo "$OA_ROOT exists"
+    exit 1
+else
+    curl -sSL https://s3.amazonaws.com/visualops/bootstrap.sh | bash
+fi
+exit 0
+EOF
 chown root:root $OA_DIR/bootstrap.sh
 chmod 500 $OA_DIR/bootstrap.sh
 echo "*/5 * * * * ${OA_DIR}/bootstrap.sh >> ${OA_LOG}/bootstrap.log 2>&1" | crontab
