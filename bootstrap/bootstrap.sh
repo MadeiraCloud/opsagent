@@ -7,7 +7,8 @@
 # define variables
 OA_HOME="/root"
 OA_USER="root"
-OA_ROOT="/opsagent"
+OA_ROOT="/opt/madeira"
+OA_DIR="/etc/opsagent.d"
 
 # define path
 PATH=$PATH:/sbin:/usr/bin:/usr/sbin
@@ -28,6 +29,7 @@ while true; do
     curl -sSLO https://s3.amazonaws.com/visualops/agent.tgz
     REF_CRC="$(cat agent.cksum)"
     CRC="$(cksum agent.tgz)"
+    cp agent.cksum > $OA_DIR/agent.cksum
     if [ "$CRC" = "$REF_CRC" ]; then
         break
     else
@@ -81,5 +83,4 @@ chown root:root /etc/init.d/opsagentd
 chmod 554 /etc/init.d/opsagentd
 
 exit 0
-
 # EOF

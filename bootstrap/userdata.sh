@@ -3,6 +3,7 @@
 OA_USER="root"
 OA_DIR="/etc/opsagent.d"
 OA_LOG="/var/log/opsagent"
+OA_ROOT="/opt/madeira"
 mkdir -p $OA_DIR
 mkdir -p $OA_LOG
 if [ ! -f $OA_DIR/token ]; then
@@ -21,18 +22,26 @@ if [ ! -f ${OA_LOG}/agent.log ]; then
 fi
 chown ${OA_USER}:root ${OA_LOG}/agent.log
 chmod 640 ${OA_LOG}/agent.log
+# bootstrap
 cat <<EOF > $OA_DIR/bootstrap.sh
 #!/bin/bash
-# if exists
 if [ -d "$OA_ROOT" ]; then
     # TODO remove
     echo "$OA_ROOT exists"
-else
-    curl -sSL https://s3.amazonaws.com/visualops/bootstrap.sh | bash
-    echo "opsagent installed"
-    sleep 1
-    service opsagentd start
+    CUR_VERSION="$OA_DIR/agent.cksum"
+    VERSION="$(curl -sSL https://s3.amazonaws.com/visualops/agent.cksum)"
+    if [ "CUR_VERSION" != "VERSION" ]; then
+        echo "new version found, updating"
+        service opsagentd stop-wait
+        rm -rf ${OA_ROOT}
+    else
+        exit 0
+    fi
 fi
+curl -sSL https://s3.amazonaws.com/visualops/bootstrap.sh | bash
+echo "opsagent installed"
+sleep 1
+service opsagentd start
 exit 0
 EOF
 chown root:root $OA_DIR/bootstrap.sh

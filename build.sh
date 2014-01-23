@@ -15,7 +15,7 @@ BOOTSTRAP_DIR=bootstrap
 BUILD_DIR=build
 TREE_DIR=$BUILD_DIR/tree
 USER_DIR=$BUILD_DIR/userdata
-OA_ROOT="opsagent"
+OA_ROOT="opt/madeira"
 
 PYTHON_APT=python2.7
 PYTHON_YUM=python27
@@ -50,7 +50,7 @@ function tree() {
         cp -f ${file} "$OA_ROOT/sources/${dir}"
     done
     # Copy launch script editing shebang
-    sed -e "s/#!\/usr\/bin\/python/#!\/${OA_ROOT}\/env\/bin\/python/g" < ../../opsagent/opsagent.py > $OA_ROOT/env/bin/opsagent
+    sed -e "s|#!/usr/bin/python|#!/${OA_ROOT}/env/bin/python|g" < ../../opsagent/opsagent.py > $OA_ROOT/env/bin/opsagent
     chmod +x $OA_ROOT/env/bin/opsagent
     # Copy config files
     cp ../../conf/* $OA_ROOT/env/etc/ #TODO change * to opsagent.conf
@@ -61,34 +61,34 @@ function tree() {
 #    sed -e "s/%CRC%/${CRC}/g" < ${BOOTSTRAP_DIR}/bootstrap.tpl.sh > ${BOOTSTRAP_DIR}/bootstrap.sh
 }
 
-function userdata() {
-    mkdir -p ${USER_DIR}
-    cd ${USER_DIR}
-    MANAGER=$1
-    APP_ID=$2
-    TOKEN=$3
-    IID=$4
-    eval PYTHON_VERSION=\${PYTHON_$MANAGER}
-    if [ $MANAGER = 'APT' ]; then
-        ADD_PKG="  - python-apt"
-    else
-        ADD_PKG=""
-    fi
-    sed -e "s/%python%/${PYTHON_VERSION}/g" \
-        -e "s/%app_id%/${APP_ID}/g" \
-        -e "s/%token%/${TOKEN}/g" \
-        -e "s/%add_pkg%/${ADD_PKG}/g" \
-        < ../../bootstrap.yaml > bootstrap_$IID.yaml
-}
+#function userdata() {
+#    mkdir -p ${USER_DIR}
+#    cd ${USER_DIR}
+#    MANAGER=$1
+#    APP_ID=$2
+#    TOKEN=$3
+#    IID=$4
+#    eval PYTHON_VERSION=\${PYTHON_$MANAGER}
+#    if [ $MANAGER = 'APT' ]; then
+#        ADD_PKG="  - python-apt"
+#    else
+#        ADD_PKG=""
+#    fi
+#    sed -e "s/%python%/${PYTHON_VERSION}/g" \
+#        -e "s/%app_id%/${APP_ID}/g" \
+#        -e "s/%token%/${TOKEN}/g" \
+#        -e "s/%add_pkg%/${ADD_PKG}/g" \
+#        < ../../bootstrap.yaml > bootstrap_$IID.yaml
+#}
 
 
 case $1 in
     tree)
         tree
         ;;
-    userdata)
-        userdata $2 $3 $4 $5
-        ;;
+#    userdata)
+#        userdata $2 $3 $4 $5
+#        ;;
     *)
         echo -e "syntax error\nusage: $USAGE"
         ;;

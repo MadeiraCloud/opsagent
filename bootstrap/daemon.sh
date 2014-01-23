@@ -15,7 +15,7 @@
 # Description: Runs opsagent
 ### END INIT INFO
 
-OA_ROOT="/opsagent"
+OA_ROOT="/opt/madeira"
 
 case "$1" in
   start)
