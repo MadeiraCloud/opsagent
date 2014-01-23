@@ -176,7 +176,7 @@ class StateAdaptor(object):
 				'repo'		: 'name',
 				'branch'	: 'rev',
 				# 'version'	:,
-				# 'ssh_key'	: 'identify',
+				'ssh_key'	: 'identify',
 				'path'		: 'target',
 				'user'		: 'user',
 				'force'		: 'force_checkout',
