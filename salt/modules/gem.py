@@ -21,11 +21,11 @@ def _gem(command, ruby=None, runas=None, **kwargs):
     if __salt__['rbenv.is_installed'](runas=runas):
         return __salt__['rbenv.do'](cmdline, runas=runas, **kwargs)
 
-    ret = __salt__['cmd.run_all'](
+    ret = __salt__['cmd.run_stdall'](
         cmdline,
         runas=runas
         )
-    state_std(kwargs, result)
+    state_std(kwargs, ret)
     if ret['retcode'] == 0:
         return ret['stdout']
     else:

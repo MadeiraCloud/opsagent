@@ -74,7 +74,7 @@ def start(name='all', user=None, conf_file=None, bin_env=None, **kwargs):
         salt '*' supervisord.start <service>
         salt '*' supervisord.start <group>:
     '''
-    ret = __salt__['cmd.run_all'](
+    ret = __salt__['cmd.run_stdall'](
         _ctl_cmd('start', name, conf_file, bin_env), runas=user
     )
     state_std(kwargs, ret)
@@ -101,7 +101,7 @@ def restart(name='all', user=None, conf_file=None, bin_env=None, **kwargs):
         salt '*' supervisord.restart <service>
         salt '*' supervisord.restart <group>:
     '''
-    ret = __salt__['cmd.run_all'](
+    ret = __salt__['cmd.run_stdall'](
         _ctl_cmd('restart', name, conf_file, bin_env), runas=user
     )
     state_std(kwargs, ret)
@@ -128,7 +128,7 @@ def stop(name='all', user=None, conf_file=None, bin_env=None, **kwargs):
         salt '*' supervisord.stop <service>
         salt '*' supervisord.stop <group>:
     '''
-    ret = __salt__['cmd.run_all'](
+    ret = __salt__['cmd.run_stdall'](
         _ctl_cmd('stop', name, conf_file, bin_env), runas=user
     )
     state_std(kwargs, ret)
@@ -155,7 +155,7 @@ def add(name, user=None, conf_file=None, bin_env=None, **kwargs):
     '''
     if name.endswith(':'):
         name = name[:-1]
-    ret = __salt__['cmd.run_all'](
+    ret = __salt__['cmd.run_stdall'](
         _ctl_cmd('add', name, conf_file, bin_env), runas=user
     )
     state_std(kwargs, ret)
@@ -182,7 +182,7 @@ def remove(name, user=None, conf_file=None, bin_env=None, **kwargs):
     '''
     if name.endswith(':'):
         name = name[:-1]
-    ret = __salt__['cmd.run_all'](
+    ret = __salt__['cmd.run_stdall'](
         _ctl_cmd('remove', name, conf_file, bin_env), runas=user
     )
     state_std(kwargs, ret)
@@ -207,7 +207,7 @@ def reread(user=None, conf_file=None, bin_env=None, **kwargs):
 
         salt '*' supervisord.reread
     '''
-    ret = __salt__['cmd.run_all'](
+    ret = __salt__['cmd.run_stdall'](
         _ctl_cmd('reread', None, conf_file, bin_env), runas=user
     )
     state_std(kwargs, ret)
@@ -232,7 +232,7 @@ def update(user=None, conf_file=None, bin_env=None, **kwargs):
 
         salt '*' supervisord.update
     '''
-    ret = __salt__['cmd.run_all'](
+    ret = __salt__['cmd.run_stdall'](
         _ctl_cmd('update', None, conf_file, bin_env), runas=user
     )
     state_std(kwargs, ret)
@@ -309,7 +309,7 @@ def custom(command, user=None, conf_file=None, bin_env=None, **kwargs):
 
         salt '*' supervisord.custom "mstop '*gunicorn*'"
     '''
-    ret = __salt__['cmd.run_all'](
+    ret = __salt__['cmd.run_stdall'](
         _ctl_cmd(command, None, conf_file, bin_env), runas=user
     )
     state_std(kwargs, ret)

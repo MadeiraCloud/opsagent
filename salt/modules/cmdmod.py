@@ -212,7 +212,7 @@ def _run(cmd,
          cwd=None,
          stdin=None,
          stdout=subprocess.PIPE,
-         stderr=subprocess.PIPE,
+         stderr=subprocess.STDOUT,
          output_loglevel='info',
          quiet=False,
          runas=None,
@@ -789,6 +789,7 @@ def run_all(cmd,
                runas=runas,
                cwd=cwd,
                stdin=stdin,
+               stderr=subprocess.STDOUT if kwargs.has_key('stderr') and kwargs['stderr'] == subprocess.STDOUT else subprocess.PIPE,
                shell=shell,
                python_shell=python_shell,
                env=env,
@@ -817,6 +818,83 @@ def run_all(cmd,
             log.log(lvl, 'stderr: {0}'.format(ret['stderr']))
     return ret
 
+def run_stdall(cmd,
+            cwd=None,
+            stdin=None,
+            runas=None,
+            shell=DEFAULT_SHELL,
+            python_shell=True,
+            env=(),
+            clean_env=False,
+            template=None,
+            rstrip=True,
+            umask=None,
+            output_loglevel='info',
+            quiet=False,
+            timeout=None,
+            reset_system_locale=True,
+            saltenv='base',
+            **kwargs):
+    '''
+    Execute the passed command and return a dict of return data
+
+    Note that ``env`` represents the environment variables for the command, and
+    should be formatted as a dict, or a YAML string which resolves to a dict.
+
+    CLI Example:
+
+    .. code-block:: bash
+
+        salt '*' cmd.run_all "ls -l | awk '/foo/{print \\$2}'"
+
+    The template arg can be set to 'jinja' or another supported template
+    engine to render the command arguments before execution.
+    For example:
+
+    .. code-block:: bash
+
+        salt '*' cmd.run_all template=jinja "ls -l /tmp/{{grains.id}} | awk '/foo/{print \\$2}'"
+
+    A string of standard input can be specified for the command to be run using
+    the ``stdin`` parameter. This can be useful in cases where sensitive
+    information must be read from standard input.:
+
+    .. code-block:: bash
+
+        salt '*' cmd.run_all "grep f" stdin='one\\ntwo\\nthree\\nfour\\nfive\\n'
+    '''
+    ret = _run(cmd,
+               runas=runas,
+               cwd=cwd,
+               stdin=stdin,
+               stderr=subprocess.STDOUT,
+               shell=shell,
+               python_shell=python_shell,
+               env=env,
+               clean_env=clean_env,
+               template=template,
+               rstrip=rstrip,
+               umask=umask,
+               output_loglevel=output_loglevel,
+               quiet=quiet,
+               timeout=timeout,
+               reset_system_locale=reset_system_locale,
+               saltenv=saltenv)
+
+    lvl = _check_loglevel(output_loglevel, quiet)
+    if lvl is not None:
+        if ret['retcode'] != 0:
+            if lvl < LOG_LEVELS['error']:
+                lvl = LOG_LEVELS['error']
+            log.error(
+                'Command {0!r} failed with return code: {1}'
+                .format(cmd, ret['retcode'])
+            )
+        if ret['stdout']:
+            log.log(lvl, 'stdout: {0}'.format(ret['stdout']))
+        if ret['stderr']:
+            log.log(lvl, 'stderr: {0}'.format(ret['stderr']))
+    return ret
 
 def retcode(cmd,
             cwd=None,
