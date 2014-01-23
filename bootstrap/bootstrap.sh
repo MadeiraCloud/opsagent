@@ -79,7 +79,6 @@ fi
 # start service
 chown root:root /etc/init.d/opsagentd
 chmod 554 /etc/init.d/opsagentd
-service opsagentd start
 
 exit 0
 
