@@ -200,13 +200,13 @@ class StateAdaptor(object):
 		'common.svn' : {
 			'attributes' : {
 				'repo'		: 'name',
-				'branch'	: '',
+				#'branch'	: '',
 				'revision'	: 'rev',
 				'username'	: 'username',
 				'password'	: 'password',
 				'path'		: 'target',
 				'user'		: 'user',
-				'force'		: 'forge',
+				'force'		: 'force',
 			},
 			'states' : [
 				'latest', 'export'
