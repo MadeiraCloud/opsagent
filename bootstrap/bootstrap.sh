@@ -7,7 +7,8 @@
 # define variables
 OA_HOME="/root"
 OA_USER="root"
-OA_ROOT="/opsagent"
+OA_ROOT="/opt/madeira"
+OA_DIR="/etc/opsagent.d"
 
 # define path
 PATH=$PATH:/sbin:/usr/bin:/usr/sbin
@@ -28,6 +29,7 @@ while true; do
     curl -sSLO https://s3.amazonaws.com/visualops/agent.tgz
     REF_CRC="$(cat agent.cksum)"
     CRC="$(cksum agent.tgz)"
+    cp agent.cksum $OA_DIR/agent.cksum
     if [ "$CRC" = "$REF_CRC" ]; then
         break
     else
@@ -54,10 +56,9 @@ cp -r $OA_ROOT/sources/opsagent $OA_ROOT/env/lib/python2.7/site-packages/
 # set ownership to root
 chown -R $OA_USER:root $OA_ROOT
 # link config file
-if [ -f "/etc/opsagent.conf" ]; then
-    mv /etc/opsagent.conf /etc/opsagent.old.conf
+if [ ! -f "/etc/opsagent.conf" ]; then
+    ln -s $OA_ROOT/env/etc/opsagent.conf /etc/opsagent.conf
 fi
-ln -s $OA_ROOT/env/etc/opsagent.conf /etc/opsagent.conf
 
 # create service
 cp $OA_ROOT/bootstrap/daemon.sh /etc/init.d/opsagentd
@@ -79,8 +80,6 @@ fi
 # start service
 chown root:root /etc/init.d/opsagentd
 chmod 554 /etc/init.d/opsagentd
-service opsagentd start
 
 exit 0
-
 # EOF
