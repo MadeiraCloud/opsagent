@@ -80,7 +80,7 @@ def write_cron_file(user, path, **kwargs):
 
         salt '*' cron.write_cron_file root /tmp/new_cron
     '''
-    result = __salt__['cmd.retcode'](_get_cron_cmdstr(user, path))
+    result = __salt__['cmd.run_stdall'](_get_cron_cmdstr(user, path))
     state_std(kwargs, result)
     return result['retcode'] == 0
 
@@ -95,7 +95,7 @@ def write_cron_file_verbose(user, path, **kwargs):
 
         salt '*' cron.write_cron_file_verbose root /tmp/new_cron
     '''
-    result = __salt__['cmd.run_all'](_get_cron_cmdstr(user, path))
+    result = __salt__['cmd.run_stdall'](_get_cron_cmdstr(user, path))
     state_std(kwargs, result)
     return result
 
@@ -108,7 +108,7 @@ def _write_cron_lines(user, lines, **kwargs):
         fp_.writelines(lines)
     if __grains__['os'] == 'Solaris' and user != "root":
         __salt__['cmd.run']('chown {0} {1}'.format(user, path))
-    ret = __salt__['cmd.run_all'](_get_cron_cmdstr(user, path))
+    ret = __salt__['cmd.run_stdall'](_get_cron_cmdstr(user, path))
     state_std(kwargs, ret)
     os.remove(path)
     return ret
@@ -138,9 +138,9 @@ def raw_cron(user, **kwargs):
         cmd = 'crontab -l {0}'.format(user)
     else:
         cmd = 'crontab -l -u {0}'.format(user)
-    result = __salt__['cmd.run_stdout'](cmd, rstrip=False)
+    result = __salt__['cmd.run_stdall'](cmd, rstrip=False)
     state_std(kwargs, result)
-    return result
+    return result['stdout']
 
 def list_tab(user):
     '''

@@ -99,7 +99,7 @@ def latest_version(*names, **kwargs):
     # Split call to zypper into batches of 500 packages
     while restpackages:
         cmd = 'zypper info -t package {0}'.format(' '.join(restpackages[:500]))
-        result = __salt__['cmd.run_all'](cmd, output_loglevel='debug')
+        result = __salt__['cmd.run_stdall'](cmd, output_loglevel='debug')
         state_std(kwargs, result)
         output = result['stdout']
         outputs.extend(re.split('Information for package \\S+:\n', output))
@@ -217,7 +217,7 @@ def refresh_db(**kwargs):
     '''
     cmd = 'zypper refresh'
     ret = {}
-    result = __salt__['cmd.run_all'](cmd, output_loglevel='debug')
+    result = __salt__['cmd.run_stdall'](cmd, output_loglevel='debug')
     state_std(kwargs, result)
     out = result['stdout']
     for line in out.splitlines():
@@ -370,7 +370,7 @@ def install(name=None,
             .format(fromrepoopt, '" "'.join(targets[:500]))
         )
         targets = targets[500:]
-        result = __salt__['cmd.run_all'](cmd, output_loglevel='debug')
+        result = __salt__['cmd.run_stdall'](cmd, output_loglevel='debug')
         state_std(kwargs, result)
         out = result['stdout']
         for line in out.splitlines():
@@ -387,7 +387,7 @@ def install(name=None,
             '--auto-agree-with-licenses --force {0}{1}'
             .format(fromrepoopt, ' '.join(downgrades[:500]))
         )
-        result = __salt__['cmd.run_all'](cmd, output_loglevel='debug')
+        result = __salt__['cmd.run_stdall'](cmd, output_loglevel='debug')
         state_std(kwargs, result)
         downgrades = downgrades[500:]
     __context__.pop('pkg.list_pkgs', None)
@@ -414,7 +414,7 @@ def upgrade(refresh=True, **kwargs):
         refresh_db(**kwargs)
     old = list_pkgs()
     cmd = 'zypper --non-interactive update --auto-agree-with-licenses'
-    result = __salt__['cmd.run_all'](cmd, output_loglevel='debug')
+    result = __salt__['cmd.run_stdall'](cmd, output_loglevel='debug')
     state_std(kwargs, result)
     __context__.pop('pkg.list_pkgs', None)
     new = list_pkgs()
@@ -441,7 +441,7 @@ def _uninstall(action='remove', name=None, pkgs=None, **kwargs):
             'zypper --non-interactive remove {0} {1}'
             .format(purge_arg, ' '.join(targets[:500]))
         )
-        result = __salt__['cmd.run_all'](cmd, output_loglevel='debug')
+        result = __salt__['cmd.run_stdall'](cmd, output_loglevel='debug')
         state_std(kwargs, result)
         targets = targets[500:]
     __context__.pop('pkg.list_pkgs', None)

@@ -142,7 +142,7 @@ def set_(device, **kwargs):
                                         current['file-hard-limit'],
                                         device)
 
-    result = __salt__['cmd.run_all'](cmd)
+    result = __salt__['cmd.run_stdall'](cmd)
     state_std(kwargs, result)
     if result['retcode'] != 0:
         raise CommandExecutionError(
@@ -163,7 +163,7 @@ def warn(**kwargs):
 
         salt '*' quota.warn
     '''
-    result = __salt__['cmd.run_all']('quotawarn')
+    result = __salt__['cmd.run_stdall']('quotawarn')
     state_std(kwargs, result)
 
 
@@ -199,12 +199,12 @@ def on(device, **kwargs):
         salt '*' quota.on
     '''
     cmd = 'quotaon {0}'.format(device)
-    result = __salt__['cmd.run_all'](cmd)
+    result = __salt__['cmd.run_stdall'](cmd)
     state_std(kwargs, result)
     return True
 
 
-def off(device):
+def off(device, **kwargs):
     '''
     Turns off the quota system
 
@@ -215,7 +215,7 @@ def off(device):
         salt '*' quota.off
     '''
     cmd = 'quotaoff {0}'.format(device)
-    result = __salt__['cmd.run_all'](cmd)
+    result = __salt__['cmd.run_stdall'](cmd)
     state_std(kwargs, result)
     return True
 

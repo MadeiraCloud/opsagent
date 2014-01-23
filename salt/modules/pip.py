@@ -443,7 +443,7 @@ def install(pkgs=None,
     if pre_releases:
         # Check the locally installed pip version
         pip_version_cmd = '{0} --version'.format(_get_pip_bin(bin_env))
-        output = __salt__['cmd.run_all'](pip_version_cmd).get('stdout', '')
+        output = __salt__['cmd.run_stdall'](pip_version_cmd).get('stdout', '')
         state_std(kwargs, output)
         pip_version = output.split()[1]
 
@@ -498,7 +498,7 @@ def install(pkgs=None,
         cmd_kwargs = dict(runas=user, cwd=cwd, saltenv=saltenv)
         if bin_env and os.path.isdir(bin_env):
             cmd_kwargs['env'] = {'VIRTUAL_ENV': bin_env}
-        result = __salt__['cmd.run_all'](' '.join(cmd), **cmd_kwargs)
+        result = __salt__['cmd.run_stdall'](' '.join(cmd), **cmd_kwargs)
         state_std(kwargs, result)
         return result
     finally:
@@ -669,7 +669,7 @@ def uninstall(pkgs=None,
         cmd_kwargs['env'] = {'VIRTUAL_ENV': bin_env}
 
     try:
-        result = __salt__['cmd.run_all'](' '.join(cmd), **cmd_kwargs)
+        result = __salt__['cmd.run_stdall'](' '.join(cmd), **cmd_kwargs)
         state_std(kwargs, result)
     finally:
         for requirement in cleanup_requirements:
@@ -733,7 +733,7 @@ def freeze(bin_env=None,
     cmd_kwargs = dict(runas=user, cwd=cwd)
     if bin_env and os.path.isdir(bin_env):
         cmd_kwargs['env'] = {'VIRTUAL_ENV': bin_env}
-    result = __salt__['cmd.run_all'](' '.join(cmd), **cmd_kwargs)
+    result = __salt__['cmd.run_stdall'](' '.join(cmd), **cmd_kwargs)
     state_std(kwargs, result)
 
     if result['retcode'] > 0:

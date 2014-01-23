@@ -265,7 +265,7 @@ def create(path,
     cmd.append(path)
 
     # Let's create the virtualenv
-    ret = __salt__['cmd.run_all'](' '.join(cmd), runas=user)
+    ret = __salt__['cmd.run_stdall'](' '.join(cmd), runas=user)
     state_std(kwargs, ret)
     if ret['retcode'] > 0:
         # Something went wrong. Let's bail out now!
@@ -346,7 +346,7 @@ def _install_script(source, cwd, python, user, saltenv='base'):
         os.chmod(tmppath, 320)
         os.chown(tmppath, __salt__['file.user_to_uid'](user), -1)
     try:
-        return __salt__['cmd.run_all'](
+        return __salt__['cmd.run_stdall'](
             '{0} {1}'.format(python, tmppath),
             runas=user,
             cwd=cwd,

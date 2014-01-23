@@ -76,7 +76,7 @@ def install(pkg=None,
     if not _valid_version():
         return '{0!r} is not available.'.format('npm.install')
 
-    cmd = 'npm install --silent --json'
+    cmd = 'npm install'		#'npm install --silent --json'
 
     if dir is None:
         cmd += ' --global'
@@ -84,31 +84,21 @@ def install(pkg=None,
     if pkg:
         cmd += ' "{0}"'.format(pkg)
 
-    result = __salt__['cmd.run_all'](cmd, cwd=dir, runas=runas)
+    result = __salt__['cmd.run_stdall'](cmd, cwd=dir, runas=runas)
     state_std(kwargs, result)
     if result['retcode'] != 0:
         raise CommandExecutionError(result['stderr'])
 
     # npm >1.2.21 is putting the output to stderr even though retcode is 0
     npm_output = result['stdout'] or result['stderr']
-    try:
-        return json.loads(npm_output)
-    except ValueError:
-        # Not JSON! Try to coax the json out of it!
-        pass
+    for line in npm_output.splitlines():
+        if line.find('%s@' % pkg) >= 0:
+            return [{
+                'name'		:	pkg,
+                'version'	:	line[line.find('%s@' % pkg)+len('%s@' % pkg):line.find(' ')]	#EXAMPLE: express@3.4.8 /usr/local/lib/node_modules/express
+            }]
 
-    lines = npm_output.splitlines()
-    log.error(lines)
-
-    # Strip all lines until JSON output starts
-    while not lines[0].startswith('{') and not lines[0].startswith('['):
-        lines = lines[1:]
-
-    try:
-        return json.loads(''.join(lines))
-    except ValueError:
-        # Still no JSON!! Return the stdout as a string
-        return npm_output
+    return npm_output
 
 
 def uninstall(pkg,
@@ -148,7 +138,7 @@ def uninstall(pkg,
 
     cmd += ' "{0}"'.format(pkg)
 
-    result = __salt__['cmd.run_all'](cmd, cwd=dir, runas=runas)
+    result = __salt__['cmd.run_stdall'](cmd, cwd=dir, runas=runas)
     state_std(kwargs, result)
     if result['retcode'] != 0:
         log.error(result['stderr'])

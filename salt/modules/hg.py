@@ -45,7 +45,7 @@ def revision(cwd, rev='tip', short=False, user=None, **kwargs):
         short=' --debug' if not short else '',
         rev=' -r {0}'.format(rev))
 
-    result = __salt__['cmd.run_all'](cmd, cwd=cwd, runas=user)
+    result = __salt__['cmd.run_stdall'](cmd, cwd=cwd, runas=user)
     state_std(kwargs, result)
     
     if result['retcode'] == 0:
@@ -122,7 +122,7 @@ def archive(cwd, output, rev='tip', fmt=None, prefix=None, user=None, **kwargs):
         fmt=' --type {0}'.format(fmt) if fmt else '',
         prefix=' --prefix "{0}"'.format(prefix if prefix else ''))
 
-    result = __salt__['cmd.run_all'](cmd, cwd=cwd, runas=user)
+    result = __salt__['cmd.run_stdall'](cmd, cwd=cwd, runas=user)
     state_std(kwargs, result)
     return result['stdout']
 
@@ -150,7 +150,7 @@ def pull(cwd, opts=None, user=None, **kwargs):
 
     if not opts:
         opts = ''
-    result = __salt__['cmd.run_all']('hg pull {0}'.format(opts), cwd=cwd, runas=user)
+    result = __salt__['cmd.run_stdall']('hg pull {0}'.format(opts), cwd=cwd, runas=user)
     state_std(kwargs, result)
     return result['stdout']
 
@@ -180,6 +180,7 @@ def update(cwd, rev, force=False, user=None, **kwargs):
     _check_hg()
 
     cmd = 'hg update {0}{1}'.format(rev, ' -C' if force else '')
+    result = __salt__['cmd.run_stdall'](cmd, cwd=cwd, runas=user)
     state_std(kwargs, result)
     return result['stdout']
 
@@ -211,6 +212,6 @@ def clone(cwd, repository, opts=None, user=None, **kwargs):
     if not opts:
         opts = ''
     cmd = 'hg clone {0} {1} {2}'.format(repository, cwd, opts)
-    result = __salt__['cmd.run_all'](cmd, runas=user)
+    result = __salt__['cmd.run_stdall'](cmd, runas=user)
     state_std(kwargs, result)
     return result['stdout']

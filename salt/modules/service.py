@@ -72,7 +72,7 @@ def start(name, **kwargs):
         _GRAINMAP.get(__grains__.get('os'), '/etc/init.d'),
         name + ' start'
     )
-    result = __salt__['cmd.run_all'](cmd)
+    result = __salt__['cmd.run_stdall'](cmd)
     state_std(kwargs, result)
     return not result['retcode']
 
@@ -91,7 +91,7 @@ def stop(name):
         _GRAINMAP.get(__grains__.get('os'), '/etc/init.d'),
         name + ' stop'
     )
-    result = __salt__['cmd.run_all'](cmd)
+    result = __salt__['cmd.run_stdall'](cmd)
     state_std(kwargs, result)
     return not result['retcode']
 
@@ -110,7 +110,7 @@ def restart(name):
         _GRAINMAP.get(__grains__.get('os'), '/etc/init.d'),
         name + ' restart'
     )
-    result = __salt__['cmd.run_all'](cmd)
+    result = __salt__['cmd.run_stdall'](cmd)
     state_std(kwargs, result)
     return not result['retcode']
 
@@ -144,7 +144,7 @@ def reload_(name):
         _GRAINMAP.get(__grains__.get('os'), '/etc/init.d'),
         name + ' reload'
     )
-    result = __salt__['cmd.run_all'](cmd)
+    result = __salt__['cmd.run_stdall'](cmd)
     state_std(kwargs, result)
     return not result['retcode']
 

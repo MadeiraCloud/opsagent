@@ -73,7 +73,7 @@ def _git_run(cmd, cwd=None, runas=None, identity=None, **kwargs):
             'GIT_SSH': helper
         }
 
-    result = __salt__['cmd.run_all'](cmd,
+    result = __salt__['cmd.run_stdall'](cmd,
                                      cwd=cwd,
                                      runas=runas,
                                      env=env,
@@ -152,7 +152,7 @@ def revision(cwd, rev='HEAD', short=False, user=None, **kwargs):
     '''
     _check_git()
 
-    cmd = 'git rev-parse {0}{1} --progress'.format('--short ' if short else '', rev)
+    cmd = 'git rev-parse {0}{1}'.format('--short ' if short else '', rev)
     return _git_run(cmd, cwd, runas=user, **kwargs)
 
 
@@ -189,7 +189,7 @@ def clone(cwd, repository, opts=None, user=None, identity=None, **kwargs):
 
     if not opts:
         opts = ''
-    cmd = 'git clone {0} {1} {2} --progress'.format(repository, cwd, opts)
+    cmd = 'git clone {0} {1} {2}'.format(repository, cwd, opts)
 
     return _git_run(cmd, runas=user, identity=identity, **kwargs)
 
@@ -255,7 +255,7 @@ def archive(cwd, output, rev='HEAD', fmt=None, prefix=None, user=None, **kwargs)
 
     basename = '{0}/'.format(os.path.basename(_git_getdir(cwd, user=user)))
 
-    cmd = 'git archive{prefix}{fmt} -o {output} {rev} --progress'.format(
+    cmd = 'git archive{prefix}{fmt} -o {output} {rev}'.format(
             rev=rev,
             output=output,
             fmt=' --format={0}'.format(fmt) if fmt else '',
@@ -293,7 +293,7 @@ def fetch(cwd, opts=None, user=None, identity=None, **kwargs):
 
     if not opts:
         opts = ''
-    cmd = 'git fetch {0} --progress'.format(opts)
+    cmd = 'git fetch {0}'.format(opts)
 
     return _git_run(cmd, cwd=cwd, runas=user, identity=identity, **kwargs)
 
@@ -324,7 +324,7 @@ def pull(cwd, opts=None, user=None, identity=None, **kwargs):
 
     if not opts:
         opts = ''
-    return _git_run('git pull {0} --progress'.format(opts),
+    return _git_run('git pull {0}'.format(opts),
                     cwd=cwd,
                     runas=user,
                     identity=identity,
@@ -365,7 +365,7 @@ def rebase(cwd, rev='master', opts=None, user=None, **kwargs):
 
     if not opts:
         opts = ''
-    return _git_run('git rebase {0} {1} --progress'.format(opts, rev),
+    return _git_run('git rebase {0} {1}'.format(opts, rev),
                     cwd=cwd,
                     runas=user,
                     **kwargs)
@@ -404,7 +404,7 @@ def checkout(cwd, rev, force=False, opts=None, user=None, **kwargs):
 
     if not opts:
         opts = ''
-    cmd = 'git checkout {0} {1} {2} --progress'.format(' -f' if force else '', rev, opts)
+    cmd = 'git checkout {0} {1} {2}'.format(' -f' if force else '', rev, opts)
     return _git_run(cmd, cwd=cwd, runas=user, **kwargs)
 
 
@@ -435,7 +435,7 @@ def merge(cwd, branch='@{upstream}', opts=None, user=None, **kwargs):
 
     if not opts:
         opts = ''
-    cmd = 'git merge {0} {1} --progress'.format(branch,
+    cmd = 'git merge {0} {1}'.format(branch,
                                      opts)
 
     return _git_run(cmd, cwd, runas=user, **kwargs)
@@ -462,7 +462,7 @@ def init(cwd, opts=None, user=None, **kwargs):
     '''
     _check_git()
 
-    cmd = 'git init {0} {1} --progress'.format(cwd, opts)
+    cmd = 'git init {0} {1}'.format(cwd, opts)
     return _git_run(cmd, runas=user, **kwargs)
 
 
@@ -495,7 +495,7 @@ def submodule(cwd, init=True, opts=None, user=None, identity=None, **kwargs):
 
     if not opts:
         opts = ''
-    cmd = 'git submodule update {0} {1} --progress'.format('--init' if init else '', opts)
+    cmd = 'git submodule update {0} {1}'.format('--init' if init else '', opts)
     return _git_run(cmd, cwd=cwd, runas=user, identity=identity, **kwargs)
 
 
@@ -553,7 +553,7 @@ def add(cwd, file_name, user=None, opts=None, **kwargs):
 
     if not opts:
         opts = ''
-    cmd = 'git add {0} {1} --progress'.format(file_name, opts)
+    cmd = 'git add {0} {1}'.format(file_name, opts)
     return _git_run(cmd, cwd=cwd, runas=user, **kwargs)
 
 
@@ -582,7 +582,7 @@ def rm(cwd, file_name, user=None, opts=None, **kwargs):
 
     if not opts:
         opts = ''
-    cmd = 'git rm {0} {1} --progress'.format(file_name, opts)
+    cmd = 'git rm {0} {1}'.format(file_name, opts)
     return _git_run(cmd, cwd=cwd, runas=user, **kwargs)
 
 
@@ -611,7 +611,7 @@ def commit(cwd, message, user=None, opts=None, **kwargs):
 
     if not opts:
         opts = ''
-    cmd = 'git commit -m {0} {1} --progress'.format(pipes.quote(message), opts)
+    cmd = 'git commit -m {0} {1}'.format(pipes.quote(message), opts)
     return _git_run(cmd, cwd=cwd, runas=user, **kwargs)
 
 
@@ -648,7 +648,7 @@ def push(cwd, remote_name, branch='master', user=None, opts=None,
 
     if not opts:
         opts = ''
-    cmd = 'git push {0} {1} {2} --progress'.format(remote_name, branch, opts)
+    cmd = 'git push {0} {1} {2}'.format(remote_name, branch, opts)
     return _git_run(cmd, cwd=cwd, runas=user, identity=identity, **kwargs)
 
 
@@ -730,9 +730,9 @@ def remote_set(cwd, name='origin', url=None, user=None, **kwargs):
         salt '*' git.remote_set /path/to/repo origin git@github.com:saltstack/salt.git
     '''
     if remote_get(cwd, name):
-        cmd = 'git remote rm {0} --progress'.format(name)
+        cmd = 'git remote rm {0}'.format(name)
         _git_run(cmd, cwd=cwd, runas=user, **kwargs)
-    cmd = 'git remote add {0} {1} --progress'.format(name, url)
+    cmd = 'git remote add {0} {1}'.format(name, url)
     _git_run(cmd, cwd=cwd, runas=user, **kwargs)
     return remote_get(cwd=cwd, remote=name, user=None)
 
@@ -760,7 +760,7 @@ def reset(cwd, opts=None, user=None, **kwargs):
 
     if not opts:
         opts = ''
-    return _git_run('git reset {0} --progress'.format(opts), cwd=cwd, runas=user, **kwargs)
+    return _git_run('git reset {0}'.format(opts), cwd=cwd, runas=user, **kwargs)
 
 
 def stash(cwd, opts=None, user=None, **kwargs):
@@ -786,7 +786,7 @@ def stash(cwd, opts=None, user=None, **kwargs):
 
     if not opts:
         opts = ''
-    return _git_run('git stash {0} --progress'.format(opts), cwd=cwd, runas=user, **kwargs)
+    return _git_run('git stash {0}'.format(opts), cwd=cwd, runas=user, **kwargs)
 
 
 def config_set(cwd, setting_name, setting_value, user=None, is_global=False, **kwargs):
@@ -821,7 +821,7 @@ def config_set(cwd, setting_name, setting_value, user=None, is_global=False, **k
 
     _check_git()
 
-    return _git_run('git config {0} {1} {2} --progress'.format(scope, setting_name, setting_value), cwd=cwd, runas=user, **kwargs)
+    return _git_run('git config {0} {1} {2}'.format(scope, setting_name, setting_value), cwd=cwd, runas=user, **kwargs)
 
 
 def config_get(cwd, setting_name, user=None):
