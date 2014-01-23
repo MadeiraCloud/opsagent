@@ -162,6 +162,8 @@ class StateAdaptor(object):
 				'source' : 'name',
 				'target' : 'target',
 				'user'	 : 'user',
+				'group'	 : 'group',
+				'mode'	 : 'mode',
 				'absent' : 'absent'
 			},
 			'states' : [
