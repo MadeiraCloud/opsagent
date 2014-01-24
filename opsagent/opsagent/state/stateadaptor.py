@@ -279,6 +279,14 @@ class StateAdaptor(object):
 			'states' : ['running'],
 			'type' : 'service',
 		},
+		'linux.upstart' : {
+			'attributes' : {
+				'name' : 'name',
+				# 'watch' : 'watch',
+			},
+			'states' : ['running'],
+			'type' : 'service',
+		},
 
 		## cmd
 		'linux.cmd' : {
