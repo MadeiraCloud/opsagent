@@ -128,50 +128,6 @@ class StateAdaptor(object):
 			'type' : 'cmd'
 		},
 
-		## path
-		'linux.dir' : {
-			'attributes' : {
-				'path' : 'name',
-				'user' : 'user',
-				'group' : 'group',
-				'mode' : 'mode',
-				'recursive' : 'recurse',
-				'absent' : 'absent',
-			},
-			'states' : [
-				'directory', 'absent'
-			],
-			'type' : 'file'
-		},
-		'linux.file' : {
-			'attributes' : {
-				'path' : 'name',
-				'user' : 'user',
-				'group' : 'group',
-				'mode' : 'mode',
-				'content' : 'contents',
-				'absent' : 'absent',
-			},
-			'states' : [
-				'managed', 'absent'
-			],
-			'type' : 'file'
-		},
-		'linux.symlink' : {
-			'attributes' : {
-				'source' : 'name',
-				'target' : 'target',
-				'user'	 : 'user',
-				'group'	 : 'group',
-				'mode'	 : 'mode',
-				'absent' : 'absent'
-			},
-			'states' : [
-				'symlink', 'absent'
-			],
-			'type' : 'file'
-		},
-
 		## scm
 		'common.git' : {
 			'attributes' : {
@@ -251,6 +207,50 @@ class StateAdaptor(object):
 					'mode' : 'mode'
 				}
 			},
+		},
+
+		## path
+		'linux.dir' : {
+			'attributes' : {
+				'path' : 'name',
+				'user' : 'user',
+				'group' : 'group',
+				'mode' : 'mode',
+				'recursive' : 'recurse',
+				'absent' : 'absent',
+			},
+			'states' : [
+				'directory', 'absent'
+			],
+			'type' : 'file'
+		},
+		'linux.file' : {
+			'attributes' : {
+				'path' : 'name',
+				'user' : 'user',
+				'group' : 'group',
+				'mode' : 'mode',
+				'content' : 'contents',
+				'absent' : 'absent',
+			},
+			'states' : [
+				'managed', 'absent'
+			],
+			'type' : 'file'
+		},
+		'linux.symlink' : {
+			'attributes' : {
+				'source' : 'name',
+				'target' : 'target',
+				'user'	 : 'user',
+				'group'	 : 'group',
+				'mode'	 : 'mode',
+				'absent' : 'absent'
+			},
+			'states' : [
+				'symlink', 'absent'
+			],
+			'type' : 'file'
 		},
 
 		## service
@@ -454,6 +454,22 @@ class StateAdaptor(object):
 			},
 			'states' : ['lv_present', 'lv_absent'],
 			'type' : 'lvm',
+		},
+
+		## virtual env
+		'common.virtualenv' : {
+			'attributes' : {
+				'path'					: 'name',
+				'python'				: 'python',
+				'system-site-packages'	: 'system_site_packages',
+				# 'always-copy'			: '',
+				# 'unzip-setuptools'		: '',
+				# 'no-setuptools'			: '',
+				# 'no-pip'				: '',
+				'extra-search-dir'		: 'extra-search-dir',
+			},
+			'states' : ['managed'],
+			'type' : 'virtualenv',
 		},
 
 		## ssh
