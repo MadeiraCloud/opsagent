@@ -281,7 +281,7 @@ class StateAdaptor(object):
 		},
 
 		## cmd
-		'sys.cmd' : {
+		'linux.cmd' : {
 			'attributes' : {
 				'bin'			: 'shell',
 				'cmd'			: 'name',
