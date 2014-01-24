@@ -41,9 +41,9 @@ class Config():
             'user_data': "http://169.254.169.254/latest/user-data",
             },
         'salt': {
-            'file_roots': '/opsagent/env/srv/salt',
-            'extension_modules': '/opsagent/env/var/cache/salt/minion/extmods',
-            'cachedir': '/opsagent/env/var/cache/madeira',
+            'file_roots': '/opt/madeira/env/srv/salt',
+            'extension_modules': '/opt/madeira/env/var/cache/salt/minion/extmods',
+            'cachedir': '/opt/madeira/env/var/cache/madeira',
             'delay': 1,
             'timeout': 30,
             }

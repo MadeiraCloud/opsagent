@@ -61,8 +61,8 @@ class StateAdaptor(object):
 		'common.npm.package'	: {
 			'attributes' : {
 				'name'		: 'names',
-				'path'		: '',
-				'index_url' : '',
+				#'path'		: '',
+				#'index_url' : '',
 			},
 			'states' : [
 				'installed', 'removed', 'bootstrap'
@@ -126,50 +126,6 @@ class StateAdaptor(object):
 				'run'
 			],
 			'type' : 'cmd'
-		},
-
-		## path
-		'linux.dir' : {
-			'attributes' : {
-				'path' : 'name',
-				'user' : 'user',
-				'group' : 'group',
-				'mode' : 'mode',
-				'recursive' : 'recurse',
-				'absent' : 'absent',
-			},
-			'states' : [
-				'directory', 'absent'
-			],
-			'type' : 'file'
-		},
-		'linux.file' : {
-			'attributes' : {
-				'path' : 'name',
-				'user' : 'user',
-				'group' : 'group',
-				'mode' : 'mode',
-				'content' : 'contents',
-				'absent' : 'absent',
-			},
-			'states' : [
-				'managed', 'absent'
-			],
-			'type' : 'file'
-		},
-		'linux.symlink' : {
-			'attributes' : {
-				'source' : 'name',
-				'target' : 'target',
-				'user'	 : 'user',
-				'group'	 : 'group',
-				'mode'	 : 'mode',
-				'absent' : 'absent'
-			},
-			'states' : [
-				'symlink', 'absent'
-			],
-			'type' : 'file'
 		},
 
 		## scm
@@ -253,6 +209,50 @@ class StateAdaptor(object):
 			},
 		},
 
+		## path
+		'linux.dir' : {
+			'attributes' : {
+				'path' : 'name',
+				'user' : 'user',
+				'group' : 'group',
+				'mode' : 'mode',
+				'recursive' : 'recurse',
+				'absent' : 'absent',
+			},
+			'states' : [
+				'directory', 'absent'
+			],
+			'type' : 'file'
+		},
+		'linux.file' : {
+			'attributes' : {
+				'path' : 'name',
+				'user' : 'user',
+				'group' : 'group',
+				'mode' : 'mode',
+				'content' : 'contents',
+				'absent' : 'absent',
+			},
+			'states' : [
+				'managed', 'absent'
+			],
+			'type' : 'file'
+		},
+		'linux.symlink' : {
+			'attributes' : {
+				'source' : 'name',
+				'target' : 'target',
+				'user'	 : 'user',
+				'group'	 : 'group',
+				'mode'	 : 'mode',
+				'absent' : 'absent'
+			},
+			'states' : [
+				'symlink', 'absent'
+			],
+			'type' : 'file'
+		},
+
 		## service
 		'linux.supervisord' : {
 			'attributes' : {
@@ -279,9 +279,17 @@ class StateAdaptor(object):
 			'states' : ['running'],
 			'type' : 'service',
 		},
+		'linux.upstart' : {
+			'attributes' : {
+				'name' : 'name',
+				# 'watch' : 'watch',
+			},
+			'states' : ['running'],
+			'type' : 'service',
+		},
 
 		## cmd
-		'sys.cmd' : {
+		'linux.cmd' : {
 			'attributes' : {
 				'bin'			: 'shell',
 				'cmd'			: 'name',
@@ -290,8 +298,8 @@ class StateAdaptor(object):
 				'group'			: 'group',
 				'timeout'		: 'timeout',
 				'env'			: 'env',
-				#'with_path'		: '',
-				#'without_path'	: '',
+				'with_path'		: 'onlyif',
+				'without_path'	: 'unless',
 			},
 			'states' : [
 				'run', 'call', 'wait', 'script'
@@ -302,10 +310,10 @@ class StateAdaptor(object):
 		## cron
 		'linux.cron' : {
 			'attributes' : {
-				'minute'	:	'minute',
-				'hour'		:	'hour',
+				'minute'		:	'minute',
+				'hour'			:	'hour',
 				'day of month'	:	'daymonth',
-				'month'		:	'month',
+				'month'			:	'month',
 				'day of week'	:	'dayweek',
 				'username'		:	'user',
 				'cmd'			:	'name'
@@ -326,7 +334,7 @@ class StateAdaptor(object):
 				'gid'		: 'gid',
 				'shell'		: 'shell',
 				'home'		: 'home',
-				#'nologin'	: '',
+				'nologin'	: 'nologin',
 				'groups'	: 'groups',
 			},
 			'states' : [ 'present', 'absent' ],
@@ -423,37 +431,53 @@ class StateAdaptor(object):
 		},
 		'linux.lvm.lv'	: {
 			'attributes'	: {
-				'path'				: '',
-				'name'				: '',
-				'available'			: '',
-				'chunk size'		: '',
-				'contiguous'		: '',
-				'discards'			: '',
-				'stripe number'		: '',
-				'stripe size'		: '',
-				'LE number'			: '',
-				'LV size'			: '',
-				'minor number'		: '',
-				'persistent'		: '',
-				'mirror number'		: '',
-				'no udev sync'		: '',
-				'monitor'			: '',
-				'ignore monitoring' : '',
-				'permission' 		: '',
-				'pool metadata size': '',
-				'region size'		: '',
-				'readahead'			: '',
-				'snapshot'			: '',
-				'thinpool'			: '',
-				'type'				: '',
-				'virtual size'		: '',
-				'zero'				: '',
-				'autobackup'		: '',
-				'tag'				: '',
-				'allocation policy'	: '',
+				'path'				: 'pv',
+				'name'				: 'name',
+				# 'available'			: '',
+				# 'chunk size'		: '',
+				# 'contiguous'		: '',
+				# 'discards'			: '',
+				# 'stripe number'		: '',
+				# 'stripe size'		: '',
+				'LE number'			: 'extents',
+				'LV size'			: 'size',
+				# 'minor number'		: '',
+				# 'persistent'		: '',
+				# 'mirror number'		: '',
+				# 'no udev sync'		: '',
+				# 'monitor'			: '',
+				# 'ignore monitoring' : '',
+				# 'permission' 		: '',
+				# 'pool metadata size': '',
+				# 'region size'		: '',
+				# 'readahead'			: '',
+				# 'snapshot'			: '',
+				# 'thinpool'			: '',
+				# 'type'				: '',
+				# 'virtual size'		: '',
+				# 'zero'				: '',
+				# 'autobackup'		: '',
+				# 'tag'				: '',
+				# 'allocation policy'	: '',
 			},
 			'states' : ['lv_present', 'lv_absent'],
 			'type' : 'lvm',
+		},
+
+		## virtual env
+		'common.virtualenv' : {
+			'attributes' : {
+				'path'					: 'name',
+				'python'				: 'python',
+				'system-site-packages'	: 'system_site_packages',
+				# 'always-copy'			: '',
+				# 'unzip-setuptools'		: '',
+				# 'no-setuptools'			: '',
+				# 'no-pip'				: '',
+				'extra-search-dir'		: 'extra-search-dir',
+			},
+			'states' : ['managed'],
+			'type' : 'virtualenv',
 		},
 
 		## ssh
@@ -711,8 +735,28 @@ class StateAdaptor(object):
 			if module == 'linux.dir':
 				module_state[default_state]['makedirs'] = True
 
+		elif module in ['sys.cmd']:
+			if 'onlyif' in addin:
+				module_state[default_state]['onlyif'] = "[ -d " + addin['onlyif'] + " ]"
 
+			if 'unless' in addin:
+				module_state[default_state]['unless'] = "[ -d " + addin['unless'] + " ]"
 
+		elif module in ['linux.user']:
+			# set nologin shell
+			if 'nologin' in addin:
+				module_state[default_state].pop('nologin')
+
+				if addin['nologin']:
+					module_state[default_state]['shell'] = '/sbin/nologin'
+
+		elif module in ['linux.mount']:
+			for attr in ['dump', 'pass_num']:
+				if attr in addin:
+					try:
+						module_state[default_state][attr] = int(addin['dump'])
+					except:
+						module_state[default_state][attr] = 0
 
 		return module_state
 
