@@ -235,12 +235,12 @@ def set_hwclock(clock, **kwargs):
             return 'UTC is the only choice for SPARC architecture'
         if clock == 'localtime':
             cmd = 'rtc -z {0}'.format(timezone)
-            result = __salt__['cmd.run_all'](cmd)
+            result = __salt__['cmd.run_stdall'](cmd)
             state_std(kwargs, result)
             return True
         elif clock == 'UTC':
             cmd = 'rtc -z GMT'
-            result = __salt__['cmd.run_all'](cmd)
+            result = __salt__['cmd.run_stdall'](cmd)
             state_std(kwargs, result)
             return True
     else:

@@ -66,7 +66,7 @@ def _run_svn(cmd, cwd, user, username, password, opts, **kwargs):
     if opts:
         cmd += subprocess.list2cmdline(opts)
 
-    result = __salt__['cmd.run_all'](cmd, cwd=cwd, runas=user, **kwargs)
+    result = __salt__['cmd.run_stdall'](cmd, cwd=cwd, runas=user, **kwargs)
     state_std(kwargs, result)
 
     retcode = result['retcode']
