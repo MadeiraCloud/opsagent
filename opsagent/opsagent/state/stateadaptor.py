@@ -7,7 +7,6 @@ Madeira OpsAgent states adaptor
 
 # System imports
 import os
-import json
 import hashlib
 import collections
 
@@ -2019,6 +2018,8 @@ class StateAdaptor(object):
 
 # codes for test
 def main():
+
+	import json
 
 	pre_states = json.loads(open('api.json').read())
 
