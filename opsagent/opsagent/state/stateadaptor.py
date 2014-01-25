@@ -661,6 +661,8 @@ class StateAdaptor(object):
 
 				for k, v in item.items():
 					if v in self.salt_map[module]['states']:
+						if v not in module_state:
+							module_state[v] = {}
 						if 'names' not in module_state[v]:
 							module_state[v] = addin
 							module_state[v]['names'] = []
