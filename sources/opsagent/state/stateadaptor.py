@@ -7,7 +7,6 @@ Madeira OpsAgent states adaptor
 
 # System imports
 import os
-import json
 import hashlib
 import collections
 
@@ -355,6 +354,13 @@ class StateAdaptor(object):
 		## hostname
 
 		## hosts
+		'linux.hosts' : {
+			'attributes' : {
+				'content' : 'contents'
+			},
+			'states' : ['managed'],
+			'type' : 'file',
+		},
 
 		## mount
 		'linux.mount' : {
@@ -655,6 +661,8 @@ class StateAdaptor(object):
 
 				for k, v in item.items():
 					if v in self.salt_map[module]['states']:
+						if v not in module_state:
+							module_state[v] = {}
 						if 'names' not in module_state[v]:
 							module_state[v] = addin
 							module_state[v]['names'] = []
@@ -757,6 +765,16 @@ class StateAdaptor(object):
 						module_state[default_state][attr] = int(addin['dump'])
 					except:
 						module_state[default_state][attr] = 0
+
+		elif module in ['linux.hosts']:
+
+			module_state[default_state] = {
+				'name' 		: '/etc/hosts',
+				'user' 		: 'root',
+				'group' 	: 'root',
+				'mode' 		: '0644',
+				'contents' 	: addin['contents']
+			}
 
 		return module_state
 
@@ -1167,118 +1185,118 @@ class StateAdaptor(object):
 
 	# ## scm
 	# def _scm(self, module, parameter, uid=None, step=None):
-		"""
-			Transfer scm to salt state.
-		"""
-		# check
-		if not isinstance(module, basestring) or not isinstance(parameter, dict):
-			print "invalid preparation states"
-			return 1
+	# 	"""
+	# 		Transfer scm to salt state.
+	# 	"""
+	# 	# check
+	# 	if not isinstance(module, basestring) or not isinstance(parameter, dict):
+	# 		print "invalid preparation states"
+	# 		return 1
 
-		if self.__check_module(module) != 0:
-			print "invalid scm type"
-			return 2
+	# 	if self.__check_module(module) != 0:
+	# 		print "invalid scm type"
+	# 		return 2
 
-		m_list = module.split('.')
-		type = m_list[1]
+	# 	m_list = module.split('.')
+	# 	type = m_list[1]
 
-		state = 'latest'
-		repo = None
-		addin = {}
-		scm_dir_addin = {}
+	# 	state = 'latest'
+	# 	repo = None
+	# 	addin = {}
+	# 	scm_dir_addin = {}
 
-		for attr, value in parameter.items():
-			if value is None:	continue
+	# 	for attr, value in parameter.items():
+	# 		if value is None:	continue
 
-			if attr == 'repo':
-				addin['name'] = repo = value.split('-')[1].strip()
+	# 		if attr == 'repo':
+	# 			addin['name'] = repo = value.split('-')[1].strip()
 
-			elif attr == 'branch':
-				if type == 'git':
-					addin['rev'] = value
+	# 		elif attr == 'branch':
+	# 			if type == 'git':
+	# 				addin['rev'] = value
 
-			elif attr == 'revision':
-				addin['rev'] = value
+	# 		elif attr == 'revision':
+	# 			addin['rev'] = value
 
-			elif attr == 'path':
-				addin['target'] = value
+	# 		elif attr == 'path':
+	# 			addin['target'] = value
 
-			elif attr == 'user':
-				addin['user'] = value
-				scm_dir_addin['user'] = value
+	# 		elif attr == 'user':
+	# 			addin['user'] = value
+	# 			scm_dir_addin['user'] = value
 
-			elif attr == 'force':
-				addin['force_checkout'] = True if value == 'True' else False
+	# 		elif attr == 'force':
+	# 			addin['force_checkout'] = True if value == 'True' else False
 
-			elif attr == 'group':
-				scm_dir_addin['group'] = value
+	# 		elif attr == 'group':
+	# 			scm_dir_addin['group'] = value
 
-			elif attr == 'mode':
-				scm_dir_addin['mode'] = value
+	# 		elif attr == 'mode':
+	# 			scm_dir_addin['mode'] = value
 
-			else:
-				if type == 'git':
-					if attr == 'version':
-						addin['rev'] = value
-					elif attr == 'ssh-key':
-						addin['identity'] = value
-					#else:
-						## invalid attributes
+	# 		else:
+	# 			if type == 'git':
+	# 				if attr == 'version':
+	# 					addin['rev'] = value
+	# 				elif attr == 'ssh-key':
+	# 					addin['identity'] = value
+	# 				#else:
+	# 					## invalid attributes
 
-				elif type == 'svn':
-					if attr in ['username', 'password']:
-						addin[attr] = value
-					#else:
-						## invalid attributes
+	# 			elif type == 'svn':
+	# 				if attr in ['username', 'password']:
+	# 					addin[attr] = value
+	# 				#else:
+	# 					## invalid attributes
 
-				#elif type == 'hg':
-					## invalid attributes
+	# 			#elif type == 'hg':
+	# 				## invalid attributes
 
-		if not addin or not repo:
-			print "invalid parameters"
-			return 3
+	# 	if not addin or not repo:
+	# 		print "invalid parameters"
+	# 		return 3
 
-		scm_states = {}
+	# 	scm_states = {}
 
-		tag = self.__get_tag(module, uid, step, repo, state)
-		scm_state =	{
-			tag : {
-				type : [
-					state,
-					addin,
-				]
-			}
-		}
+	# 	tag = self.__get_tag(module, uid, step, repo, state)
+	# 	scm_state =	{
+	# 		tag : {
+	# 			type : [
+	# 				state,
+	# 				addin,
+	# 			]
+	# 		}
+	# 	}
 
-		scm_states[tag] = {
-			type : [
-				state,
-				addin
-			]
-		}
+	# 	scm_states[tag] = {
+	# 		type : [
+	# 			state,
+	# 			addin
+	# 		]
+	# 	}
 
-		# add directory state
-		scm_dir_state = 'file'
-		dir_state = 'directory'
-		if addin['target'] and scm_dir_addin:
-			scm_dir_addin['recurse'] = scm_dir_addin.keys()
-			scm_dir_addin['name'] = addin['target']
+	# 	# add directory state
+	# 	scm_dir_state = 'file'
+	# 	dir_state = 'directory'
+	# 	if addin['target'] and scm_dir_addin:
+	# 		scm_dir_addin['recurse'] = scm_dir_addin.keys()
+	# 		scm_dir_addin['name'] = addin['target']
 
-			scm_dir_tag = self.__get_tag('path.dir', uid, step, addin['target'], dir_state)
+	# 		scm_dir_tag = self.__get_tag('path.dir', uid, step, addin['target'], dir_state)
 
-			scm_states[scm_dir_tag] = {
-				scm_dir_state : [
-					dir_state,
-					scm_dir_addin,
-					{
-						'require' : [
-							{ type : tag }
-						]
-					},
-				]
-			}
+	# 		scm_states[scm_dir_tag] = {
+	# 			scm_dir_state : [
+	# 				dir_state,
+	# 				scm_dir_addin,
+	# 				{
+	# 					'require' : [
+	# 						{ type : tag }
+	# 					]
+	# 				},
+	# 			]
+	# 		}
 
-		return scm_states
+	# 	return scm_states
 
 	## service
 	# def _service(self, module, parameter, uid=None, step=None):
@@ -1607,83 +1625,83 @@ class StateAdaptor(object):
 	# 		}
 	# 	}
 
-	def _sys_hostname(self, module, parameter, uid=None, step=None):
-		"""
-			Transfer system hostname to salt state.
-		"""
+	# def _sys_hostname(self, module, parameter, uid=None, step=None):
+	# 	"""
+	# 		Transfer system hostname to salt state.
+	# 	"""
 
-		# check
-		if not isinstance(module, basestring) or not isinstance(parameter, dict):
-			print "invalid preparation states"
-			return 1
+	# 	# check
+	# 	if not isinstance(module, basestring) or not isinstance(parameter, dict):
+	# 		print "invalid preparation states"
+	# 		return 1
 
-		if self.__check_module(module) != 0:
-			print "invalid system hostname state"
-			return 2
+	# 	if self.__check_module(module) != 0:
+	# 		print "invalid system hostname state"
+	# 		return 2
 
-		addin = {}
-		host = parameter['hostname']
-		ip = None
+	# 	addin = {}
+	# 	host = parameter['hostname']
+	# 	ip = None
 
-		for attr, value in parameter.items():
-			if value is None: continue
+	# 	for attr, value in parameter.items():
+	# 		if value is None: continue
 
-			if attr == 'hostname':
-				host = value
+	# 		if attr == 'hostname':
+	# 			host = value
 
-			elif attr == 'ip':
-				addin['ip'] = value
+	# 		elif attr == 'ip':
+	# 			addin['ip'] = value
 
-			#else:
-				## invalid attributes
+	# 		#else:
+	# 			## invalid attributes
 
-		if not addin or not host:
-			print "invalid parameters"
-			return 3
+	# 	if not addin or not host:
+	# 		print "invalid parameters"
+	# 		return 3
 
-		return {
-			host : {
-				'host' : [
-					'present',
-					addin
-				]
-			}
-		}
+	# 	return {
+	# 		host : {
+	# 			'host' : [
+	# 				'present',
+	# 				addin
+	# 			]
+	# 		}
+	# 	}
 
-	def _sys_hosts(self, module, parameter, uid=None, step=None):
-		"""
-			Transfer system hosts to salt state.
-		"""
+	# def _sys_hosts(self, module, parameter, uid=None, step=None):
+	# 	"""
+	# 		Transfer system hosts to salt state.
+	# 	"""
 
-		# check
-		if not isinstance(module, basestring) or not isinstance(parameter, dict):
-			print "invalid preparation states"
-			return 1
+	# 	# check
+	# 	if not isinstance(module, basestring) or not isinstance(parameter, dict):
+	# 		print "invalid preparation states"
+	# 		return 1
 
-		if self.__check_module(module) != 0:
-			print "invalid system hostname state"
-			return 2
+	# 	if self.__check_module(module) != 0:
+	# 		print "invalid system hostname state"
+	# 		return 2
 
-		name = '/etc/hosts'
-		state = 'managed'
-		tag = self.__get_tag('path.file', uid, step, name, state)
+	# 	name = '/etc/hosts'
+	# 	state = 'managed'
+	# 	tag = self.__get_tag('path.file', uid, step, name, state)
 
-		hosts_state = {
-			tag	:	{
-				'file'	: [
-					state,
-					{
-						'name'		:	name,
-						'user'		:	'root',
-						'group'		:	'root',
-						'mode'		:	'0644',
-						'contents'	:	parameter['content'],
-					}
-				]
-			}
-		}
+	# 	hosts_state = {
+	# 		tag	:	{
+	# 			'file'	: [
+	# 				state,
+	# 				{
+	# 					'name'		:	name,
+	# 					'user'		:	'root',
+	# 					'group'		:	'root',
+	# 					'mode'		:	'0644',
+	# 					'contents'	:	parameter['content'],
+	# 				}
+	# 			]
+	# 		}
+	# 	}
 
-		return hosts_state
+	# 	return hosts_state
 
 	# def _sys_mount(self, module, parameter, uid=None, step=None):
 	# 	"""
@@ -1948,60 +1966,62 @@ class StateAdaptor(object):
 	# 	return auth_state
 
 	# def _system_ssh_known_host(self, module, parameter, uid=None, step=None):
-		"""
-			Transfer system SSH known_hosts to salt state.
-		"""
+		# """
+		# 	Transfer system SSH known_hosts to salt state.
+		# """
 
-		# check
-		if not isinstance(module, basestring) or not isinstance(parameter, dict):
-			print "invalid preparation states"
-			return 1
+		# # check
+		# if not isinstance(module, basestring) or not isinstance(parameter, dict):
+		# 	print "invalid preparation states"
+		# 	return 1
 
-		if self.__check_module(module) != 0:
-			print "invalid system SSH known_hosts state"
-			return 2
+		# if self.__check_module(module) != 0:
+		# 	print "invalid system SSH known_hosts state"
+		# 	return 2
 
-		#type = module.split('.', 1)[1].replace('.', '_')
-		type = 'ssh_known_hosts'
-		addin = {}
+		# #type = module.split('.', 1)[1].replace('.', '_')
+		# type = 'ssh_known_hosts'
+		# addin = {}
 
-		for attr, value in parameter.items():
-			if value is None: continue
+		# for attr, value in parameter.items():
+		# 	if value is None: continue
 
-			if attr == 'hostname':
-				addin['name'] = value
+		# 	if attr == 'hostname':
+		# 		addin['name'] = value
 
-			elif attr == 'username':
-				addin['user'] = value
+		# 	elif attr == 'username':
+		# 		addin['user'] = value
 
-			elif attr == 'filename':
-				addin['config'] = value
+		# 	elif attr == 'filename':
+		# 		addin['config'] = value
 
-			elif attr == 'fingerprint':
-				addin[attr] = value
+		# 	elif attr == 'fingerprint':
+		# 		addin[attr] = value
 
-			elif attr == 'encrypt_algorithm':
-				if value in self.ssh_key_type:
-					addin['enc'] = value
+		# 	elif attr == 'encrypt_algorithm':
+		# 		if value in self.ssh_key_type:
+		# 			addin['enc'] = value
 
-		if not addin or 'name' not in addin:
-			print "invalid parameters"
-			return 3
+		# if not addin or 'name' not in addin:
+		# 	print "invalid parameters"
+		# 	return 3
 
-		state = 'present'
-		tag = self.__get_tag(module, uid, step, addin['name'], state)
+		# state = 'present'
+		# tag = self.__get_tag(module, uid, step, addin['name'], state)
 
-		return {
-			tag : {
-				type : [
-					state,
-					addin,
-				]
-			}
-		}
+		# return {
+		# 	tag : {
+		# 		type : [
+		# 			state,
+		# 			addin,
+		# 		]
+		# 	}
+		# }
 
 # codes for test
 def main():
+
+	import json
 
 	pre_states = json.loads(open('api.json').read())
 
