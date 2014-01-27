@@ -8,87 +8,63 @@
 ##
 
 
-USAGE="$0 tree | (userdata APT|YUM {app_id} {token} {instance_id})"
+USAGE="$0 tree"
 
-VIRTUALENV_VERSION=1.9
-BOOTSTRAP_DIR=bootstrap
+SCRIPTS_DIR=scripts
+CONF_DIR=conf
+LIBS_DIR=libs
+SOURCES_DIR=sources
+
 BUILD_DIR=build
-TREE_DIR=$BUILD_DIR/tree
-USER_DIR=$BUILD_DIR/userdata
-OA_ROOT="opt/madeira"
-
-PYTHON_APT=python2.7
-PYTHON_YUM=python27
+OPSAGENT_DIR=opsagent
 
 
 function tree() {
     # Clear (if any) and create build directory
-    rm -rf ${TREE_DIR}
-    mkdir -p ${TREE_DIR}
-    cd ${TREE_DIR}
-    # Create agent build tree
-    mkdir -p $OA_ROOT/{bootstrap,sources,env/etc,env/bin}
+    rm -rf ${BUILD_DIR}
+    # Create agent build directory
+    mkdir -p ${BUILD_DIR}/${OPSAGENT_DIR}/{$SCRIPTS_DIR,$CONF_DIR,$LIBS_DIR,$SOURCES_DIR}
+
+    # move to build directory
+    cd ${BUILD_DIR}
+
     # Copy bootstrap scripts
-    cp ../../bootstrap/bootstrap_{apt,yum}.sh $OA_ROOT/bootstrap/
-    # Copy services install scripts
-    cp ../../bootstrap/bootstrap_{chkconfig,updaterc}.sh $OA_ROOT/bootstrap/
-    # Copy services launchers
-    cp ../../bootstrap/daemon.sh $OA_ROOT/bootstrap/
+    cp ../${SCRIPTS_DIR}/{bootstrap.sh,init.sh,userdata.sh} ${OPSAGENT_DIR}/${SCRIPTS_DIR}/
+    # Copy service launcher
+    cp ../${SCRIPTS_DIR}/daemon.sh ${OPSAGENT_DIR}/${SCRIPTS_DIR}/
     # Copy virtualenv
-    cp -r ../../libs/virtualenv $OA_ROOT/bootstrap/
+    cp -r ../${LIBS_DIR}/virtualenv ${OPSAGENT_DIR}/${LIBS_DIR}/
     # Copy ws4py sources
-    cp -r ../../libs/ws4py $OA_ROOT/sources/
+    cp -r ../${LIBS_DIR}/ws4py ${OPSAGENT_DIR}/${LIBS_DIR}/
     # Copy salt and dependencies
-    cp -r ../../libs/{msgpack,yaml,jinja2,markupsafe,salt} $OA_ROOT/sources/
-    # Patch salt
-    cp -r ../../salt $OA_ROOT/sources/
+    cp -r ../${LIBS_DIR}/{msgpack,yaml,jinja2,markupsafe,salt} ${OPSAGENT_DIR}/${LIBS_DIR}/
+
     # Copy opsagent sources
-    for file in `find ../../opsagent/opsagent -type f -name '*.py'`
+    for file in `find ../${SOURCES_DIR}/opsagent -type f -name '*.py'`
     do
-        dir=`echo ${file} | rev | cut -d '/' -f 2-100 | rev | cut -d '/' -f 4-100 -s`
-        mkdir -p $OA_ROOT/sources/${dir}
-        cp -f ${file} "$OA_ROOT/sources/${dir}"
+        dir=`echo ${file} | rev | cut -d '/' -f 2-100 | rev | cut -d '/' -f 3-100 -s`
+        mkdir -p ${OPSAGENT_DIR}/${SOURCES_DIR}/${dir}
+        cp -f ${file} "${OPSAGENT_DIR}/${SOURCES_DIR}/${dir}"
     done
-    # Copy launch script editing shebang
-    sed -e "s|#!/usr/bin/python|#!/${OA_ROOT}/env/bin/python|g" < ../../opsagent/opsagent.py > $OA_ROOT/env/bin/opsagent
-    chmod +x $OA_ROOT/env/bin/opsagent
+
+    # Copy launcher script
+    cp ../${SOURCES_DIR}/opsagent.py ${OPSAGENT_DIR}/${SCRIPTS_DIR}/opsagent
+
     # Copy config files
-    cp ../../conf/* $OA_ROOT/env/etc/ #TODO change * to opsagent.conf
-    tar cfvz ../agent.tgz $OA_ROOT
+    cp ../${CONF_DIR}/opsagent.conf ${OPSAGENT_DIR}/${CONF_DIR}/
+
+    # create tarball
+    cd ${OPSAGENT_DIR}
+    tar cfvz ../opsagent.tgz *
     cd ..
-    CRC="$(cksum agent.tgz)"
-    echo $CRC > agent.cksum
-#    sed -e "s/%CRC%/${CRC}/g" < ${BOOTSTRAP_DIR}/bootstrap.tpl.sh > ${BOOTSTRAP_DIR}/bootstrap.sh
+    # generate checksum
+    cksum opsagent.tgz > opsagent.cksum
 }
-
-#function userdata() {
-#    mkdir -p ${USER_DIR}
-#    cd ${USER_DIR}
-#    MANAGER=$1
-#    APP_ID=$2
-#    TOKEN=$3
-#    IID=$4
-#    eval PYTHON_VERSION=\${PYTHON_$MANAGER}
-#    if [ $MANAGER = 'APT' ]; then
-#        ADD_PKG="  - python-apt"
-#    else
-#        ADD_PKG=""
-#    fi
-#    sed -e "s/%python%/${PYTHON_VERSION}/g" \
-#        -e "s/%app_id%/${APP_ID}/g" \
-#        -e "s/%token%/${TOKEN}/g" \
-#        -e "s/%add_pkg%/${ADD_PKG}/g" \
-#        < ../../bootstrap.yaml > bootstrap_$IID.yaml
-#}
-
 
 case $1 in
     tree)
         tree
         ;;
-#    userdata)
-#        userdata $2 $3 $4 $5
-#        ;;
     *)
         echo -e "syntax error\nusage: $USAGE"
         ;;

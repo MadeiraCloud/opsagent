@@ -18,6 +18,7 @@ class Daemon():
     def __init__(self, config, stdin='/dev/null', stdout='/dev/null', stderr='/dev/null'):
         self.config = config
         self.__pidfile = config['global']['pidfile']
+        self.__haltfile = config['global']['haltfile']
         self.__stdin = stdin
         self.__stdout = stdout
         self.__stderr = stderr
@@ -71,6 +72,7 @@ class Daemon():
         pid = str(os.getpid())
         # write pid to file
         file(self.__pidfile,'w+').write("%s\n"%pid)
+        os.chmod(self.__pidfile, 0640)
 
     # start as daemon
     def start(self):
@@ -92,7 +94,7 @@ class Daemon():
         self.run()
 
     # stop the daemon
-    def stop(self, wait=False):
+    def stop(self, wait=False, end=False):
         # get pid from pidfile
         try:
             pf = file(self.__pidfile,'r')
@@ -108,9 +110,17 @@ class Daemon():
 
         # kill daemon
         try:
-            sig = (SIGTERM if wait else SIGKILL)
+            if end:
+                file(self.__haltfile,'w+').write("end")
+                os.chmod(self.__haltfile, 0640)
+            elif wait:
+                file(self.__haltfile,'w+').write("wait")
+                os.chmod(self.__haltfile, 0640)
+            else:
+                file(self.__haltfile,'w+').write("kill")
+                os.chmod(self.__haltfile, 0640)
             while True:
-                os.kill(pid, sig)
+                os.kill(pid, SIGTERM)
                 time.sleep(1)
         except OSError, err:
             err = str(err)
@@ -122,8 +132,8 @@ class Daemon():
                 sys.exit(1)
 
     # restart daemon
-    def restart(self, wait=False):
-        self.stop(wait)
+    def restart(self, wait=False, end=False):
+        self.stop(wait, end)
         # don't go too fast ...
         time.sleep(1)
         self.start()

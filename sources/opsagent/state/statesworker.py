@@ -59,6 +59,7 @@ class StatesWorker(threading.Thread):
         self.__status = 0
 
         # flags
+        self.__cv_wait = False
         self.__run = False
         self.__waiting = False
         self.__abort = False
@@ -115,22 +116,25 @@ class StatesWorker(threading.Thread):
         self.__wait_event.clear()
 
     # End program
-    def abort(self, kill=False):
+    def abort(self, kill=False, end=False):
         if self.__abort:
             utils.log("DEBUG", "Already aborting ...",('abort',self))
             return
+
         self.__abort = True
-        self.__run = False
+        if not end:
+            self.__run = False
         if kill:
             self.kill()
 
-        utils.log("DEBUG", "Aquire conditional lock ...",('abort',self))
-        self.__cv.acquire()
-        utils.log("DEBUG", "Conditional lock acquired.",('abort',self))
-        utils.log("DEBUG", "Notify execution thread.",('abort',self))
-        self.__cv.notify()
-        utils.log("DEBUG", "Release conditional lock.",('abort',self))
-        self.__cv.release()
+        if self.__cv_wait:
+            utils.log("DEBUG", "Aquire conditional lock ...",('abort',self))
+            self.__cv.acquire()
+            utils.log("DEBUG", "Conditional lock acquired.",('abort',self))
+            utils.log("DEBUG", "Notify execution thread.",('abort',self))
+            self.__cv.notify()
+            utils.log("DEBUG", "Release conditional lock.",('abort',self))
+            self.__cv.release()
 
 
     # Program status
@@ -367,10 +371,11 @@ class StatesWorker(threading.Thread):
         while not self.__abort:
             self.__cv.acquire()
             try:
-                if not self.__run:
+                if not self.__run and not self.__abort:
                     utils.log("INFO", "Waiting for recipes ...",('run',self))
-                    # TODO while not run?
+                    self.__cv_wait = True
                     self.__cv.wait()
+                    self.__cv_wait = False
                 utils.log("DEBUG", "Ready to go ...",('run',self))
                 self.__runner()
             except Exception as e:

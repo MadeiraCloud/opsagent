@@ -128,7 +128,10 @@ class Manager(WebSocketClient):
     # Create directories
     def __init_dir(self):
         dirs = [
-            self.__config['global']['watch']
+            self.__config['global']['watch'],
+            self.__config['salt']['file_roots'],
+            self.__config['salt']['extension_modules'],
+            self.__config['salt']['cachedir'],
             ]
         errors = []
         for dir in dirs:

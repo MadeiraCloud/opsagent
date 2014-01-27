@@ -73,7 +73,21 @@ class OpsAgentRunner(Daemon):
         # terminating process
         def handler(signum=None, frame=None):
             utils.log("WARNING", "Signal handler called with signal %s"%signum,('handler','OpsAgentRunner'))
-            self.__sw.abort()
+            try:
+                fd = file(self.__haltfile,'r')
+                halt = int(fd.read().strip())
+                fd.close()
+            except IOError:
+                halt = None
+            if halt:
+                if halt is "wait":
+                    self.__sw.abort()
+                    return
+                elif halt is "end":
+                    self.__sw.abort(end=True)
+                    return
+            utils.log("WARNING", "No soft arguent set, exiting now...",('handler','OpsAgentRunner'))
+            sys.exit(0)
 
         # handle termination
         for sig in [signal.SIGTERM, signal.SIGINT, signal.SIGHUP, signal.SIGQUIT]:
@@ -158,6 +172,10 @@ def main():
         runner.stop(wait=True)
     elif command == "restart-wait":
         runner.restart(wait=True)
+    elif command == "stop-end":
+        runner.stop(end=True)
+    elif command == "restart-end":
+        runner.restart(end=True)
     else:
         runner.run()
 
