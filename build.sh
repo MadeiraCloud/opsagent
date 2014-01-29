@@ -29,7 +29,11 @@ function tree() {
     cd ${BUILD_DIR}
 
     # Copy bootstrap scripts
-    cp ../${SCRIPTS_DIR}/{bootstrap.sh,init.sh,userdata.sh} ${OPSAGENT_DIR}/${SCRIPTS_DIR}/
+    cp ../${SCRIPTS_DIR}/bootstrap.sh ${OPSAGENT_DIR}/${SCRIPTS_DIR}/
+    # Copy standalone scripts
+    cp ../${SCRIPTS_DIR}/{init.sh,userdata.sh} ./
+    cksum init.sh > init.cksum
+    cksum userdata.sh > userdata.cksum
     # Copy service launcher
     cp ../${SCRIPTS_DIR}/daemon.sh ${OPSAGENT_DIR}/${SCRIPTS_DIR}/
     # Copy virtualenv
@@ -55,8 +59,8 @@ function tree() {
 
     # create tarball
     cd ${OPSAGENT_DIR}
-    tar cfvz ../opsagent.tgz *
-    cd ..
+    tar cvfz ../opsagent.tgz *
+    cd -
     # generate checksum
     cksum opsagent.tgz > opsagent.cksum
 }

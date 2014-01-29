@@ -33,6 +33,7 @@ class Config():
             'haltfile': '/tmp/opsagentd.halt',
             'token': '/etc/opsagent.d/token',
             'end': '/etc/opsagent.d/token',
+            'logfile': '/var/log/madeira/agent.log',
             },
         'runtime': {
             'proc': False,
