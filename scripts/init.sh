@@ -11,7 +11,7 @@ PATH=${PATH}:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
 OA_USER=root
 
 # OpsAgent remote location
-OA_REMOTE=https://s3.amazonaws.com/visualops
+OA_REMOTE=https://s3.amazonaws.com/visualops-new
 
 # OpsAgent directories
 OA_ROOT_DIR=/opt/madeira
@@ -57,6 +57,7 @@ chmod 640 ${OA_LOG_DIR}/agent.log
 
 # sources update check
 function update_sources() {
+    RET=0
     if [ -f ${OA_BOOT_DIR}/${1}.tgz ]; then
         CUR_VERSION="$(cat ${OA_BOOT_DIR}/${1}.cksum)"
         RETVAL_CUR=$?
@@ -64,17 +65,18 @@ function update_sources() {
         RETVAL_LAST=$?
         VALID="$(echo LAST_VERSION | grep ${1}.tgz | wc -l)"
         RETVAL_VALID=$?
-        if [ "$RETVAL_CUR" != "0" ]
-            ||
-            [ "$RETVAL_LAST" = "0" ] && [ "$RETVAL_VALID" = "0" ] && [ "$VALID" = "1" ] && [ "$CUR_VERSION" != "$LAST_VERSION" ]
+        if ([ "$RETVAL_CUR" != "0" ]) \
+            || \
+            ([ "$RETVAL_LAST" = "0" ] && [ "$RETVAL_VALID" = "0" ] && [ "$VALID" = "1" ] && [ "$CUR_VERSION" != "$LAST_VERSION" ])
         then
-            return 1
+            RET=1
         else
-            return 0
+            RET=0
         fi
     else
-        return 2
+        RET=2
     fi
+    echo ${RET}
 }
 
 # sources update fetch
@@ -84,11 +86,13 @@ function get_sources() {
         curl -sSL -o ${OA_BOOT_DIR}/${1}.tgz ${OA_REMOTE}/${1}.tgz
         chmod 640 ${OA_BOOT_DIR}/${1}.{cksum,tgz}
         REF_CRC="$(cat ${OA_BOOT_DIR}/${1}.cksum)"
-        CRC="$(cksum ${OA_BOOT_DIR}/${1}.tgz)"
+        cd ${OA_BOOT_DIR}
+        CRC="$(cksum ${1}.tgz)"
+        cd -
         if [ "$CRC" = "$REF_CRC" ]; then
             break
         else
-            echo "Checksum check failed, retryind in 1 second" >&2
+            echo "${1} checksum check failed, retryind in 1 second" >&2
             sleep 1
         fi
     done
@@ -96,7 +100,9 @@ function get_sources() {
         rm -rf ${OA_BOOT_DIR}/${1}
     fi
     mkdir -p ${OA_BOOT_DIR}/${1}
-    tar xfz ${OA_BOOT_DIR}/${1}.tgz ${OA_BOOT_DIR}/${1}/
+    cd ${OA_BOOT_DIR}/${1}
+    tar xfz ../${1}.tgz
+    cd -
     chown -R root:root ${OA_BOOT_DIR}/${1}
 }
 

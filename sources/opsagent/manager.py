@@ -156,7 +156,7 @@ class Manager(WebSocketClient):
         utils.log("WARNING", "procfs not present, attempting to mount...",('__mount_proc_try',self))
         if not dir:
             try:
-                os.makedirs(proc,0555)
+                os.makedirs(proc,0755)
             except Exception as e:
                 err = "Can't create '%s' directory: '%s'. FATAL."%(proc,e)
                 utils.log("ERROR", err,('__mount_proc_try',self))

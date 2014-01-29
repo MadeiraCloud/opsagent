@@ -75,17 +75,16 @@ class OpsAgentRunner(Daemon):
             utils.log("WARNING", "Signal handler called with signal %s"%signum,('handler','OpsAgentRunner'))
             try:
                 fd = file(self.__haltfile,'r')
-                halt = int(fd.read().strip())
+                halt = fd.read().strip()
                 fd.close()
             except IOError:
                 halt = None
-            if halt:
-                if halt is "wait":
-                    self.__sw.abort()
-                    return
-                elif halt is "end":
-                    self.__sw.abort(end=True)
-                    return
+            if halt == "wait":
+                self.__sw.abort()
+                return
+            elif halt == "end":
+                self.__sw.abort(end=True)
+                return
             utils.log("WARNING", "No soft arguent set, exiting now...",('handler','OpsAgentRunner'))
             sys.exit(0)
 
@@ -133,6 +132,9 @@ def optParse():
     parser.add_option("-v", "--verbose", action="store_true", dest="verbose", default=False,
                       help="verbose mode (log debug -all- info)"
                       )
+    parser.add_option("-d", "--debug", action="store_true", dest="verbose", default=False,
+                      help="debug mode (display log)"
+                      )
     return parser.parse_args()
 
 
@@ -156,8 +158,8 @@ def main():
         loglvl = 'INFO'
     if options.verbose: loglvl = 'DEBUG'
     elif options.quiet: loglvl = 'ERROR'
-    __log(loglvl,
-          (options.log_file if options.log_file else config['global'].get('logfile')))
+    logfile = (options.log_file if options.log_file else config['global'].get('logfile'))
+    __log(loglvl, (logfile if not options.debug else None))
 
     # run
     runner = OpsAgentRunner(config)

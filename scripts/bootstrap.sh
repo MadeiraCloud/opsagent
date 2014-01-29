@@ -40,7 +40,11 @@ cp -r ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_LIBS_DIR}/ws4py ${OA_ENV_DIR}/lib/${PYTHO
 cp -r ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_LIBS_DIR}/{msgpack,yaml,jinja2,markupsafe,salt} ${OA_ENV_DIR}/lib/${PYTHON}/site-packages/
 # copy opsagent sources
 cp -r ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_SOURCES_DIR}/opsagent ${OA_ENV_DIR}/lib/${PYTHON}/site-packages/
-# set ownership to root
+# copy config files
+mkdir -p ${OA_ENV_DIR}/etc
+cp -r ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_CONF_DIR}/* ${OA_ENV_DIR}/etc/
+chmod -R 640 ${OA_ENV_DIR}/etc/*
+# set ownership to right user
 chown -R ${OA_USER}:root ${OA_ENV_DIR}
 
 # link config file
