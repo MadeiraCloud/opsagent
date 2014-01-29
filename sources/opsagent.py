@@ -132,7 +132,7 @@ def optParse():
     parser.add_option("-v", "--verbose", action="store_true", dest="verbose", default=False,
                       help="verbose mode (log debug -all- info)"
                       )
-    parser.add_option("-d", "--debug", action="store_true", dest="verbose", default=False,
+    parser.add_option("-d", "--debug", action="store_true", dest="debug", default=False,
                       help="debug mode (display log)"
                       )
     return parser.parse_args()
