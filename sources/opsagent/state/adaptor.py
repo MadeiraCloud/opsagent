@@ -2046,7 +2046,7 @@ def main():
 		'cachedir' : '/code/OpsAgent/cache'
 	}
 
-        from staterunner import StateRunner
+    	from opsagent.state.runner import StateRunner
 	adaptor = StateAdaptor()
 	runner = StateRunner(config)
 
@@ -2060,7 +2060,7 @@ def main():
 
 		for p_state in com['state']:
 
-			step = p_state['stateid']
+			step = p_state['id']
 
 			state = adaptor.transfer(step, p_state['module'], p_state['parameter'])
 

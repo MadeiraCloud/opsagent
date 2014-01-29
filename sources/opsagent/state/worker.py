@@ -17,8 +17,8 @@ from opsagent import utils
 from opsagent.objects import send
 from opsagent.exception import *
 
-from stateadaptor import StateAdaptor
-from staterunner import StateRunner
+from opsagent.state.adaptor import StateAdaptor
+from opsagent.state.runner import StateRunner
 ##
 
 ## DEFINES
@@ -322,14 +322,14 @@ class StatesWorker(threading.Thread):
                 self.__run = False
                 continue
             state = self.__states[self.__status]
-            utils.log("INFO", "Running state '%s', #%s"%(state['stateid'], self.__status),('__runner',self))
+            utils.log("INFO", "Running state '%s', #%s"%(state['id'], self.__status),('__runner',self))
             try:
                 if state.get('module') in self.__builtins:
-                    (result,err_log,out_log) = self.__builtins[state['module']](state['stateid'],
+                    (result,err_log,out_log) = self.__builtins[state['module']](state['id'],
                                                                                 state['module'],
                                                                                 state['parameter'])
                 else:
-                    (result,err_log,out_log) = self.__exec_salt(state['stateid'],
+                    (result,err_log,out_log) = self.__exec_salt(state['id'],
                                                                 state['module'],
                                                                 state['parameter'])
             except SWWaitFormatException:
@@ -347,7 +347,7 @@ class StatesWorker(threading.Thread):
                 utils.log("INFO", "Execution complete, reporting logs to backend.",('__runner',self))
                 self.__send(send.statelog(init=self.__config['init'],
                                           version=self.__version,
-                                          id=state['stateid'],
+                                          id=state['id'],
                                           result=result,
                                           err_log=err_log,
                                           out_log=out_log))
