@@ -29,7 +29,7 @@ def statelog(init, version, id, result, err_log, out_log):
             "instance_id"    :   init.get('instance_id'),
             "app_id"         :   init.get('app_id'),
             "recipe_version" :   version,
-            "stateid"        :   id,
+            "id"             :   id,
             "state_result"   :   result,
             "state_stderr"   :   err_log,
             "state_stdout"   :   out_log

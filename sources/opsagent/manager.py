@@ -14,10 +14,10 @@ import subprocess
 # Library imports
 from ws4py.client.threadedclient import WebSocketClient
 # Custom import
-from objects import codes
-from objects import send
-from objects import aws
-from state.statesworker import StatesWorker
+from opsagent.objects import codes
+from opsagent.objects import send
+from opsagent.objects import aws
+from opsagent.state.worker import StatesWorker
 from opsagent.exception import *
 import utils
 ##
@@ -83,7 +83,7 @@ class Manager(WebSocketClient):
                 if type(state) is not dict:
                     utils.log("ERROR", "Invalid state: not a dict.",('__act_recipe',self))
                     raise ManagerInvalidStateFormatException
-                if ("stateid" not in state) or ("module" not in state) or ("parameter" not in state):
+                if ("id" not in state) or ("module" not in state) or ("parameter" not in state):
                     utils.log("ERROR", "Invalid state: parameter missing.",('__act_recipe',self))
                     raise ManagerInvalidStateFormatException
 
@@ -107,7 +107,7 @@ class Manager(WebSocketClient):
         if not version:
             utils.log("ERROR", "Invalid version.",('__act_wait',self))
             raise ManagerInvalidWaitFormatException
-        id = data.get("stateid")
+        id = data.get("id")
         if not id:
             utils.log("ERROR", "Invalid state id.",('__act_wait',self))
             raise ManagerInvalidWaitFormatException
