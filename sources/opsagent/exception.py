@@ -6,7 +6,7 @@ Madeira OpsAgent exceptions
 
 
 # Custom imports
-import utils
+from opsagent import utils
 
 
 # Configuration Parser exceptions
@@ -30,7 +30,7 @@ class SWNoManagerException(Exception): pass
 class SWNoWaitFileException(Exception): pass
 
 # StatePreparation exceptions
-class StatePrepareExcepton(Exception): pass
+class StatePrepareException(Exception): pass
 
 # General Exception
 class OpsAgentException(Exception): pass

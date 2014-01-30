@@ -21,7 +21,7 @@ from opsagent.config import Config
 from opsagent import utils
 from opsagent.exception import *
 from opsagent.manager import Manager
-from opsagent.state.statesworker import StatesWorker
+from opsagent.state.worker import StateWorker
 
 
 # general defines
@@ -68,7 +68,7 @@ class OpsAgentRunner(Daemon):
 
     def run(self):
         # init
-        self.__sw = StatesWorker(config=self.config)
+        self.__sw = StateWorker(config=self.config)
 
         # terminating process
         def handler(signum=None, frame=None):
@@ -102,7 +102,7 @@ class OpsAgentRunner(Daemon):
 #                # states worker dead
 #                if not sw.is_alive():
 #                    del sw
-#                    sw = StatesWorker(config=config)
+#                    sw = StateWorker(config=config)
 #                    sw.start()
                 # run manager
                 self.run_manager()

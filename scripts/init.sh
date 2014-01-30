@@ -109,39 +109,61 @@ function get_sources() {
 
 # check for updates (and fetch)
 UPDATE_AGENT=$(update_sources ${OA_AGENT})
+echo "UPDATEAGENT=$UPDATE_AGENT"
 if [ ${UPDATE_AGENT} -ne 0 ]; then
+    echo "update agent"
     get_sources ${OA_AGENT}
+else
+    echo "don't update agent"
 fi
 UPDATE_SALT=$(update_sources ${OA_SALT})
+echo "UPDATESALT=$UPDATE_SALT"
 if [ ${UPDATE_SALT} -ne 0 ]; then
+    echo "update salt"
     get_sources ${OA_SALT}
+else
+    echo "don't update agent"
 fi
 
 # shudown agent
 if [ ${UPDATE_AGENT} -ne 0 ] && [ -d ${OA_ENV_DIR} ]; then
+    echo "shutdown agent"
     service opsagentd stop-end
     rm -rf ${OA_ENV_DIR}
+else
+    echo "don't shutdown agent"
 fi
 
 # bootstrap agent
 if [ ! -d ${OA_ENV_DIR} ]; then
     if [ ${UPDATE_AGENT} -eq 0 ]; then
+        echo "change update_agent to 3"
         UPDATE_AGENT=3
     fi
+    echo "bootstrap agent"
     source ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_SCRIPTS_DIR}/bootstrap.sh
+else
+    echo "don't bootstrap agent"
 fi
 
 # patch salt
 if [ ${UPDATE_AGENT} -ne 0 ] || [ ${UPDATE_SALT} -ne 0 ]; then
     if [ ${UPDATE_AGENT} -eq 0 ]; then
+        echo "stop agent (update salt)"
         service opsagentd stop-end
     fi
+    echo "patch salt"
     source ${OA_BOOT_DIR}/${OA_SALT}/${SRC_SCRIPTS_DIR}/bootstrap.sh
+else
+    echo "don't patch salt"
 fi
 
 # load agent
 if [ ${UPDATE_AGENT} -ne 0 ] || [ ${UPDATE_SALT} -ne 0 ]; then
+    echo "load agent"
     service opsagentd start
+else
+    echo "don't load agent"
 fi
 
 # EOF

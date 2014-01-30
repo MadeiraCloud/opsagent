@@ -35,7 +35,7 @@ WAIT_STATE_RETRY=1
 
 ## STATES WORKER OBJECT
 # Manages the states execution
-class StatesWorker(threading.Thread):
+class StateWorker(threading.Thread):
     def __init__(self, config):
         # init thread and object
         threading.Thread.__init__(self)

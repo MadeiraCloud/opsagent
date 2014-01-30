@@ -12,7 +12,7 @@ import collections
 
 # Internal imports
 from opsagent import utils
-from opsagent.exception import StatePrepareExcepton,OpsAgentException
+from opsagent.exception import StatePrepareException,OpsAgentException
 
 class StateAdaptor(object):
 

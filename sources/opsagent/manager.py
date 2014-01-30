@@ -17,9 +17,9 @@ from ws4py.client.threadedclient import WebSocketClient
 from opsagent.objects import codes
 from opsagent.objects import send
 from opsagent.objects import aws
-from opsagent.state.worker import StatesWorker
+from opsagent.state.worker import StateWorker
 from opsagent.exception import *
-import utils
+from opsagent import utils
 ##
 
 ## DEFINES

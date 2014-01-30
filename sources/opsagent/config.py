@@ -12,8 +12,8 @@ from copy import deepcopy
 import sys
 
 # Custon imports
-import utils
-from exception import *
+from opsagent import utils
+from opsagent.exception import *
 
 
 # Config class
