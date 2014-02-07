@@ -47,8 +47,8 @@ class Config():
             'file_roots': '/opt/madeira/env/srv/salt',
             'extension_modules': '/opt/madeira/env/var/cache/salt/minion/extmods',
             'cachedir': '/opt/madeira/env/var/cache/madeira',
-            'delay': 1,
-            'timeout': 30,
+            'delay': '1',
+            'timeout': '30',
             }
         }
 
@@ -83,6 +83,7 @@ class Config():
         if file:
             self.__read_file(file)
         for name in self.__parser.sections():
+            if name is 'runtime': continue
             self.__c.setdefault(name, {})
             for key, value in self.__parser.items(name):
                 self.__c[name][key] = value

@@ -12,6 +12,8 @@ import time
 import os
 import signal
 import re
+import sys
+import hashlib
 # Custom imports
 from opsagent import utils
 from opsagent.objects import send
@@ -69,6 +71,9 @@ class StateWorker(threading.Thread):
             'general.wait' : self.__exec_wait,
             }
 
+        # wait pid
+        self.__waitpid = None
+
 
     ## NETWORK RELAY
     # retry sending after disconnection
@@ -124,6 +129,8 @@ class StateWorker(threading.Thread):
         self.__abort = True
         if not end:
             self.__run = False
+            if self.__waitpid:
+                os.kill(self.__waitpid, SIGTERM)
         if kill:
             self.kill()
 
@@ -238,8 +245,6 @@ class StateWorker(threading.Thread):
             utils.log("WARNING", "Waited state ABORTED.",('__exec_wait',self))
         return (value,None,None)
 
-    import hashlib
-
     # Write hash
     def __create_hash(self, target, hash, file):
         utils.log("DEBUG", "Writing new hash for file '%s' in '%s': '%s'"%(file, target, hash),('__create_hash',self))
@@ -306,11 +311,13 @@ class StateWorker(threading.Thread):
     # Delay at the end of the states
     def __recipe_delay(self):
         utils.log("INFO", "Last state reached, execution paused for %s minutes."%(self.__config['salt']['delay']),('__recipe_delay',self))
-        pid = os.fork()
-        if (pid == 0):
-            time.sleep(self.__config['salt']['delay']*60)
+        self.__waitpid = os.fork()
+        if (pid == 0): # son
+            time.sleep(int(self.__config['salt']['delay'])*60)
+            sys.exit(0)
         else:
-            os.waitpid(pid,0)
+            os.waitpid(self.__haltpid,0)
+        self.__waitpid = None
         utils.log("INFO", "Delay passed, execution restarting...",('__recipe_delay',self))
 
     # Render recipes

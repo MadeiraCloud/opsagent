@@ -73,16 +73,21 @@ class OpsAgentRunner(Daemon):
         # terminating process
         def handler(signum=None, frame=None):
             utils.log("WARNING", "Signal handler called with signal %s"%signum,('handler','OpsAgentRunner'))
+            father = False
             try:
                 fd = file(self.__haltfile,'r')
                 halt = fd.read().strip()
                 fd.close()
+                fd = file(self.__pidfile,'r')
+                if int(fd.read().strip()):
+                    father = True
+                fd.close()
             except IOError:
                 halt = None
-            if halt == "wait":
+            if halt == "wait" and father:
                 self.__sw.abort()
                 return
-            elif halt == "end":
+            elif halt == "end" and father:
                 self.__sw.abort(end=True)
                 return
             utils.log("WARNING", "No soft arguent set, exiting now...",('handler','OpsAgentRunner'))
