@@ -12,13 +12,13 @@ import collections
 
 # Internal imports
 from opsagent import utils
-from opsagent.exception import StatePrepareException,OpsAgentException
+from opsagent.exception import StateException, OpsAgentException
 
 class StateAdaptor(object):
 
 	ssh_key_type = ['ssh-rsa', 'ecdsa', 'ssh-dss']
 
-	salt_map = {
+	mod_map = {
 		## package
 		'linux.apt.package'	: {
 			'attributes' : {
@@ -515,76 +515,53 @@ class StateAdaptor(object):
 
 		self.states = None
 
-	def transfer(self, step, module, parameter):
+	def convert(self, step, module, parameter):
 		"""
-			Transfer the module json data to salt states.
+			convert the module json data to salt states.
 		"""
 
-		utils.log("DEBUG", "Begin to transfer module json data ...", ("transfer", self))
+		utils.log("DEBUG", "Begin to convert module json data ...", ("convert", self))
 
-		if not isinstance(module, basestring) or not isinstance(parameter, dict):
-			utils.log("ERROR", "Invalid input parameter: %s, %s" % (module, parameter), ("transfer", self))
-			return
-
-		# check module
-		if module not in self.salt_map:
-			utils.log("WARNING", "Not supported module %s" % module, ("transfer", self))
-			return
+		if not isinstance(module, basestring):	raise StateException("Invalid input parameter: %s, %s" % (module, parameter))
+		if not isinstance(parameter, dict):		raise StateException("Invalid input parameter: %s, %s" % (module, parameter))
+		if module not in self.mod_map:			raise StateException("Unsupported module %s" % module)
 
 		# convert from unicode to string
-		utils.log("DEBUG", "Begin to convert unicode parameter to string ...", ("transfer", self))
-		parameter = self.__convert(parameter)
+		utils.log("DEBUG", "Begin to convert unicode parameter to string ...", ("convert", self))
+		parameter = utils.uni2str(parameter)
 
-		salt_state = self._transfer(step, module, parameter)
-		if not salt_state or not isinstance(salt_state, dict):
-			utils.log("ERROR", "Transfer json to salt state failed", ("transfer", self))
-			return
+		self.states = self.__salt(step, module, parameter)
+		return self.states
 
-		self.states = salt_state
-		return salt_state
-
-	def _transfer(self, step, module, parameter):
-
+	def __salt(self, step, module, parameter):
 		salt_state = {}
 
-		# generate addin
 		addin = self.__init_addin(module, parameter)
-		if not addin:
-			utils.log("ERROR", "Transfer module parameters failed: %s, %s" % (module, parameter), ("_transfer", self))
-			return salt_state
-
-		# process
 		module_states = self.__build_up(module, addin)
-		if not module_states:
-			utils.log("ERROR", "Build up module state failed: %s" % module, ("_transfer", self))
-			return salt_state
 
 		for state, addin in module_states.items():
-
 			# add require
-			utils.log("DEBUG", "Begin to generate requirity ...", ("_transfer", self))
+			utils.log("DEBUG", "Begin to generate requirity ...", ("_convert", self))
 			require = []
-			if 'require' in self.salt_map[module]:
-				req_state = self.__get_require(self.salt_map[module]['require'])
+			if 'require' in self.mod_map[module]:
+				req_state = self.__get_require(self.mod_map[module]['require'])
 				if req_state:
 					for req_tag, req_value in req_state.items():
 						salt_state[req_tag] = req_value
-
 						require.append({ next(iter(req_value)) : req_tag })
 
 			# add require in
-			utils.log("DEBUG", "Begin to generate require-in ...", ("_transfer", self))
+			utils.log("DEBUG", "Begin to generate require-in ...", ("_convert", self))
 			require_in = []
-			if 'require_in' in self.salt_map[module]:
-				req_in_state = self.__get_require_in(self.salt_map[module]['require_in'], parameter)
+			if 'require_in' in self.mod_map[module]:
+				req_in_state = self.__get_require_in(self.mod_map[module]['require_in'], parameter)
 				if req_in_state:
 					for req_in_tag, req_in_value in req_in_state.items():
 						salt_state[req_in_tag] = req_in_value
-
 						require_in.append({ next(iter(req_in_value)) : req_in_tag })
 
 			## add watch, todo
-			utils.log("DEBUG", "Begin to generate watch ...",("_transfer", self))
+			utils.log("DEBUG", "Begin to generate watch ...",("_convert", self))
 			watch = []
 			# if 'watch' in parameter and isinstance(parameter['watch'], list):
 			# 	watch_state = self.__add_watch(parameter['watch'], step)
@@ -599,58 +576,42 @@ class StateAdaptor(object):
 				addin
 			]
 
-			if require:
-				module_state.append({ 'require' : require })
-			if require_in:
-				module_state.append({ 'require_in' : require_in })
-			if watch:
-				module_state.append({ 'watch' : watch })
+			if require:		module_state.append({ 'require' : require })
+			if require_in:	module_state.append({ 'require_in' : require_in })
+			if watch:		module_state.append({ 'watch' : watch })
 
 			# tag
 			#name = addin['names'] if 'names' in addin else addin['name']
 			tag = self.__get_tag(module, None, step, None, state)
-			utils.log("DEBUG", "Generated tag is %s" % tag, ("_transfer", self))
-
-			type = self.salt_map[module]['type']
-
+			utils.log("DEBUG", "Generated tag is %s" % tag, ("_convert", self))
 			salt_state[tag] = {
-				type : module_state
+				self.mod_map[module]['type'] : module_state
 			}
 
 			# add env and sls
-			if 'require_in' in self.salt_map[module]:
+			if 'require_in' in self.mod_map[module]:
 				salt_state[tag]['__env__'] = 'base'
 				salt_state[tag]['__sls__'] = 'madeira'
-
+		if not salt_state:	raise StateException("conver state failed: %s %s" % (module, parameter))
 		return salt_state
 
 	def __init_addin(self, module, parameter):
-
 		addin = {}
 
 		for attr, value in parameter.items():
 			if value is None:	continue
 
-			if attr in self.salt_map[module]['attributes'].keys():
-				key = self.salt_map[module]['attributes'][attr]
-
+			if attr in self.mod_map[module]['attributes'].keys():
+				key = self.mod_map[module]['attributes'][attr]
 				if isinstance(value, dict):
-					addin[key] = []
-					for k, v in value.items():
-						if v:
-							addin[key].append({k:v})
-						else:
-							addin[key].append(k)
-
+					addin[key] = [k if not v else {k:v} for k, v in value.items()]
 				else:
 					addin[key] = value
-
+		if not addin:	raise StateExcepttion("No addin founded: %s, %s" % (module, parameter))
 		return addin
 
 	def __build_up(self, module, addin):
-
-		default_state = self.salt_map[module]['states'][0]
-
+		default_state = self.mod_map[module]['states'][0]
 		module_state = {
 			default_state : addin
 		}
@@ -660,7 +621,7 @@ class StateAdaptor(object):
 				if not isinstance(item, dict):	continue	# filter default state
 
 				for k, v in item.items():
-					if v in self.salt_map[module]['states']:
+					if v in self.mod_map[module]['states']:
 						if v not in module_state:
 							module_state[v] = {}
 						if 'names' not in module_state[v]:
@@ -775,43 +736,19 @@ class StateAdaptor(object):
 				'mode' 		: '0644',
 				'contents' 	: addin['contents']
 			}
-
+		if not module_state:	raise StateException("Build up module state failed: %s" % module)
 		return module_state
 
 	def __get_tag(self, module, uid=None, step=None, name=None, state=None):
 		"""
 			generate state identify tag.
 		"""
-
-		if not isinstance(module, basestring):
-			module = str(module)
-
 		tag = module.replace('.', '_')
-
-		if step:
-			if not isinstance(step, basestring):
-				step = str(step)
-			tag = step + '_' + tag
-
-		if uid:
-			if not isinstance(step, basestring):
-				uid = str(uid)
-			tag = uid + '_' + tag
-
-		if name:
-			if not isinstance(name, basestring):
-				name = str(name)
-			tag += '_' + name
-
-		if state:
-			if not isinstance(state, basestring):
-				state = str(state)
-			tag += '_' + state
-
-		tag = '_' + tag
-
-		#return hashlib.md5(tag).hexdigest()
-		return tag
+		if step:	tag = step + '_' + tag
+		if uid:		tag = uid + '_' + tag
+		if name:	tag += '_' + name
+		if state:	tag += '_' + state
+		return '_' + tag
 
 	def __get_require(self, require):
 		"""
@@ -821,13 +758,13 @@ class StateAdaptor(object):
 		requre_state = {}
 
 		for module, parameter in require.items():
-			if module not in self.salt_map.keys():	continue
+			if module not in self.mod_map.keys():	continue
 
 			addin = self.__init_addin(module, parameter)
 
-			state 	= self.salt_map[module]['states'][0]
+			state 	= self.mod_map[module]['states'][0]
 			tag 	= self.__get_tag(module, None, None, 'require', state)
-			type 	= self.salt_map[module]['type']
+			type 	= self.mod_map[module]['type']
 
 			requre_state[tag] = {
 				type : [
@@ -853,8 +790,8 @@ class StateAdaptor(object):
 				req_addin[v] = parameter[k]
 
 			#addin = self.__init_addin(module, req_p)
-			state = self.salt_map[module]['states'][0]
-			type = self.salt_map[module]['type']
+			state = self.mod_map[module]['states'][0]
+			type = self.mod_map[module]['type']
 
 			tag = self.__get_tag(module, None, None, 'require_in', state)
 
@@ -933,31 +870,17 @@ class StateAdaptor(object):
 			Check supported state.
 		"""
 
-		if state not in self.salt_map[module]['states']:
+		if state not in self.mod_map[module]['states']:
 			print "not supported state %s in module %s" % (state, module)
 			return 1
 
 		return 0
 
-	def __convert(self, data):
-		"""
-			Convert data from unicode to string.
-		"""
-
-		if isinstance(data, basestring):
-			return str(data)
-		elif isinstance(data, collections.Mapping):
-			return dict(map(self.__convert, data.iteritems()))
-		# elif isinstance(data, collections.Iterable):
-		# 	return type(data)(map(self.__convert, data))
-		else:
-			return data
-
 	##################################################################################
 	## package
 	# def _package(self, step, module, parameter):
 	# 	"""
-	# 		Transfer package to salt state.
+	# 		convert package to salt state.
 	# 	"""
 	# 	pkg_state = {}
 
@@ -968,8 +891,8 @@ class StateAdaptor(object):
 
 	# 	# add require
 	# 	require = []
-	# 	if 'require' in self.salt_map[module]:
-	# 		req_state = self.__get_require(self.salt_map[module]['require'])
+	# 	if 'require' in self.mod_map[module]:
+	# 		req_state = self.__get_require(self.mod_map[module]['require'])
 	# 		if req_state:
 	# 			for req in req_state:
 	# 				for req_tag, req_value in req.items():
@@ -1038,7 +961,7 @@ class StateAdaptor(object):
 	# ## repo, source
 	# def _repo(self, module, parameter, uid=None, step=None):
 	# 	"""
-	# 		Transfer repository to salt state.
+	# 		convert repository to salt state.
 	# 	"""
 
 	# 	# check
@@ -1186,7 +1109,7 @@ class StateAdaptor(object):
 	# ## scm
 	# def _scm(self, module, parameter, uid=None, step=None):
 	# 	"""
-	# 		Transfer scm to salt state.
+	# 		convert scm to salt state.
 	# 	"""
 	# 	# check
 	# 	if not isinstance(module, basestring) or not isinstance(parameter, dict):
@@ -1301,7 +1224,7 @@ class StateAdaptor(object):
 	## service
 	# def _service(self, module, parameter, uid=None, step=None):
 	# 	"""
-	# 		Transfer service to salt state.
+	# 		convert service to salt state.
 	# 	"""
 
 	# 	# check
@@ -1387,7 +1310,7 @@ class StateAdaptor(object):
 	## sys
 	# def _sys_cmd(self, module, parameter, uid=None, step=None):
 	# 	"""
-	# 		Transfer system cmd to salt state.
+	# 		convert system cmd to salt state.
 	# 	"""
 
 	# 	# check
@@ -1471,14 +1394,14 @@ class StateAdaptor(object):
 
 	# def _sys_script(self, module, parameter, uid=None, step=None):
 	# 	"""
-	# 		Transfer system script to salt state.
+	# 		convert system script to salt state.
 	# 	"""
 
 	# 	return self._sys_cmd(module, parameter, uid, step)
 
 	# def _sys_cron(self, module, parameter, uid=None, step=None):
 	# 	"""
-	# 		Transfer system cron to salt state.
+	# 		convert system cron to salt state.
 	# 	"""
 
 	# 	# check
@@ -1532,7 +1455,7 @@ class StateAdaptor(object):
 
 	# def _sys_user(self, module, parameter, uid=None, step=None):
 	# 	"""
-	# 		Transfer system username to salt state.
+	# 		convert system username to salt state.
 	# 	"""
 
 	# 	# check
@@ -1579,7 +1502,7 @@ class StateAdaptor(object):
 
 	# def _sys_group(self, module, parameter, uid=None, step=None):
 	# 	"""
-	# 		Transfer system group to salt state.
+	# 		convert system group to salt state.
 	# 	"""
 
 	# 	# check
@@ -1627,7 +1550,7 @@ class StateAdaptor(object):
 
 	# def _sys_hostname(self, module, parameter, uid=None, step=None):
 	# 	"""
-	# 		Transfer system hostname to salt state.
+	# 		convert system hostname to salt state.
 	# 	"""
 
 	# 	# check
@@ -1670,7 +1593,7 @@ class StateAdaptor(object):
 
 	# def _sys_hosts(self, module, parameter, uid=None, step=None):
 	# 	"""
-	# 		Transfer system hosts to salt state.
+	# 		convert system hosts to salt state.
 	# 	"""
 
 	# 	# check
@@ -1705,7 +1628,7 @@ class StateAdaptor(object):
 
 	# def _sys_mount(self, module, parameter, uid=None, step=None):
 	# 	"""
-	# 		Transfer system mount to salt state.
+	# 		convert system mount to salt state.
 	# 	"""
 
 	# 	# check
@@ -1761,7 +1684,7 @@ class StateAdaptor(object):
 
 	# def _sys_ntp(self, module, parameter, uid=None, step=None):
 	# 	"""
-	# 		Transfer system ntp to salt state. (Salt currently only supports Windows platform.)
+	# 		convert system ntp to salt state. (Salt currently only supports Windows platform.)
 	# 	"""
 	# 	# check
 	# 	# if not isinstance(module, basestring) or not isinstance(parameter, dict):
@@ -1779,7 +1702,7 @@ class StateAdaptor(object):
 
 	# def _sys_selinux(self, module, parameter, uid=None, step=None):
 	# 	"""
-	# 		Transfer system selinux to salt state.
+	# 		convert system selinux to salt state.
 	# 	"""
 
 	# 	# check
@@ -1840,7 +1763,7 @@ class StateAdaptor(object):
 
 	# def _sys_timezone(self, module, parameter, uid=None, step=None):
 	# 	"""
-	# 		Transfer system timezon to salt state.
+	# 		convert system timezon to salt state.
 	# 	"""
 
 	# 	# check
@@ -1886,7 +1809,7 @@ class StateAdaptor(object):
 	## ssh
 	# def _system_ssh_auth(self, module, parameter, uid=None, step=None):
 	# 	"""
-	# 		Transfer SSH authorized_key to salt state.
+	# 		convert SSH authorized_key to salt state.
 	# 	"""
 
 	# 	# check
@@ -1967,7 +1890,7 @@ class StateAdaptor(object):
 
 	# def _system_ssh_known_host(self, module, parameter, uid=None, step=None):
 		# """
-		# 	Transfer system SSH known_hosts to salt state.
+		# 	convert system SSH known_hosts to salt state.
 		# """
 
 		# # check
@@ -2018,11 +1941,9 @@ class StateAdaptor(object):
 		# 	}
 		# }
 
-# codes for test
-def main():
-
+# ===================== UT =====================
+def ut():
 	import json
-
 	pre_states = json.loads(open('api.json').read())
 
 	# salt_opts = {
@@ -2046,7 +1967,7 @@ def main():
 		'cachedir' : '/code/OpsAgent/cache'
 	}
 
-    	from opsagent.state.runner import StateRunner
+	from opsagent.state.runner import StateRunner
 	adaptor = StateAdaptor()
 	runner = StateRunner(config)
 
@@ -2059,21 +1980,16 @@ def main():
 		states = {}
 
 		for p_state in com['state']:
-
 			step = p_state['id']
-
-			state = adaptor.transfer(step, p_state['module'], p_state['parameter'])
-
+			state = adaptor.convert(step, p_state['module'], p_state['parameter'])
 			print json.dumps(state)
 
 			if not state or not isinstance(state, dict):
-				err_log = "transfer salt state failed"
+				err_log = "convert salt state failed"
 				print err_log
 				result = (False, err_log, out_log)
-
 			else:
 				result = runner.exec_salt(state)
-
 			print result
 
 	# out_states = [salt_opts] + states
@@ -2081,4 +1997,4 @@ def main():
 	# 	json.dump(out_states, f)
 
 if __name__ == '__main__':
-	main()
+	ut()

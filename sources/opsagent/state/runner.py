@@ -10,7 +10,7 @@ import json
 from salt.state import State
 
 from opsagent import utils
-from opsagent.exception import StatePrepareException,OpsAgentException
+from opsagent.exception import StateException, OpsAgentException
 
 class StateRunner(object):
 
