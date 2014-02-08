@@ -711,6 +711,9 @@ class StateAdaptor(object):
 			if 'unless' in addin:
 				module_state[default_state]['unless'] = "[ -d " + addin['unless'] + " ]"
 
+			if 'timeout' in addin:
+				module_state[default_state]['timeout'] = int(addin['timeout'])
+
 		elif module in ['linux.user']:
 			# set nologin shell
 			if 'nologin' in addin:
