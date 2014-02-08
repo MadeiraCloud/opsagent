@@ -656,18 +656,34 @@ class StateAdaptor(object):
 		}
 
 		if module in ['linux.apt.package', 'linux.yum.package', 'common.gem.package', 'common.npm.package', 'common.pecl.package', 'common.pip.package']:
+			module_state = {}
+
 			for item in addin['names']:
-				if not isinstance(item, dict):	continue	# filter default state
+				pkg_name = None
+				pkg_state = None
+				if isinstance(item, dict):
+					for k, v in item.items():
+						pkg_name 	= k
+						pkg_state 	= default_state
 
-				for k, v in item.items():
-					if v in self.salt_map[module]['states']:
-						if v not in module_state:
-							module_state[v] = {}
-						if 'names' not in module_state[v]:
-							module_state[v] = addin
-							module_state[v]['names'] = []
+						if v in self.salt_map[module]['states']:
+							pkg_state = v
 
-						module_state[v]['names'].append(k)
+						if pkg_state not in module_state:			module_state[pkg_state] = {}
+						if 'names' not in module_state[pkg_state]:	module_state[pkg_state]['names'] = []
+
+						if pkg_state == default_state:
+							module_state[pkg_state]['names'].append(item)
+						else:
+							module_state[pkg_state]['names'].append(pkg_name)
+
+				else:	# insert into default state
+					pkg_state	= default_state
+
+					if pkg_state not in module_state:			module_state[pkg_state] = {}
+					if 'names' not in module_state[pkg_state]:	module_state[pkg_state]['names'] = []
+
+					module_state[pkg_state]['names'].append(item)
 
 		elif module in ['common.git', 'common.svn', 'common.hg']:
 			if 'name' in addin:
@@ -826,18 +842,23 @@ class StateAdaptor(object):
 		for module, parameter in require.items():
 			if module not in self.salt_map.keys():	continue
 
-			addin = self.__init_addin(module, parameter)
+			# addin = self.__init_addin(module, parameter)
 
-			state 	= self.salt_map[module]['states'][0]
-			tag 	= self.__get_tag(module, None, None, 'require', state)
-			type 	= self.salt_map[module]['type']
+			# state 	= self.salt_map[module]['states'][0]
+			# tag 	= self.__get_tag(module, None, None, 'require', state)
+			# type 	= self.salt_map[module]['type']
 
-			requre_state[tag] = {
-				type : [
-					state,
-					addin
-				]
-			}
+			the_requre_state = self._transfer('require', module, parameter)
+
+			if the_requre_state:
+				requre_state.update(the_requre_state)
+
+			# requre_state[tag] = {
+			# 	type : [
+			# 		state,
+			# 		addin
+			# 	]
+			# }
 
 		return requre_state
 
