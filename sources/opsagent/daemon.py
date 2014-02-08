@@ -17,18 +17,18 @@ from signal import SIGTERM,SIGINT,SIGKILL
 class Daemon():
     def __init__(self, config, stdin='/dev/null', stdout='/dev/null', stderr='/dev/null'):
         self.config = config
-        self.__pidfile = config['global']['pidfile']
-        self.__haltfile = config['global']['haltfile']
+        self.pidfile = config['global']['pidfile']
+        self.haltfile = config['global']['haltfile']
         self.__stdin = stdin
         self.__stdout = stdout
         self.__stderr = stderr
 
     # delete pid file
-    def delpid(self):
-        os.remove(self.__pidfile)
+    def __delpid(self):
+        os.remove(self.pidfile)
 
     # make as daemon
-    def daemonize(self):
+    def __daemonize(self):
         # first fork
         try:
             pid = os.fork()
@@ -67,18 +67,18 @@ class Daemon():
         os.dup2(serr.fileno(), sys.stderr.fileno())
 
         # delete pid file when exit
-        atexit.register(self.delpid)
+        atexit.register(self.__delpid)
         # get pid
         pid = str(os.getpid())
         # write pid to file
-        file(self.__pidfile,'w+').write("%s\n"%pid)
-        os.chmod(self.__pidfile, 0640)
+        file(self.pidfile,'w+').write("%s\n"%pid)
+        os.chmod(self.pidfile, 0640)
 
     # start as daemon
     def start(self):
         # check if already running
         try:
-            fd = file(self.__pidfile,'r')
+            fd = file(self.pidfile,'r')
             pid = int(fd.read().strip())
             fd.close()
         except IOError:
@@ -86,18 +86,18 @@ class Daemon():
 
         # if pid exists, daemon running, don't do anything
         if pid:
-            sys.stderr.write("pidfile %s already exist. Daemon already running?\n"%(self.__pidfile))
+            sys.stderr.write("pidfile %s already exist. Daemon already running?\n"%(self.pidfile))
             sys.exit(1)
 
         # start the daemon
-        self.daemonize()
+        self.__daemonize()
         self.run()
 
     # stop the daemon
     def stop(self, wait=False, end=False):
         # get pid from pidfile
         try:
-            pf = file(self.__pidfile,'r')
+            pf = file(self.pidfile,'r')
             pid = int(pf.read().strip())
             pf.close()
         except IOError:
@@ -105,28 +105,28 @@ class Daemon():
 
         # no file
         if not pid:
-            sys.stderr.write("pidfile %s does not exist. Daemon not running?\n"%(self.__pidfile))
+            sys.stderr.write("pidfile %s does not exist. Daemon not running?\n"%(self.pidfile))
             return
 
         # kill daemon
         try:
             if end:
-                file(self.__haltfile,'w+').write("end")
-                os.chmod(self.__haltfile, 0640)
+                file(self.haltfile,'w+').write("end")
+                os.chmod(self.haltfile, 0640)
             elif wait:
-                file(self.__haltfile,'w+').write("wait")
-                os.chmod(self.__haltfile, 0640)
+                file(self.haltfile,'w+').write("wait")
+                os.chmod(self.haltfile, 0640)
             else:
-                file(self.__haltfile,'w+').write("kill")
-                os.chmod(self.__haltfile, 0640)
+                file(self.haltfile,'w+').write("kill")
+                os.chmod(self.haltfile, 0640)
             while True:
                 os.kill(pid, SIGTERM)
                 time.sleep(1)
         except OSError, err:
             err = str(err)
             if err.find("No such process"):
-                if os.path.exists(self.__pidfile):
-                    os.remove(self.__pidfile)
+                if os.path.exists(self.pidfile):
+                    os.remove(self.pidfile)
             else:
                 sys.stderr.write("%s"%(err))
                 sys.exit(1)

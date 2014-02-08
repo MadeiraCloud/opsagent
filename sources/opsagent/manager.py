@@ -4,7 +4,6 @@ Madeira OpsAgent manager
 @author: Thibault BRONCHAIN
 '''
 
-
 ## IMPORTS
 # Native imports
 import json

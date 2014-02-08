@@ -4,6 +4,8 @@
 ## (c) 2014 MadeiraCloud LTD.
 ##
 
+# for crc
+
 # Set path
 PATH=${PATH}:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
 
@@ -63,8 +65,13 @@ function update_sources() {
         RETVAL_CUR=$?
         LAST_VERSION="$(curl -sSL ${OA_REMOTE}/${1}.cksum)"
         RETVAL_LAST=$?
-        VALID="$(echo LAST_VERSION | grep ${1}.tgz | wc -l)"
+        VALID="$(echo $LAST_VERSION | grep ${1}.tgz | wc -l)"
         RETVAL_VALID=$?
+        echo "RETVAL_CUR=$RETVAL_CUR" 1>&2
+        echo "RETVAL_LAST=$RETVAL_LAST" 1>&2
+        echo "RETVAL_VALID=$RETVAL_VALID" 1>&2
+        echo "VALID=$VALID" 1>&2
+        echo "CUR_VERSION=$CUR_VERSION" 1>&2
         if ([ "$RETVAL_CUR" != "0" ]) \
             || \
             ([ "$RETVAL_LAST" = "0" ] && [ "$RETVAL_VALID" = "0" ] && [ "$VALID" = "1" ] && [ "$CUR_VERSION" != "$LAST_VERSION" ])

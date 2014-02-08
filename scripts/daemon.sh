@@ -27,19 +27,27 @@ case "$1" in
     ${OA_ROOT}/env/bin/opsagent stop
     ;;
   stop-wait)
-    echo "Stopping opsagent"
+    echo "Stopping opsagent waiting state end"
     ${OA_ROOT}/env/bin/opsagent stop-wait
     ;;
   restart-wait)
-    echo "Restarting opsagent"
+    echo "Restarting opsagent waiting state end"
     ${OA_ROOT}/env/bin/opsagent restart-wait
+    ;;
+  stop-end)
+    echo "Stopping opsagent waiting recipe end"
+    ${OA_ROOT}/env/bin/opsagent stop-end
+    ;;
+  restart-end)
+    echo "Restarting opsagent waiting recipe end"
+    ${OA_ROOT}/env/bin/opsagent restart-end
     ;;
   restart)
     echo "Restarting opsagent"
     ${OA_ROOT}/env/bin/opsagent /etc/opsagent.conf restart
     ;;
   *)
-    echo "Usage: $0 {start|stop|restart|stop-wait|restart-wait}"
+    echo "Usage: $0 {start|stop|restart|stop-wait|restart-wait|stop-end|restart-end}"
     exit 1
     ;;
 esac

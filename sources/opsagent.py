@@ -47,13 +47,13 @@ def __log(lvl, file=None):
 class OpsAgentRunner(Daemon):
     def run_manager(self):
         utils.log("DEBUG", "Creating Network Manager ...",('run_manager','OpsAgentRunner'))
-        manager = Manager(url=self.config['network']['ws_uri'], config=self.config, statesworker=self.__sw)
+        manager = Manager(url=self.config['network']['ws_uri'], config=self.config, statesworker=self.sw)
         utils.log("DEBUG", "Network Manager created.",('run_manager','OpsAgentRunner'))
         try:
             utils.log("DEBUG", "Connecting manager to backend.",('run_manager','OpsAgentRunner'))
             manager.connect()
             utils.log("DEBUG", "Connection done, registering to StateWorker.",('run_manager','OpsAgentRunner'))
-            self.__sw.set_manager(manager)
+            self.sw.set_manager(manager)
             utils.log("DEBUG", "Registration done, running forever ...",('run_manager','OpsAgentRunner'))
             manager.run_forever()
             utils.log("DEBUG", "Network connection lost/aborted.",('run_manager','OpsAgentRunner'))
@@ -65,33 +65,45 @@ class OpsAgentRunner(Daemon):
                 utils.log("DEBUG", "Connection closed.",('run_manager','OpsAgentRunner'))
             else:
                 utils.log("DEBUG", "Connection already closed.",('run_manager','OpsAgentRunner'))
+        self.sw.set_manager(None)
 
     def run(self):
         # init
-        self.__sw = StateWorker(config=self.config)
+        self.sw = StateWorker(config=self.config)
+
+        sw = self.sw
+        haltfile = self.haltfile
+        pidfile = self.pidfile
 
         # terminating process
         def handler(signum=None, frame=None):
             utils.log("WARNING", "Signal handler called with signal %s"%signum,('handler','OpsAgentRunner'))
             father = False
             try:
-                fd = file(self.__haltfile,'r')
+                fd = file(haltfile,'r')
                 halt = fd.read().strip()
                 fd.close()
-                fd = file(self.__pidfile,'r')
+                fd = file(pidfile,'r')
                 if int(fd.read().strip()):
                     father = True
                 fd.close()
             except IOError:
                 halt = None
+            except Exception as e:
+                utils.log("WARNING", "Unexpected error, forcing quit: '%s'."%(e),('handler','OpsAgentRunner'))
+                halt = None
             if halt == "wait" and father:
-                self.__sw.abort()
-                return
+                utils.log("WARNING", "Waiting current state end before end...",('handler','OpsAgentRunner'))
+                sw.abort()
             elif halt == "end" and father:
-                self.__sw.abort(end=True)
-                return
-            utils.log("WARNING", "No soft arguent set, exiting now...",('handler','OpsAgentRunner'))
-            sys.exit(0)
+                utils.log("WARNING", "Waiting current recipe end before end...",('handler','OpsAgentRunner'))
+                sw.abort(end=True)
+            elif father:
+                utils.log("WARNING", "Exiting now...",('handler','OpsAgentRunner'))
+                sw.abort(kill=True)
+            else:
+                utils.log("WARNING", "No soft , exiting now...",('handler','OpsAgentRunner'))
+                sys.exit(0)
 
         # handle termination
         for sig in [signal.SIGTERM, signal.SIGINT, signal.SIGHUP, signal.SIGQUIT]:
@@ -99,16 +111,17 @@ class OpsAgentRunner(Daemon):
             except: pass #pass some signals if not POSIX
 
         # start
-        self.__sw.start()
+        self.sw.start()
 
         # run forever
-        while not self.__sw.aborted():
+        while self.sw and not self.sw.aborted():
             try:
+#                Can't work now - SW cannot be restarted
 #                # states worker dead
-#                if not sw.is_alive():
-#                    del sw
-#                    sw = StateWorker(config=config)
-#                    sw.start()
+#                if not self.sw.is_alive():
+#                    del self.sw
+#                    self.sw = StateWorker(config=self.config)
+#                    self.sw.start()
                 # run manager
                 self.run_manager()
             except Exception as e:
@@ -117,9 +130,9 @@ class OpsAgentRunner(Daemon):
                 utils.log("WARNING", "Conenction aborted, retrying ...",('run','OpsAgentRunner'))
 
         # end properly
-        if self.__sw.is_alive():
-            self.__sw.join()
-        self.__sw = None
+        if self.sw and self.sw.is_alive():
+            self.sw.join()
+        self.sw = None
 
 
 # option parser
