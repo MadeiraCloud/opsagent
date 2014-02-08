@@ -29,7 +29,10 @@ def get_aws_data(url):
     return res
 
 # Get instance ID from AWS
-def instance_id(config):
+def instance_id(config, manager):
+    if not manager.running():
+        utils.log("WARNING", "Execution aborting, exiting ...",('instance_id','aws'))
+        return None
     utils.log("DEBUG", "Getting instance id ...",('instance_id','aws'))
     try:
         id = get_aws_data(config['network']['instance_id'])
@@ -44,7 +47,10 @@ def instance_id(config):
     return id
 
 # Get app ID from AWS passed by Madeira
-def app_id(config):
+def app_id(config, manager):
+    if not manager.running():
+        utils.log("WARNING", "Execution aborting, exiting ...",('app_id','aws'))
+        return None
     utils.log("DEBUG", "Getting app id ...",('instance_id','aws'))
     try:
         user_data = get_aws_data(config['network']['user_data'])
@@ -78,9 +84,9 @@ def token(config):
     return token
 
 ## TODO: remove
-#def app_id_t(config):
+#def app_id_t(config, manager):
 #    return ('ethylic')
-#def isntance_id_t(config):
+#def instance_id_t(config, manager):
 #    return ('slurry')
 #def token_t(config):
 #    return ('token')
