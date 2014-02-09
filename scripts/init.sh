@@ -13,7 +13,7 @@ PATH=${PATH}:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
 OA_USER=root
 
 # OpsAgent remote location
-OA_REMOTE=https://s3.amazonaws.com/visualops-new
+OA_REMOTE=https://s3.amazonaws.com/visualops
 
 # OpsAgent directories
 OA_ROOT_DIR=/opt/madeira

@@ -6,8 +6,9 @@
 
 OA_CONF_DIR=/etc/opsagent.d
 OA_LOG_DIR=/var/log/madeira
+OA_SRC_DIR=/opt/madeira
 OA_TMP_ROOT=/tmp/opsagent
-OA_REMOTE=https://s3.amazonaws.com/visualops-new
+OA_REMOTE=https://s3.amazonaws.com/visualops
 
 (crontab -l | grep -v ${OA_CONF_DIR}/cron.sh) > /tmp/opsagent.crontab
 crontab -r
@@ -19,16 +20,18 @@ done
 
 rm -rf ${OA_CONF_DIR}
 rm -rf ${OA_LOG_DIR}
+rm -rf ${OA_SRC_DIR}
 rm -rf ${OA_TMP_ROOT}*
 
-if [ "$2" = "reinstall" ]; then
+if [ "$1" = "reinstall" ]; then
     curl -sSL ${OA_REMOTE}/userdata.sh | bash
 fi
 
-if [ "$3" = "debug" ]; then
-    (crontab -l | grep -v ${OA_CONF_DIR}/cron.sh) > /tmp/opsagent.crontab
+if [ "$2" = "debug" ]; then
+    (crontab -l | grep -v ${OA_CONF_DIR}/cron.sh) > ${OA_TMP_ROOT}.crontab
     crontab -r
-    cat /tmp/opsagent.crontab | crontab
+    cat ${OA_TMP_ROOT}.crontab | crontab
+    . ${OA_CONF_DIR}/cron.sh
     service opsagentd stop
     for id in `ps aux | grep opsagent | sed -e 's/  */ /g' | cut -d ' ' -f 2`; do
         kill -9 $id
