@@ -1,0 +1,8 @@
+{
+	"component": {
+		"init" : {
+			"state": [{"id":"state-9DDEBDBC-7E5B-46D8-BD5E-D97614300F40","module":"linux.file","parameter":{"content":"#!/bin/sh\necho \"hello world\"","user":"xjimmy","path":"/madeira/util/test.sh","mode":"0755","absent":false,"group":"root"}}]
+		}
+	}
+}
+
