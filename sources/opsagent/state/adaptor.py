@@ -8,7 +8,6 @@ Madeira OpsAgent states adaptor
 # System imports
 import os
 import hashlib
-import collections
 
 # Internal imports
 from opsagent import utils

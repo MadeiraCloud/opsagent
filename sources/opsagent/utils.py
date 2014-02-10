@@ -4,6 +4,7 @@ Madeira OpsAgent utilities
 @author: Thibault BRONCHAIN
 '''
 
+import collections
 
 # System imports
 import logging
@@ -48,12 +49,12 @@ def log(action, content, fc=None):
     LOGGING_EQ[action](pt)
 
 # convert data from unicode to string
-def uni2str(self, data):
+def uni2str(data):
     if isinstance(data, basestring):
         return str(data)
     elif isinstance(data, collections.Mapping):
-        return dict(map(self.__convert, data.iteritems()))
-    # elif isinstance(data, collections.Iterable):
-    # 	return type(data)(map(self.__convert, data))
+        return dict(map(uni2str, data.iteritems()))
+    elif isinstance(data, collections.Iterable):
+    	return type(data)(map(uni2str, data))
     else:
         return data
