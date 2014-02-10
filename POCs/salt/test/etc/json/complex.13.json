@@ -1,0 +1,86 @@
+{
+  "component": {
+    "init": {
+      "state": [
+        {
+          "id": "state-9DDEBDBC-7E5B-46D8-BD5E-D97614500F46",
+          "module": "linux.file",
+          "parameter": {
+            "content": "#!/bin/bash
+## test
+
+echo $$ > /var/run/foo.pid
+while 1; do
+    sleep 1
+done
+
+##",
+            "user": "root",
+            "path": "/usr/local/bin/foo",
+            "mode": "0755",
+            "absent": false,
+            "group": "root"
+          }
+        },
+        {
+          "id": "state-9DDEBDBC-7E5B-46D8-BD5E-D97614A09F40",
+          "module": "linux.file",
+          "parameter": {
+            "path": "/etc/supervisord.conf",
+            "user": "root",
+            "content": "[unix_http_server]
+file=/tmp/supervisor.sock
+
+[rpcinterface:supervisor]
+supervisor.rpcinterface_factory = supervisor.rpcinterface:make_main_rpcinterface
+
+[supervisorctl]
+serverurl=unix:///tmp/supervisor.sock
+
+[program:foo]
+command=/usr/local/bin/foo
+autostart=true
+autorestart=true
+startretries=3
+stdout_logfile=/var/log/foo.log
+stdout_logfile_maxbytes=100MB
+stdout_logfile_backups=5
+stdout_capture_maxbytes=1MB
+stdout_events_enabled=false
+redirect_stderr=true
+user=root",
+            "mode": "0644",
+            "absent": false,
+            "group": "root"
+          }
+        },
+        {
+          "id": "state-7B5E6E8A-17CD-4578-8A84-15D020634E1F",
+          "module": "linux.yum.package",
+          "parameter": {
+            "name": {
+              "python-pip": ""
+            }
+          }
+        },
+        {
+          "id": "state-7B5E6E8A-17CD-4578-8E86-15D020632F9F",
+          "module": "common.pip.package",
+          "parameter": {
+            "name": {
+              "supervisor": ""
+            }
+          }
+        },
+        {
+          "id": "state-7E596E8A-17CD-4578-8E85-15D020642ACC",
+          "module": "linux.supervisord",
+          "parameter": {
+            "name": "foo",
+            "config": "/etc/supervisord.conf"
+          }
+        }
+      ]
+    }
+  }
+}
