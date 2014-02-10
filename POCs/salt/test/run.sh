@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 BASE_DIR=/opt/madeira/env/lib/python2.7/site-packages/opsagent/state
 PY_BIN=/opt/madeira/env/bin/python
