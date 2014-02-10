@@ -1,0 +1,52 @@
+linux.user
+linux.group
+linux.cron
+linux.file
+linux.dir
+linux.symlink
+linux.upstart
+linux.timezone
+linux.systemd
+linux.cmd
+linux.hosts
+linux.yum.repo
+linux.yum.package
+linux.apt.repo
+linux.apt.package
+common.git # -> need to install git
+common.hg # -> need to install hg
+common.svn # -> need to install svn
+common.npm.package # -> need to install npm
+common.pip.package # -> need to install pip
+common.gem.package # -> need to install gem
+common.virtualenv # -> create?
+linux.supervisord # -> need to create service
+linux.sysvinit
+linux.mount
+linux.lvm.pv # TODO: set right path
+linux.lvm.vg # TODO: set right path
+linux.lvm.lv # TODO: lvname?vgname?
+linux.hosts
+
+#linux.fs # Doesn't exists?
+#linux.ulimit # Doesn't exists?
+
+#internal.reboot
+#internal.wait
+
+
+linux.yum.package git + common.git
+linux.apt.package git + common.git
+linux.yum.package hg + common.hg
+linux.apt.package hg + common.hg
+linux.yum.package svn + common.svn
+linux.apt.package svn + common.svn
+
+linux.yum.package npm + common.npm.package #TODO
+linux.apt.package npm + common.npm.package
+linux.yum.package pip + common.pip.package
+linux.apt.package pip + common.pip.package
+linux.yum.package gem + common.gem.package
+linux.apt.package gem + common.gem.package
+
+#supervisord TODO

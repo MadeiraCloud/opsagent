@@ -31,9 +31,18 @@ function tree() {
     # Copy bootstrap scripts
     cp ../${SCRIPTS_DIR}/bootstrap.sh ${OPSAGENT_DIR}/${SCRIPTS_DIR}/
     # Copy standalone scripts
-    cp ../${SCRIPTS_DIR}/{init.sh,userdata.sh} ./
+    cp ../${SCRIPTS_DIR}/{init.sh,userdata.sh,clean.sh} ./
     cksum init.sh > init.cksum
     cksum userdata.sh > userdata.cksum
+    cksum clean.sh > clean.cksum
+    # TODO: remove
+    # Copy unit tests
+    cd ../POCs/salt
+    tar cfz test.tgz test
+    cd -
+    mv ../POCs/salt/test.tgz ./
+    cksum test.tgz > test.cksum
+    # /TODO
     # Copy service launcher
     cp ../${SCRIPTS_DIR}/daemon.sh ${OPSAGENT_DIR}/${SCRIPTS_DIR}/
     # Copy virtualenv

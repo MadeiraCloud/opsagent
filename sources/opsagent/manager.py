@@ -38,6 +38,7 @@ class Manager(WebSocketClient):
         # variables
         self.__config = config
         self.__connected = False
+        self.__run = True
 
         # actions map
         self.__actions = {
@@ -53,6 +54,13 @@ class Manager(WebSocketClient):
 
         # states worker
         self.__states_worker = statesworker
+
+
+    ## HELPERS
+    # runnign status
+    def running(self):
+        return self.__run
+    ##
 
 
     ## ACTIONS
@@ -148,7 +156,6 @@ class Manager(WebSocketClient):
                 utils.log("ERROR", err,('__init_dir',self))
                 errors.append(err)
         return (" ".join(errors) if errors else None)
-        #
 
     # Mount proc FileSystem
     def __mount_proc_try(self, proc, dir=False):
@@ -186,9 +193,9 @@ class Manager(WebSocketClient):
     # Get instance id and user data from AWS
     def __get_id(self):
         utils.log("INFO", "Fetching instance data from AWS ...",('__get_id',self))
-        instance_id = aws.instance_id(self.__config)
+        instance_id = aws.instance_id(self.__config, self)
         utils.log("INFO", "Instance ID: '%s'"%(instance_id),('__get_id',self))
-        app_id = aws.app_id(self.__config)
+        app_id = aws.app_id(self.__config, self)
         utils.log("INFO", "App ID: '%s'"%(app_id),('__get_id',self))
         token = aws.token(self.__config)
         utils.log("DEBUG", "Token: '%s'"%(token),('__get_id',self))
@@ -205,21 +212,24 @@ class Manager(WebSocketClient):
     def stop(self):
         utils.log("INFO", "Stopping manager ...",('stop',self))
         self.__close(code=codes.C_STOP,reason=codes.M_STOP)
+        self.__run = False
 
     # Close socket
     def __close(self, code=1000, reason='', reset=False):
         utils.log("INFO", "Closing connection ... (code='%s', reason='%s')"%(code,reason),('__close',self))
+        self.__run = False
         if reset:
             utils.log("INFO", "Reset flag set, reseting states execution ...",('__close',self))
             self.__states_worker.kill()
-            self.__states_worker.reset()
+#            self.__states_worker.reset()
             utils.log("DEBUG", "Reset succeed",('__close',self))
         utils.log("DEBUG", "Closing socket ...",('__close',self))
         self.close(code, reason)
-        try:
-            self.terminated = True
-        except Exception as e:
-            utils.log("WARNING", "Can't set terminated attribute: %s."%e,('__close',self))
+# TODO don't?
+#        try:
+#            self.terminated = True
+#        except Exception as e:
+#            utils.log("WARNING", "Can't set terminated attribute: %s."%e,('__close',self))
         utils.log("INFO", "Socket closed, connection terminated.",('__close',self))
 
     # Send data to backend
@@ -259,6 +269,7 @@ class Manager(WebSocketClient):
         utils.log("INFO", "Socket closed: %s, code '%s'"%(reason,code),('closed',self))
         utils.log("INFO", "Reconnection will start in '%s' seconds ..."%(WAIT_RECONNECT),('closed',self))
         self.__connected = False
+        self.__run = False
         if self.__states_worker and self.__states_worker.is_alive():
             self.__states_worker.set_manager(None)
         time.sleep(WAIT_RECONNECT)
@@ -277,7 +288,6 @@ class Manager(WebSocketClient):
         utils.log("DEBUG", "Data: '%s'"%(raw_data),('received_message',self))
         try:
             utils.log("DEBUG", "Converting received json data to dict",('received_message',self))
-            print raw_data
             data = json.loads(u'%s'%(raw_data))
             utils.log("INFO", "Message converted from json.",('received_message',self))
         except Exception as e:

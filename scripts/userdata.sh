@@ -7,7 +7,7 @@
 OA_CONF_DIR=/etc/opsagent.d
 OA_LOG_DIR=/var/log/madeira
 OA_EXEC_FILE=/tmp/opsagent.boot
-OA_REMOTE=https://s3.amazonaws.com/visualops-new
+OA_REMOTE=https://s3.amazonaws.com/visualops
 mkdir -p {$OA_LOG_DIR,$OA_CONF_DIR}
 # bootstrap
 cat <<EOF > ${OA_CONF_DIR}/cron.sh
