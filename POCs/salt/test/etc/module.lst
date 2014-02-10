@@ -11,7 +11,7 @@ linux.upstart
 linux.timezone
 linux.systemd
 linux.cmd
-linux.hosts
+linux.hostname
 linux.yum.repo
 linux.yum.package
 linux.apt.repo
