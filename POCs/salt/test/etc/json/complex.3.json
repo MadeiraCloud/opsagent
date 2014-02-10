@@ -13,7 +13,7 @@
         },
         {
           "id": "state-7B5E6E8A-17CD-4578-8E86-15D020632F1F",
-          "module": "common.mercurial",
+          "module": "common.hg",
           "parameter": {
             "repo": "http://hg.logilab.org/hgview",
             "path": "/tmp/hg/test/",
