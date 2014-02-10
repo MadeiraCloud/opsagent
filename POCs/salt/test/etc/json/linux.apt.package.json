@@ -1,14 +1,17 @@
 {
-        "component": {
-		"init" : {
-			"state":[{
-                        "id":"state-7EEE6E8A-17CD-4578-8E85-15D020632F1F",
-                        "module":"linux.apt.package",
-                        "parameter":{
-                                "name":{
-                                      "git":""
-                                       }}}]
-		}
-	}
+  "component": {
+    "init": {
+      "state": [
+        {
+          "id": "state-7EEE6E8A-17CD-4578-8E85-15D020632F1F",
+          "module": "linux.apt.package",
+          "parameter": {
+            "name": {
+              "git": ""
+            }
+          }
+        }
+      ]
+    }
+  }
 }
-

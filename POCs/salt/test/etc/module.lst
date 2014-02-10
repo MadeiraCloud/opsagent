@@ -1,3 +1,6 @@
+####################################################
+#lines begin with "#" or blank lines will be ignored
+####################################################
 linux.user
 linux.group
 linux.cron
@@ -35,18 +38,18 @@ linux.hosts
 #internal.wait
 
 
-linux.yum.package git + common.git
-linux.apt.package git + common.git
-linux.yum.package hg + common.hg
-linux.apt.package hg + common.hg
-linux.yum.package svn + common.svn
-linux.apt.package svn + common.svn
+complex.1 #linux.yum.package git + common.git
+complex.2 #linux.apt.package git + common.git
+complex.3 #linux.yum.package hg + common.hg
+complex.4 #linux.apt.package hg + common.hg
+complex.5 #linux.yum.package svn + common.svn
+complex.6 #linux.apt.package svn + common.svn
 
-linux.yum.package npm + common.npm.package #TODO
-linux.apt.package npm + common.npm.package
-linux.yum.package pip + common.pip.package
-linux.apt.package pip + common.pip.package
-linux.yum.package gem + common.gem.package
-linux.apt.package gem + common.gem.package
+complex.7 #linux.yum.package npm + common.npm.package #TODO
+complex.8 #linux.apt.package npm + common.npm.package
+complex.9 #linux.yum.package pip + common.pip.package
+complex.10 #linux.apt.package pip + common.pip.package
+complex.11 #linux.yum.package gem + common.gem.package
+complex.12 #linux.apt.package gem + common.gem.package
 
 #supervisord TODO

@@ -1,23 +1,26 @@
 {
-	"component": {
-		"init" : {
-			"state": [{
-                                 "id":"state-7B5E6E8A-17CD-4578-8E85-15D020632F1F",
-                                 "module":"linux.yum.package",
-                                 "parameter":{
-                                        "name":{
-                                                "python-pip":""
-                                         }
-                                 }
-                         },{
-                                 "id":"state-7B5E6E8A-17CD-4578-8E86-15D020632F1F",
-                                 "module":"common.pip.package",
-                                 "parameter":{
-                                        "name":{
-                                                "supervisor":""
-                                        }
-                                 }
-                         }]
-		}
-	}
+  "component": {
+    "init": {
+      "state": [
+        {
+          "id": "state-7B5E6E8A-17CD-4578-8E85-15D020632F1F",
+          "module": "linux.yum.package",
+          "parameter": {
+            "name": {
+              "python-pip": ""
+            }
+          }
+        },
+        {
+          "id": "state-7B5E6E8A-17CD-4578-8E86-15D020632F1F",
+          "module": "common.pip.package",
+          "parameter": {
+            "name": {
+              "supervisor": ""
+            }
+          }
+        }
+      ]
+    }
+  }
 }

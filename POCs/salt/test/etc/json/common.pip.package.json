@@ -1,7 +1,17 @@
 {
-	"component": {
-		"init" : {
-			"state": [{"id":"state-FE45FD37-D0CC-4D91-84F5-48400F68FC90","module":"common.pip.package","parameter":{"name":{"supervisor":""}}}]
-		}
-	}
+  "component": {
+    "init": {
+      "state": [
+        {
+          "id": "state-FE45FD37-D0CC-4D91-84F5-48400F68FC90",
+          "module": "common.pip.package",
+          "parameter": {
+            "name": {
+              "supervisor": ""
+            }
+          }
+        }
+      ]
+    }
+  }
 }

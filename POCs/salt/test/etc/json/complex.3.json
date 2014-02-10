@@ -1,27 +1,30 @@
 {
-	"component": {
-		"init" : {
-			"state": [{
-                                 "id":"state-7B5E6E8A-17CD-4578-8E85-15D020632F1F",
-                                 "module":"linux.yum.package",
-                                 "parameter":{
-                                        "name":{
-                                                "mercurial":""
-                                         }
-                                 }
-                         },{
-                                 "id":"state-7B5E6E8A-17CD-4578-8E86-15D020632F1F",
-                                 "module":"common.mercurial",
-                                 "parameter":{
-                                        "repo":"http://hg.logilab.org/hgview",
-                                        "path":"/tmp/hg/test/",
-                                        "force":true,
-                                        "group":"root",
-                                        "user":"root",
-                                        "branch":"master",
-                                        "mode":"0755"
-                                 }
-                         }]
-		}
-	}
+  "component": {
+    "init": {
+      "state": [
+        {
+          "id": "state-7B5E6E8A-17CD-4578-8E85-15D020632F1F",
+          "module": "linux.yum.package",
+          "parameter": {
+            "name": {
+              "mercurial": ""
+            }
+          }
+        },
+        {
+          "id": "state-7B5E6E8A-17CD-4578-8E86-15D020632F1F",
+          "module": "common.mercurial",
+          "parameter": {
+            "repo": "http://hg.logilab.org/hgview",
+            "path": "/tmp/hg/test/",
+            "force": true,
+            "group": "root",
+            "user": "root",
+            "branch": "master",
+            "mode": "0755"
+          }
+        }
+      ]
+    }
+  }
 }
