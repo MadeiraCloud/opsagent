@@ -289,19 +289,18 @@ class StateWorker(threading.Thread):
                 utils.log("WARNING", err,('__exec_salt',self))
                 return (FAIL,err,None)
 
-        # Standard execution
-        # TODO dict conversion + salt call
-#        import subprocess
-#        p = subprocess.Popen(["sleep","5"])
-#        result = (SUCCESS if p.wait() == 0 else FAIL)
-#        (out_log,err_log) = p.communicate()
-        # /TODO
+        try:
+            # state convert
+            salt_state = self.__state_adaptor.convert(id, module, parameter)
 
-        # state transfer
-        salt_state = self.__state_adaptor.transfer(id, module, parameter)
-
-        # exec salt state
-        (result, err_log, out_log) = self.__state_runner.exec_salt(salt_state)
+            # exec salt state
+            (result, err_log, out_log) = self.__state_runner.exec_salt(salt_state)
+        except StateException, err:
+            utils.log("ERROR", err, ('__exec_salt',self))
+            return (FAIL, err, None)
+        except Exception as err:
+            utils.log("ERROR", err, ('__exec_salt',self))
+            return (FAIL, err, None)
 
         utils.log("INFO", "State ID '%s' from module '%s' done, result '%s'."%(id,module,result),('__exec_salt',self))
         utils.log("DEBUG", "State out log='%s'"%(out_log),('__exec_salt',self))
