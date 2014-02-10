@@ -29,8 +29,8 @@ class SWWaitFormatException(Exception): pass
 class SWNoManagerException(Exception): pass
 class SWNoWaitFileException(Exception): pass
 
-# StatePreparation exceptions
-class StatePrepareException(Exception): pass
+# State exceptions
+class StateException(Exception): pass
 
 # General Exception
 class OpsAgentException(Exception): pass

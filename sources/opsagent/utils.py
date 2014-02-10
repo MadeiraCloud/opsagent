@@ -46,3 +46,14 @@ def log(action, content, fc=None):
           if not COLOR
           else "%s%s%s%s"%(COLORS_EQ[action][0],out,content,COLORS_EQ[action][1]))
     LOGGING_EQ[action](pt)
+
+# convert data from unicode to string
+def uni2str(self, data):
+    if isinstance(data, basestring):
+        return str(data)
+    elif isinstance(data, collections.Mapping):
+        return dict(map(self.__convert, data.iteritems()))
+    # elif isinstance(data, collections.Iterable):
+    # 	return type(data)(map(self.__convert, data))
+    else:
+        return data

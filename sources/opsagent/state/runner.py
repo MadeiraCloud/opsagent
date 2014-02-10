@@ -10,7 +10,7 @@ import json
 from salt.state import State
 
 from opsagent import utils
-from opsagent.exception import StatePrepareException,OpsAgentException
+from opsagent.exception import StateException, OpsAgentException
 
 class StateRunner(object):
 
@@ -49,19 +49,13 @@ class StateRunner(object):
 
 			self._salt_opts['file_roots']['base'].append(path)
 
-		if len(self._salt_opts['file_roots']['base']) == 0:
-			utils.log("ERROR", "Missing file roots argument", ("_init_opts", self))
-			## todo
-
-		if not self.__mkdir(config['extension_modules']):
-			utils.log("ERROR", "Missing extension modules argument", ("_init_opts", self))
-			## todo
+		if len(self._salt_opts['file_roots']['base']) == 0:		raise StateException("Missing file roots argument")
+		if not self.__mkdir(config['extension_modules']):		raise StateException("Missing extension modules argument")
 
 		self._salt_opts['extension_modules'] = config['extension_modules']
 
-		if not self.__mkdir(config['cachedir']):
-			utils.log("ERROR", "Missing cachedir argument", ("_init_opts", self))
-			## todo
+		if not self.__mkdir(config['cachedir']):	raise StateException("Missing cachedir argument")
+
 		self._salt_opts['cachedir'] = config['cachedir']
 
 	def _init_state(self):
@@ -88,8 +82,7 @@ class StateRunner(object):
 		ret = self.state.call_high(state)
 		if ret:
 			# parse the ret and return
-			print json.dumps(ret, sort_keys=True,
-				  indent=4, separators=(',', ': '))
+			utils.log("DEBUG", json.dumps(ret), ("exec_salt", self))
 
 			## set error and output log
 			result = False
