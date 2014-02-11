@@ -732,10 +732,10 @@ class StateAdaptor(object):
 		elif module in ['linux.user']:
 			# set nologin shell
 			if 'nologin' in addin:
-				module_state[default_state].pop('nologin')
-
 				if addin['nologin']:
 					module_state[default_state]['shell'] = '/sbin/nologin'
+
+				module_state[default_state].pop('nologin')
 
 		elif module in ['linux.mount']:
 			for attr in ['dump', 'pass_num']:
