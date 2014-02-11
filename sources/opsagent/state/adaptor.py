@@ -99,7 +99,7 @@ class StateAdaptor(object):
 		'linux.apt.repo'	: {
 			'attributes' : {
 				'name' 		: 'name',
-				'contents' 	: 'content'
+				'content' 	: 'contents'
 			},
 			'states' : [
 				'managed'
@@ -109,7 +109,7 @@ class StateAdaptor(object):
 		'linux.yum.repo' : {
 			'attributes' : {
 				'name' 		: 'name',
-				'contents' 	: 'content'
+				'content' 	: 'contents'
 			},
 			'states' : [
 				'managed'
