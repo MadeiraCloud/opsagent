@@ -646,8 +646,8 @@ class StateAdaptor(object):
 					module_state[pkg_state]['names'].append(item)
 
 		elif module in ['common.git', 'common.svn', 'common.hg']:
-			if 'name' in addin:
-				module_state[default_state]['name'] = addin['name'].split('-')[1].strip()
+			# if 'name' in addin:
+			# 	module_state[default_state]['name'] = addin['name'].split('-')[1].strip()
 
 			# set revision
 			if 'branch' in addin:
@@ -784,7 +784,7 @@ class StateAdaptor(object):
 			# tag 	= self.__get_tag(module, None, None, 'require', state)
 			# type 	= self.salt_map[module]['type']
 
-			the_requre_state = self._transfer('require', module, parameter)
+			the_requre_state = self.__salt('require', module, parameter)
 
 			if the_requre_state:
 				requre_state.update(the_requre_state)
