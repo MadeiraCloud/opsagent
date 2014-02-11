@@ -343,8 +343,8 @@ class StateAdaptor(object):
 		'linux.group' : {
 			'attributes' : {
 				'groupname' : 'name',
-				'gid' : 'gid',
-				'system group' : 'system'
+				'gid' 		: 'gid',
+				'system' 	: 'system'
 			},
 			'states' : ['present', 'absent'],
 			'type' : 'group'
@@ -651,8 +651,8 @@ class StateAdaptor(object):
 
 			# set revision
 			if 'branch' in addin:
-				module_state[default_state]['rev'] = addin['branch']
-				module_state[default_state].pop('branch')
+				addin['rev'] = addin['branch']
+				addin.pop('branch')
 
 		elif module in ['linux.apt.repo', 'linux.yum.repo']:
 			if 'name' in addin:
@@ -669,10 +669,10 @@ class StateAdaptor(object):
 						filename += '.repo'
 
 				if filename and obj_dir:
-					module_state[default_state]['name'] = obj_dir + filename
+					addin['name'] = obj_dir + filename
 
 		elif module in ['common.gem.source']:
-			module_state[default_state].update(
+			addin.update(
 				{
 					'name'	: 'gem source --add ' + addin['name'],
 					'shell'	: '/bin/bash',
@@ -685,7 +685,7 @@ class StateAdaptor(object):
 			auth = []
 
 			if 'enc' in addin and addin['enc'] not in self.ssh_key_type:
-				module_state[default_state]['enc'] = self.ssh_key_type[0]
+				addin['enc'] = self.ssh_key_type[0]
 
 			if module == 'common.ssh.auth' and 'content' in addin:
 				for line in value.split('\n'):
@@ -693,10 +693,10 @@ class StateAdaptor(object):
 
 					auth.append(line)
 
-				module_state[default_state]['names'] = auth
+				addin['names'] = auth
 
 				# remove name attribute
-				module_state[default_state].pop('name')
+				addin.pop('name')
 
 		elif module in ['linux.dir', 'linux.file', 'linux.symlink']:
 			# set absent
@@ -706,44 +706,51 @@ class StateAdaptor(object):
 					'name' : addin['name']
 				}
 
-			# set recurse
-			elif 'recurse' in addin and addin['recurse']:
-				module_state[default_state]['recurse'] = []
-				if 'user' in addin and addin['user']:
-					module_state[default_state]['recurse'].append('user')
-				if 'group' in addin and addin['group']:
-					module_state[default_state]['recurse'].append('group')
+			else:
 				if 'mode' in addin and addin['mode']:
-					module_state[default_state]['recurse'].append('mode')
+					addin['mode'] = int(addin['mode'])
+
+				# set recurse
+				if 'recurse' in addin and addin['recurse']:
+					addin['recurse'] = []
+					if 'user' in addin and addin['user']:
+						addin['recurse'].append('user')
+					if 'group' in addin and addin['group']:
+						addin['recurse'].append('group')
+					if 'mode' in addin and addin['mode']:
+						addin['recurse'].append('mode')
 
 			if module == 'linux.dir':
-				module_state[default_state]['makedirs'] = True
+				addin['makedirs'] = True
 
 		elif module in ['linux.cmd']:
 			if 'onlyif' in addin:
-				module_state[default_state]['onlyif'] = "[ -d " + addin['onlyif'] + " ]"
+				addin['onlyif'] = "[ -d " + addin['onlyif'] + " ]"
 
 			if 'unless' in addin:
-				module_state[default_state]['unless'] = "[ -d " + addin['unless'] + " ]"
+				addin['unless'] = "[ -d " + addin['unless'] + " ]"
 
 			if 'timeout' in addin:
-				module_state[default_state]['timeout'] = int(addin['timeout'])
+				addin['timeout'] = int(addin['timeout'])
 
-		elif module in ['linux.user']:
+		elif module in ['linux.group', 'linux.user']:
+			if 'gid' in addin and addin['gid']:
+				addin['gid'] = int(addin['gid'])
+			if 'uid' in addin and addin['uid']:
+				addin['uid'] = int(addin['uid'])
+
 			# set nologin shell
-			if 'nologin' in addin:
-				if addin['nologin']:
-					module_state[default_state]['shell'] = '/sbin/nologin'
-
-				module_state[default_state].pop('nologin')
+			if 'nologin' in addin and addin['nologin']:
+				addin['shell'] = '/sbin/nologin'
+				addin.pop('nologin')
 
 		elif module in ['linux.mount']:
 			for attr in ['dump', 'pass_num']:
 				if attr in addin:
 					try:
-						module_state[default_state][attr] = int(addin['dump'])
+						addin[attr] = int(addin['dump'])
 					except:
-						module_state[default_state][attr] = 0
+						addin[attr] = 0
 
 		elif module in ['linux.hosts']:
 
@@ -754,6 +761,7 @@ class StateAdaptor(object):
 				'mode' 		: '0644',
 				'contents' 	: addin['contents']
 			}
+
 		if not module_state:	raise StateException("Build up module state failed: %s" % module)
 		return module_state
 
