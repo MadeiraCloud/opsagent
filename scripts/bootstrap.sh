@@ -12,7 +12,7 @@ if [ $(which apt-get) ]; then
         apt-get -y -q install python2.6
     fi
     # install other dependencies
-    apt-get -y -q install python-apt expect-dev
+    apt-get -y -q install git python-apt expect-dev
 elif [ $(which yum) ]; then
     # install python
     yum -y -q install python27
@@ -20,7 +20,7 @@ elif [ $(which yum) ]; then
         yum -y -q install python26
     fi
     # install other dependencies
-    yum -y -q install expect
+    yum -y -q install git expect
 fi
 # define python version
 if [ $(which python2.7) ]; then
@@ -36,8 +36,8 @@ fi
 ${PYTHON} ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_LIBS_DIR}/virtualenv/virtualenv.py ${OA_ENV_DIR}
 # copy websocket libs
 cp -r ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_LIBS_DIR}/ws4py ${OA_ENV_DIR}/lib/${PYTHON}/site-packages/
-# copy salt libs
-cp -r ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_LIBS_DIR}/{msgpack,yaml,jinja2,markupsafe,salt} ${OA_ENV_DIR}/lib/${PYTHON}/site-packages/
+# copy salt dependencies
+cp -r ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_LIBS_DIR}/{msgpack,yaml,jinja2,markupsafe} ${OA_ENV_DIR}/lib/${PYTHON}/site-packages/
 # copy opsagent sources
 cp -r ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_SOURCES_DIR}/opsagent ${OA_ENV_DIR}/lib/${PYTHON}/site-packages/
 # copy config files

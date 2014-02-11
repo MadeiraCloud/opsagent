@@ -4,8 +4,6 @@
 ## (c) 2014 MadeiraCloud LTD.
 ##
 
-# for crc
-
 # Set path
 PATH=${PATH}:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
 
@@ -15,6 +13,9 @@ OA_USER=root
 # OpsAgent remote location
 OA_REMOTE=https://s3.amazonaws.com/visualops
 
+# Salt repo location
+SALT_REPO=git@github.com:MadeiraCloud/salt.git
+
 # OpsAgent directories
 OA_ROOT_DIR=/opt/madeira
 OA_BOOT_DIR=${OA_ROOT_DIR}/bootstrap
@@ -23,17 +24,20 @@ OA_ENV_DIR=${OA_ROOT_DIR}/env
 OA_CONF_DIR=/etc/opsagent.d
 OA_LOG_DIR=/var/log/madeira
 
+# Source directories
 SRC_SCRIPTS_DIR=scripts
 SRC_CONF_DIR=conf
 SRC_LIBS_DIR=libs
 SRC_SOURCES_DIR=sources
 
+# Config file destination
 OA_CONFIG_FILE=/etc/opsagent.conf
 
 
 # OpsAgent files
 OA_AGENT=opsagent
-OA_SALT=saltmodules
+OA_SALT=salt
+
 
 # Create main directories
 mkdir -p ${OA_CONF_DIR}
@@ -123,14 +127,28 @@ if [ ${UPDATE_AGENT} -ne 0 ]; then
 else
     echo "don't update agent"
 fi
-UPDATE_SALT=$(update_sources ${OA_SALT})
-echo "UPDATESALT=$UPDATE_SALT"
-if [ ${UPDATE_SALT} -ne 0 ]; then
-    echo "update salt"
-    get_sources ${OA_SALT}
+# get salt repo
+if [ ! -d ${OA_BOOT_DIR}/${OA_SALT} ]; then
+    git clone ${SALT_REPO} ${OA_SALT}
+    UPDATE_SALT=2
 else
-    echo "don't update agent"
+    cd ${OA_BOOT_DIR}/${OA_SALT}
+    CHANGE=$(git fetch origin master | grep 'origin/master' | wc -l)
+    if [ ${CHANGE} -ne 0 ]; then
+        UPDATE_SALT=1
+    else
+        UPDATE_SALT=0
+    fi
+    cd -
 fi
+#UPDATE_SALT=$(update_sources ${OA_SALT})
+#echo "UPDATESALT=$UPDATE_SALT"
+#if [ ${UPDATE_SALT} -ne 0 ]; then
+#    echo "update salt"
+#    get_sources ${OA_SALT}
+#else
+#    echo "don't update salt"
+#fi
 
 # shudown agent
 if [ ${UPDATE_AGENT} -ne 0 ] && [ -d ${OA_ENV_DIR} ]; then
@@ -153,16 +171,22 @@ else
     echo "don't bootstrap agent"
 fi
 
-# patch salt
+# bootstrap salt
 if [ ${UPDATE_AGENT} -ne 0 ] || [ ${UPDATE_SALT} -ne 0 ]; then
     if [ ${UPDATE_AGENT} -eq 0 ]; then
-        echo "stop agent (update salt)"
+        echo "stop agent (bootstrap salt)"
         service opsagentd stop-end
     fi
-    echo "patch salt"
+    echo "bootstrap salt"
+    if [ ${UPDATE_SALT} -eq 1 ]; then
+        cd ${OA_BOOT_DIR}/${OA_SALT}
+        git reset --hard FETCH_HEAD
+        git clean -df
+        cd -
+    fi
     source ${OA_BOOT_DIR}/${OA_SALT}/${SRC_SCRIPTS_DIR}/bootstrap.sh
 else
-    echo "don't patch salt"
+    echo "don't bootstrap salt"
 fi
 
 # load agent
