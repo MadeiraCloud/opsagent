@@ -33,6 +33,8 @@ SRC_SOURCES_DIR=sources
 # Config file destination
 OA_CONFIG_FILE=/etc/opsagent.conf
 
+# salt update trigger
+SALT_UPDATE_FILE=/tmp/opsagent.salt.update
 
 # OpsAgent files
 OA_AGENT=opsagent
@@ -131,13 +133,14 @@ fi
 if [ ! -d ${OA_BOOT_DIR}/${OA_SALT} ]; then
     git clone ${SALT_REPO} ${OA_SALT}
     UPDATE_SALT=2
-else
+elif [ -f ${SALT_UPDATE_FILE} ]; then
     cd ${OA_BOOT_DIR}/${OA_SALT}
     CHANGE=$(git fetch origin master | grep 'origin/master' | wc -l)
     if [ ${CHANGE} -ne 0 ]; then
         UPDATE_SALT=1
     else
         UPDATE_SALT=0
+        rm -f ${SALT_UPDATE_FILE}
     fi
     cd -
 fi
@@ -182,6 +185,7 @@ if [ ${UPDATE_AGENT} -ne 0 ] || [ ${UPDATE_SALT} -ne 0 ]; then
         cd ${OA_BOOT_DIR}/${OA_SALT}
         git reset --hard FETCH_HEAD
         git clean -df
+        rm -f ${SALT_UPDATE_FILE}
         cd -
     fi
     source ${OA_BOOT_DIR}/${OA_SALT}/${SRC_SCRIPTS_DIR}/bootstrap.sh

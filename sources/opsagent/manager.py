@@ -43,6 +43,7 @@ class Manager(WebSocketClient):
         # actions map
         self.__actions = {
             codes.APP_NOT_EXIST : self.__act_retry_hs,
+            codes.SALT_UPDATE   : self.__act_salt_update,
             codes.RECIPE_DATA   : self.__act_recipe,
             codes.WAIT_DATA     : self.__act_wait,
             }
@@ -72,6 +73,17 @@ class Manager(WebSocketClient):
         time.sleep(WAIT_CONNECT)
         utils.log("DEBUG", "Reconnecting ...",('__act_retry_hs',self))
         self.send_json(send.handshake(self.__config['init'], [self.__error_proc,self.__error_dir]))
+
+    # Set salt module to be updated
+    def __act_salt_update(self, data):
+        utils.log("INFO", "Setting salt module to update.",('__act_salt_update',self))
+        try:
+            file(self.__config['salt']['update_file'],'w+').write("")
+            os.chmod(self.__config['salt']['update_file'], 0640)
+        except Exception as e:
+            utils.log("WARNING", "Can't create salt update flag file (%s): %s."%(self.__config['salt'].get('update_file'),e),('__act_salt_update',self))
+        else:
+            utils.log("DEBUG", "Salt module update flag set (%s)."%(self.__config['salt']['update_file']),('__act_salt_update',self))
 
     # Recipe object received
     def __act_recipe(self, data):
