@@ -14,7 +14,7 @@ OA_USER=root
 OA_REMOTE=https://s3.amazonaws.com/visualops
 
 # Salt repo location
-SALT_REPO=git@github.com:MadeiraCloud/salt.git
+SALT_REPO=https://github.com/MadeiraCloud/salt.git
 
 # OpsAgent directories
 OA_ROOT_DIR=/opt/madeira
@@ -62,6 +62,12 @@ fi
 chown ${OA_USER}:root ${OA_LOG_DIR}/agent.log
 chmod 640 ${OA_LOG_DIR}/agent.log
 
+# setup git
+if [ $(which apt-get) ]; then
+    apt-get -y -q install git
+elif [ $(which yum) ]; then
+    yum -y -q install git
+fi
 
 # sources update check
 function update_sources() {
@@ -131,7 +137,7 @@ else
 fi
 # get salt repo
 if [ ! -d ${OA_BOOT_DIR}/${OA_SALT} ]; then
-    git clone ${SALT_REPO} ${OA_SALT}
+    git clone ${SALT_REPO} ${OA_BOOT_DIR}/${OA_SALT}
     UPDATE_SALT=2
 elif [ -f ${SALT_UPDATE_FILE} ]; then
     cd ${OA_BOOT_DIR}/${OA_SALT}
@@ -143,6 +149,8 @@ elif [ -f ${SALT_UPDATE_FILE} ]; then
         rm -f ${SALT_UPDATE_FILE}
     fi
     cd -
+else
+    UPDATE_SALT=0
 fi
 #UPDATE_SALT=$(update_sources ${OA_SALT})
 #echo "UPDATESALT=$UPDATE_SALT"

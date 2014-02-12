@@ -12,7 +12,7 @@ if [ $(which apt-get) ]; then
         apt-get -y -q install python2.6
     fi
     # install other dependencies
-    apt-get -y -q install git python-apt expect-dev
+    apt-get -y -q install python-apt expect-dev
 elif [ $(which yum) ]; then
     # install python
     yum -y -q install python27
@@ -20,7 +20,7 @@ elif [ $(which yum) ]; then
         yum -y -q install python26
     fi
     # install other dependencies
-    yum -y -q install git expect
+    yum -y -q install expect
 fi
 # define python version
 if [ $(which python2.7) ]; then
