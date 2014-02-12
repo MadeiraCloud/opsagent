@@ -68,28 +68,28 @@ class StateRunner(object):
 	def exec_salt(self, state):
 		"""
 			Transfer and exec salt state.
-			return result format: (result,err_log,out_log), result:True/False
+			return result format: (result,comment,out_log), result:True/False
 		"""
 
 		result = False
-		err_log = ''
+		comment = ''
 		out_log = ''
 
 		# check
 		if not state or not isinstance(state, dict):
-			return (result, err_log, out_log)
+			out_log = "invalid state"
+			return (result, comment, out_log)
 
 		ret = self.state.call_high(state)
 		if ret:
 			# parse the ret and return
 			utils.log("DEBUG", json.dumps(ret), ("exec_salt", self))
 
-			## set error and output log
+			# set comment and output log
 			result = False
 			for r_tag, r_value in ret.items():
-				# error log and std out log
-				if 'state_stderr' in r_value:
-					err_log += '\n\n' + r_value['state_stderr']
+				if 'comment' in r_value:
+					comment += '\n\n' + r_value['comment']
 				if 'state_stdout' in r_value:
 					out_log += '\n\n' + r_value['state_stdout']
 				if 'result' not in r_value:
@@ -103,7 +103,7 @@ class StateRunner(object):
 		else:
 			out_log = "wait failed"
 
-		return (result, err_log, out_log)
+		return (result, comment, out_log)
 
 	def __mkdir(self, path):
 		"""
