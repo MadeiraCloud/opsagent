@@ -10,19 +10,10 @@ PATH=${PATH}:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
 # OpsAgent run user
 OA_USER=root
 
-# OpsAgent remote location
-OA_REMOTE=https://s3.amazonaws.com/visualops
-
-# Salt repo location
-SALT_REPO=https://github.com/MadeiraCloud/salt.git
-
 # OpsAgent directories
 OA_ROOT_DIR=/opt/madeira
 OA_BOOT_DIR=${OA_ROOT_DIR}/bootstrap
 OA_ENV_DIR=${OA_ROOT_DIR}/env
-
-OA_CONF_DIR=/etc/opsagent.d
-OA_LOG_DIR=/var/log/madeira
 
 # Source directories
 SRC_SCRIPTS_DIR=scripts
@@ -137,11 +128,12 @@ else
 fi
 # get salt repo
 if [ ! -d ${OA_BOOT_DIR}/${OA_SALT} ]; then
-    git clone ${SALT_REPO} ${OA_BOOT_DIR}/${OA_SALT}
+    git clone ${SALT_REPO_URI} ${OA_BOOT_DIR}/${OA_SALT}
+    git checkout ${SALT_REPO_BRANCH}
     UPDATE_SALT=2
 elif [ -f ${SALT_UPDATE_FILE} ]; then
     cd ${OA_BOOT_DIR}/${OA_SALT}
-    CHANGE=$(git fetch origin master | grep 'origin/master' | wc -l)
+    CHANGE=$(git fetch origin ${SALT_REPO_BRANCH} | grep "origin/${SALT_REPO_BRANCH}" | wc -l)
     if [ ${CHANGE} -ne 0 ]; then
         UPDATE_SALT=1
     else

@@ -196,6 +196,8 @@ def main():
         runner.stop(end=True)
     elif command == "restart-end":
         runner.restart(end=True)
+    elif command == "status":
+        runner.status()
     else:
         runner.run()
 

@@ -138,6 +138,21 @@ class Daemon():
         time.sleep(1)
         self.start()
 
+    # get daemon status
+    def status(self):
+        # get pid from pidfile
+        try:
+            pf = file(self.pidfile,'r')
+            pid = int(pf.read().strip())
+            pf.close()
+        except IOError:
+            pid = None
+
+        if not pid:
+            sys.stdout.write("OpsAgent not running")
+        else:
+            sys.stdout.write("OpsAgent running")
+
     # launcher
     def run(self):
         pass

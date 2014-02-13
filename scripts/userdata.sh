@@ -4,11 +4,25 @@
 ## (c) 2014 MadeiraCloud LTD.
 ##
 #app_id=@{app_id}
+
+# salt repo URI
+#SALT_REPO_URI=@{salt_repo_uri}
+#SALT_REPO_BRANCH=@{salt_repo_branch}
+SALT_REPO_URI=https://github.com/MadeiraCloud/salt.git # TODO: remove
+SALT_REPO_BRANCH=develop # TODO: remove
+
+# opsagent config directory
 OA_CONF_DIR=/etc/opsagent.d
+# opsagent logs directory
 OA_LOG_DIR=/var/log/madeira
-OA_EXEC_FILE=/tmp/opsagent.boot
+# opsagent URI
 OA_REMOTE=https://s3.amazonaws.com/visualops
+
+# internal var
+OA_EXEC_FILE=/tmp/opsagent.boot
+
 mkdir -p {$OA_LOG_DIR,$OA_CONF_DIR}
+
 # bootstrap
 cat <<EOF > ${OA_CONF_DIR}/cron.sh
 #!/bin/bash
@@ -20,6 +34,14 @@ if [ -f ${OA_EXEC_FILE} ]; then
     echo "Bootstrap already running ..."
     exit 0
 fi
+
+SALT_REPO_URI=${SALT_REPO_URI}
+SALT_REPO_BRANCH=${SALT_REPO_BRANCH}
+OA_CONF_DIR=${OA_CONF_DIR}
+OA_LOG_DIR=${OA_LOG_DIR}
+OA_EXEC_FILE=${OA_EXEC_FILE}
+OA_REMOTE=${OA_REMOTE}
+
 touch ${OA_EXEC_FILE}
 # Set bootstrap log with restrictive access rights
 if [ ! -f ${OA_LOG_DIR}/bootstrap.log ]; then
@@ -43,14 +65,17 @@ while true; do
         sleep 1
     fi
 done
-. ${OA_CONF_DIR}/init.sh
+source ${OA_CONF_DIR}/init.sh
 rm -f ${OA_EXEC_FILE}
 EOF
+
+# set cron
 chown root:root ${OA_CONF_DIR}/cron.sh
 chmod 540 ${OA_CONF_DIR}/cron.sh
 CRON=$(crontab -l | grep ${OA_CONF_DIR}/cron.sh | wc -l)
 if [ $CRON -eq 0 ]; then
     echo "*/1 * * * * ${OA_CONF_DIR}/cron.sh >> ${OA_LOG_DIR}/bootstrap.log 2>&1" | crontab
 fi
+
 exit 0
 # EOF
