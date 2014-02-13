@@ -149,9 +149,9 @@ class Daemon():
             pid = None
 
         if not pid:
-            sys.stdout.write("OpsAgent not running")
+            sys.stdout.write("OpsAgent not running\n")
         else:
-            sys.stdout.write("OpsAgent running")
+            sys.stdout.write("OpsAgent running\n")
 
     # launcher
     def run(self):
