@@ -129,7 +129,9 @@ fi
 # get salt repo
 if [ ! -d ${OA_BOOT_DIR}/${OA_SALT} ]; then
     git clone ${SALT_REPO_URI} ${OA_BOOT_DIR}/${OA_SALT}
+    cd ${OA_BOOT_DIR}/${OA_SALT}
     git checkout ${SALT_REPO_BRANCH}
+    cd -
     UPDATE_SALT=2
 elif [ -f ${SALT_UPDATE_FILE} ]; then
     cd ${OA_BOOT_DIR}/${OA_SALT}
