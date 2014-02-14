@@ -87,18 +87,61 @@ class StateRunner(object):
 
 			# set comment and output log
 			result = False
+			require_in_comment = ''
+			require_in_log = ''
 			for r_tag, r_value in ret.items():
-				if 'comment' in r_value:
-					comment += '\n\n' + r_value['comment']
-				if 'state_stdout' in r_value:
-					out_log += '\n\n' + r_value['state_stdout']
-				if 'result' not in r_value:
-					continue
+				if 'result' not in r_value:	continue 	# filter no result
+
+				# parse require in result
+				if 'require_in' in r_tag:
+					require_in_comment = '{0}{1}{2}'.format(
+							require_in_comment,
+							'\n\n' if require_in_comment else '',
+							r_value['comment'] if 'comment' in r_value and r_value['comment'] else ''
+						)
+					require_in_log = '{0}{1}{2}'.format(
+							require_in_log,
+							'\n\n' if require_in_log else '',
+							r_value['state_stdout'] if 'state_stdout' in r_value and r_value['state_stdout'] else ''
+						)
+
+				# parse require result
+				elif 'require' in r_tag:
+					comment = '{0}{1}{2}'.format(
+						r_value['comment'] if 'comment' in r_value and r_value['comment'] else '',
+						'\n\n' if comment else '',
+						comment
+						)
+					out_log = '{0}{1}{2}'.format(
+						r_value['state_stdout'] if 'state_stdout' in r_value and r_value['state_stdout'] else '',
+						'\n\n' if out_log else '',
+						out_log
+						)
+
+				# parse common result
+				else:
+					comment = '{0}{1}{2}'.format(
+						comment,
+						'\n\n' if comment else '',
+						r_value['comment'] if 'comment' in r_value and r_value['comment'] else ''
+						)
+					out_log = '{0}{1}{2}'.format(
+						out_log,
+						'\n\n' if out_log else '',
+						r_value['state_stdout'] if 'state_stdout' in r_value and r_value['state_stdout'] else ''
+						)
 
 				result = r_value['result']
 				# break when one state runs failed
 				if not result:
 					break
+
+			# add require in comment and log
+			if require_in_comment:
+				comment += '\n\n' + require_in_comment
+
+			if require_in_log:
+				out_log += '\n\n' + require_in_log
 
 		else:
 			out_log = "wait failed"
