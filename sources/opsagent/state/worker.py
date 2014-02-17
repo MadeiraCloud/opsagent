@@ -296,7 +296,7 @@ class StateWorker(threading.Thread):
 
             # exec salt state
             utils.log("INFO", "Begin to execute salt states...", ('__exec_salt', self))
-            (result, err_log, out_log) = self.__state_runner.exec_salt(salt_state)
+            (result, comment, out_log) = self.__state_runner.exec_salt(salt_state)
         except StateException, err:
             utils.log("ERROR", str(err), ('__exec_salt',self))
             return (FAIL, str(err), None)
@@ -309,8 +309,8 @@ class StateWorker(threading.Thread):
 
         utils.log("INFO", "State ID '%s' from module '%s' done, result '%s'."%(id,module,result),('__exec_salt',self))
         utils.log("DEBUG", "State out log='%s'"%(out_log),('__exec_salt',self))
-        utils.log("DEBUG", "State error log='%s'"%(err_log),('__exec_salt',self))
-        return (result,err_log,out_log)
+        utils.log("DEBUG", "State comment='%s'"%(comment),('__exec_salt',self))
+        return (result,comment,out_log)
 
     # Delay at the end of the states
     def __recipe_delay(self):
