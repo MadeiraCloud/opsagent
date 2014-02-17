@@ -291,9 +291,11 @@ class StateWorker(threading.Thread):
 
         try:
             # state convert
+            utils.log("INFO", "Begin to convert salt states...", ('__exec_salt', self))
             salt_state = self.__state_adaptor.convert(id, module, parameter)
 
             # exec salt state
+            utils.log("INFO", "Begin to execute salt states...", ('__exec_salt', self))
             (result, err_log, out_log) = self.__state_runner.exec_salt(salt_state)
         except StateException, err:
             utils.log("ERROR", err, ('__exec_salt',self))

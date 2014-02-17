@@ -80,10 +80,11 @@ class StateRunner(object):
 			out_log = "invalid state"
 			return (result, comment, out_log)
 
+		utils.log("INFO", "Begin to execute salt state...", ("exec_salt", self))
 		ret = self.state.call_high(state)
 		if ret:
 			# parse the ret and return
-			utils.log("DEBUG", json.dumps(ret), ("exec_salt", self))
+			utils.log("INFO", json.dumps(ret), ("exec_salt", self))
 
 			# set comment and output log
 			result = False
