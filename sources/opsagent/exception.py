@@ -32,6 +32,9 @@ class SWNoWaitFileException(Exception): pass
 # State exceptions
 class StateException(Exception): pass
 
+# Excution exceptions
+class ExcutionException(Exception): pass
+
 # General Exception
 class OpsAgentException(Exception): pass
 

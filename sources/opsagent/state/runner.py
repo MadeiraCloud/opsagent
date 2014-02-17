@@ -10,7 +10,7 @@ import json
 from salt.state import State
 
 from opsagent import utils
-from opsagent.exception import StateException, OpsAgentException
+from opsagent.exception import ExcutionException, OpsAgentException
 
 class StateRunner(object):
 
@@ -49,12 +49,12 @@ class StateRunner(object):
 
 			self._salt_opts['file_roots']['base'].append(path)
 
-		if len(self._salt_opts['file_roots']['base']) == 0:		raise StateException("Missing file roots argument")
-		if not self.__mkdir(config['extension_modules']):		raise StateException("Missing extension modules argument")
+		if len(self._salt_opts['file_roots']['base']) == 0:		raise ExcutionException("Missing file roots argument")
+		if not self.__mkdir(config['extension_modules']):		raise ExcutionException("Missing extension modules argument")
 
 		self._salt_opts['extension_modules'] = config['extension_modules']
 
-		if not self.__mkdir(config['cachedir']):	raise StateException("Missing cachedir argument")
+		if not self.__mkdir(config['cachedir']):	raise ExcutionException("Missing cachedir argument")
 
 		self._salt_opts['cachedir'] = config['cachedir']
 

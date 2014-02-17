@@ -298,11 +298,14 @@ class StateWorker(threading.Thread):
             utils.log("INFO", "Begin to execute salt states...", ('__exec_salt', self))
             (result, err_log, out_log) = self.__state_runner.exec_salt(salt_state)
         except StateException, err:
-            utils.log("ERROR", err, ('__exec_salt',self))
-            return (FAIL, err, None)
+            utils.log("ERROR", str(err), ('__exec_salt',self))
+            return (FAIL, str(err), None)
+        except ExcutionException, err:
+            utils.log("ERROR", str(err), ('__exec_salt', self))
+            return (FAIL, str(err), None)
         except Exception as err:
-            utils.log("ERROR", err, ('__exec_salt',self))
-            return (FAIL, err, None)
+            utils.log("ERROR", str(err), ('__exec_salt',self))
+            return (FAIL, str(err), None)
 
         utils.log("INFO", "State ID '%s' from module '%s' done, result '%s'."%(id,module,result),('__exec_salt',self))
         utils.log("DEBUG", "State out log='%s'"%(out_log),('__exec_salt',self))
