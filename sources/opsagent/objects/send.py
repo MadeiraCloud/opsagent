@@ -23,7 +23,7 @@ def handshake(init, errors):
 
 
 # Statelog request
-def statelog(init, version, id, result, err_log, out_log):
+def statelog(init, version, id, result, comment, out_log):
     return ({
             "code"           :   codes.STATELOG,
             "instance_id"    :   init.get('instance_id'),
@@ -31,6 +31,6 @@ def statelog(init, version, id, result, err_log, out_log):
             "recipe_version" :   version,
             "id"             :   id,
             "state_result"   :   result,
-            "state_stderr"   :   err_log,
+            "state_comment"  :   comment,
             "state_stdout"   :   out_log
             })

@@ -336,22 +336,22 @@ class StateWorker(threading.Thread):
             utils.log("INFO", "Running state '%s', #%s"%(state['id'], self.__status),('__runner',self))
             try:
                 if state.get('module') in self.__builtins:
-                    (result,err_log,out_log) = self.__builtins[state['module']](state['id'],
+                    (result,comment,out_log) = self.__builtins[state['module']](state['id'],
                                                                                 state['module'],
                                                                                 state['parameter'])
                 else:
-                    (result,err_log,out_log) = self.__exec_salt(state['id'],
+                    (result,comment,out_log) = self.__exec_salt(state['id'],
                                                                 state['module'],
                                                                 state['parameter'])
             except SWWaitFormatException:
                 utils.log("ERROR", "Wrong wait request",('__runner',self))
                 result = FAIL
-                err_log = "Wrong wait request"
+                comment = "Wrong wait request"
                 out_log = None
             except Exception as e:
                 utils.log("ERROR", "Unknown exception: '%s'."%(e),('__runner',self))
                 result = FAIL
-                err_log = "Unknown exception: '%s'."%(e)
+                comment = "Unknown exception: '%s'."%(e)
                 out_log = None
             self.__waiting = False
             if self.__run:
@@ -360,7 +360,7 @@ class StateWorker(threading.Thread):
                                           version=self.__version,
                                           id=state['id'],
                                           result=result,
-                                          err_log=err_log,
+                                          comment=comment,
                                           out_log=out_log))
                 if result == SUCCESS:
                     # global status iteration
