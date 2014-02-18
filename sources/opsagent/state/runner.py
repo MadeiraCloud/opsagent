@@ -24,6 +24,10 @@ class StateRunner(object):
 		# init state
 		self._init_state()
 
+		# get os type
+		self.os_type = self.state.opts['grains']['os'].lower() if self.state.opts and \
+			'grains' in self.state.opts and 'os' in self.state.opts['grains'] else 'unknown'
+
 	def _init_opts(self, config):
 
 		self._salt_opts = {
