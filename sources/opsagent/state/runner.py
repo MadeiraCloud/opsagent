@@ -24,9 +24,8 @@ class StateRunner(object):
 		# init state
 		self._init_state()
 
-		# get os type
-		self.os_type = self.state.opts['grains']['os'].lower() if self.state.opts and \
-			'grains' in self.state.opts and 'os' in self.state.opts['grains'] else 'unknown'
+		# init os type
+		self._init_ostype()
 
 	def _init_opts(self, config):
 
@@ -68,6 +67,14 @@ class StateRunner(object):
 		"""
 
 		self.state = State(self._salt_opts)
+
+	def _init_ostype(self):
+
+		self.os_type = self.state.opts['grains']['os'].lower() if self.state.opts and \
+			'grains' in self.state.opts and 'os' in self.state.opts['grains'] else 'unknown'
+
+		if self.os_type == 'unknown':
+
 
 	def exec_salt(self, states):
 		"""
