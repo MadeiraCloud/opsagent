@@ -68,7 +68,8 @@ class StateWorker(threading.Thread):
 
         # builtins methods map
         self.__builtins = {
-            'general.wait' : self.__exec_wait,
+            'meta.wait' : self.__exec_wait,
+            'meta.comment' : None,
             }
 
         # wait pid
@@ -358,9 +359,11 @@ class StateWorker(threading.Thread):
             utils.log("INFO", "Running state '%s', #%s"%(state['id'], self.__status),('__runner',self))
             try:
                 if state.get('module') in self.__builtins:
-                    (result,comment,out_log) = self.__builtins[state['module']](state['id'],
-                                                                                state['module'],
-                                                                                state['parameter'])
+                    (result,comment,out_log) = (self.__builtins[state['module']](state['id'],
+                                                                                 state['module'],
+                                                                                 state['parameter'])
+                                                if self.__builtins[state['module']]
+                                                else (SUCCESS,None,None))
                 else:
                     (result,comment,out_log) = self.__exec_salt(state['id'],
                                                                 state['module'],
