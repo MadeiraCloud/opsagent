@@ -113,8 +113,11 @@ class StateRunner(object):
 		out_log = ''
 
 		# check
+		if not states:
+			out_log = "Null states"
+			return (result, comment, out_log)
 		if not states or not isinstance(states, list):
-			out_log = "invalid state"
+			out_log = "Invalid state format %s" % str(states)
 			return (result, comment, out_log)
 
 		try:
