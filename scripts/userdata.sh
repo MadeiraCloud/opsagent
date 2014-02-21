@@ -5,10 +5,10 @@
 ##
 
 # RW set variables
-APP_ID=@{app_id}
-WS_URI=@{ws_uri}
-#APP_ID=ethylic
-#WS_URI=wss://api.madeiracloud.com/agent/
+#APP_ID=@{app_id}
+#WS_URI=@{ws_uri}
+APP_ID=ethylic
+WS_URI=wss://api.madeiracloud.com/agent/
 
 # opsagent config directory
 OA_CONF_DIR=/etc/opsagent.d
@@ -17,7 +17,7 @@ OA_WATCH_DIR=${OA_CONF_DIR}/watch
 # opsagent logs directory
 OA_LOG_DIR=/var/log/madeira
 # opsagent URI
-OA_REMOTE=https://s3.amazonaws.com/visualops
+OA_REMOTE=https://s3.amazonaws.com/visualops-new
 
 # OpsAgent directories
 OA_ROOT_DIR=/opt/madeira

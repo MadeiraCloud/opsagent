@@ -40,7 +40,8 @@ class Config():
 
     defaultValues = {
         'global': {
-            'loglvl': 'WARNING',
+#            'loglvl': 'WARNING', #TODO: witch
+            'loglvl': 'DEBUG',
             'proc': '/proc',
             'pidfile': '/tmp/opsagentd.pid',
             'haltfile': '/tmp/opsagentd.halt',
@@ -130,5 +131,5 @@ class Config():
     def chroot(self, root, mod):
         for section in mod:
             for key in mod[section]:
-                if self.__c['section'].get(key):
-                    self.__c['section'][key] = os.path.normpath(root+'/'+self.__c['section'][key])
+                if self.__c[section].get(key):
+                    self.__c[section][key] = os.path.normpath(root+'/'+self.__c[section][key])

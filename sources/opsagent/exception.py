@@ -5,10 +5,6 @@ Madeira OpsAgent exceptions
 '''
 
 
-# Custom imports
-from opsagent import utils
-
-
 # Configuration Parser exceptions
 class ConfigFileFormatException(Exception): pass
 class ConfigFileException(Exception): pass
@@ -38,6 +34,10 @@ class ExecutionException(Exception): pass
 
 # General Exception
 class OpsAgentException(Exception): pass
+
+
+# Custom imports
+from opsagent import utils
 
 
 # Decorators

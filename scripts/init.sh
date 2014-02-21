@@ -74,7 +74,7 @@ mod_tag=
 EOF
 fi
 chown ${OA_USER}:root ${OA_CONFIG_FILE}
-chmod 440 ${OA_CONFIG_FILE}
+chmod 640 ${OA_CONFIG_FILE}
 
 # Setup git
 if [ $(which apt-get) ]; then
