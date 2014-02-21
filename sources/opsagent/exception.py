@@ -22,6 +22,7 @@ class AWSNotFoundException(Exception): pass
 # Manager exceptions
 class ManagerInvalidStateFormatException(Exception): pass
 class ManagerInvalidWaitFormatException(Exception): pass
+class ManagerInvalidStatesRepoException(Exception): pass
 class ManagerInitDirDeniedException(Exception): pass
 
 # StatesWorker exceptions

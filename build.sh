@@ -1,7 +1,6 @@
 #!/bin/bash
 ##
 ## Deployment script for MadeiraCloud OpsAgent
-## Version 0.0.1a
 ## @author: Thibault BRONCHAIN
 ##
 ## (c) 2014 MadeiraCloud LTD.
@@ -45,6 +44,8 @@ function tree() {
     # /TODO
     # Copy service launcher
     cp ../${SCRIPTS_DIR}/daemon.sh ${OPSAGENT_DIR}/${SCRIPTS_DIR}/
+    # Copy EPEL installer
+    cp -r ../${LIBS_DIR}/epel ${OPSAGENT_DIR}/${LIBS_DIR}/
     # Copy virtualenv
     cp -r ../${LIBS_DIR}/virtualenv ${OPSAGENT_DIR}/${LIBS_DIR}/
     # Copy ws4py sources

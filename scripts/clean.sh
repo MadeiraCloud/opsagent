@@ -8,7 +8,7 @@ OA_CONF_DIR=/etc/opsagent.d
 OA_LOG_DIR=/var/log/madeira
 OA_SRC_DIR=/opt/madeira
 OA_TMP_ROOT=/tmp/opsagent
-OA_REMOTE=https://s3.amazonaws.com/visualops
+OA_REMOTE=https://s3.amazonaws.com/visualops-new
 OA_SALT_DIR=/opt/madeira/bootstrap/salt
 
 (crontab -l | grep -v ${OA_CONF_DIR}/cron.sh) > /tmp/opsagent.crontab
@@ -46,10 +46,11 @@ if [ "$2" = "debug" ]; then
         echo "Fatal: no service manager"
         exit 1
     fi
-    cd ${OA_SALT_DIR}
-    git checkout develop
-    cd -
+#    cd ${OA_SALT_DIR}
+#    git checkout develop
+#    cd -
 fi
+
 
 exit 0
 # EOF

@@ -66,6 +66,7 @@ class OpsAgentRunner(Daemon):
             else:
                 utils.log("DEBUG", "Connection already closed.",('run_manager','OpsAgentRunner'))
         self.sw.set_manager(None)
+        del manager
 
     def run(self):
         # init
@@ -168,6 +169,7 @@ def main():
     except Exception as e:
         sys.stderr.write("ERROR: Unknown fatal config exception: %s, loading default.\n"%(e),('main',self))
         config = Config().getConfig()
+    config['runtime']['config_path'] = options.config_file
 
     # set log level
     loglvl = config['global']['loglvl']

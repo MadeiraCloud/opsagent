@@ -10,6 +10,7 @@ import json
 import time
 import os
 import subprocess
+import re
 # Library imports
 from ws4py.client.threadedclient import WebSocketClient
 # Custom import
@@ -43,7 +44,6 @@ class Manager(WebSocketClient):
         # actions map
         self.__actions = {
             codes.APP_NOT_EXIST : self.__act_retry_hs,
-            codes.SALT_UPDATE   : self.__act_salt_update,
             codes.RECIPE_DATA   : self.__act_recipe,
             codes.WAIT_DATA     : self.__act_wait,
             }
@@ -74,25 +74,32 @@ class Manager(WebSocketClient):
         utils.log("DEBUG", "Reconnecting ...",('__act_retry_hs',self))
         self.send_json(send.handshake(self.__config['init'], [self.__error_proc,self.__error_dir]))
 
-    # Set salt module to be updated
-    def __act_salt_update(self, data):
-        utils.log("INFO", "Setting salt module to update.",('__act_salt_update',self))
-        try:
-            file(self.__config['salt']['update_file'],'w+').write("")
-            os.chmod(self.__config['salt']['update_file'], 0640)
-        except Exception as e:
-            utils.log("WARNING", "Can't create salt update flag file (%s): %s."%(self.__config['salt'].get('update_file'),e),('__act_salt_update',self))
-        else:
-            utils.log("DEBUG", "Salt module update flag set (%s)."%(self.__config['salt']['update_file']),('__act_salt_update',self))
-
     # Recipe object received
     def __act_recipe(self, data):
         utils.log("INFO", "New recipe received.",('__act_recipe',self))
+
+        # check version
         version = data.get("recipe_version")
-        if not version:
+        if not version or type(version) is not str:
             utils.log("ERROR", "Invalid version.",('__act_recipe',self))
             raise ManagerInvalidStateFormatException
 
+        # check module
+        module = data.get("module")
+        if module and type(module) is dict:
+            module_repo = module.get("repo")
+            if not module_repo or type(module_repo) is not str:
+                utils.log("ERROR", "Invalid modules branch.",('__act_recipe',self))
+                raise ManagerInvalidStateFormatException
+            module_tag = module.get("tag")
+            if not module_tag or type(module_tag) is not str:
+                utils.log("ERROR", "Invalid modules tag.",('__act_recipe',self))
+                raise ManagerInvalidStateFormatException
+        else:
+            utils.log("ERROR", "No modules details.",('__act_recipe',self))
+            raise ManagerInvalidStateFormatException
+
+        # check states
         states = data.get("states")
         if states:
             if type(states) is not list:
@@ -108,6 +115,31 @@ class Manager(WebSocketClient):
 
         utils.log("DEBUG", "Valid data.",('__act_recipe',self))
 
+        # update repo
+        clone = False
+        if module_repo != self.__config['module']['mod_repo']:
+            utils.log("DEBUG", ".",('__act_recipe',self))
+            clone = utils.clone_repo(self.__config['module']['root'],self.__config['module']['name'],module_repo)
+            self.__config['module']['mod_repo'] = module_repo
+            try:
+                with open(self.__config['runtime']['config_path'], 'r+') as f:
+                    content = re.sub(r'mod_repo=(.+)\n',"mod_repo=%s\n"%(module_repo),f.read())
+                    f.seek(0)
+                    f.write(content)
+            except Exception as e:
+                utils.log("WARNING", "Can't save URI repo in config file '%s'."%(),('__act_recipe',self))
+        if clone or module_tag != self.__config['module']['mod_tag']:
+            utils.checkout_repo(self.__config['module']['root'],self.__config['module']['name'],module_tag)
+            self.__config['module']['mod_tag'] = module_tag
+            try:
+                with open(self.__config['runtime']['config_path'], 'r+') as f:
+                    content = re.sub(r'mod_tag=(.+)\n',"mod_tag=%s\n"%(module_tag),f.read())
+                    f.seek(0)
+                    f.write(content)
+            except Exception as e:
+                utils.log("WARNING", "Can't save tag version in config file '%s'."%(),('__act_recipe',self))
+
+        # load recipes
         curent_version = self.__states_worker.get_version()
         if (not curent_version) or (curent_version != version):
             utils.log("INFO", "Killing current execution ...",('__act_recipe',self))
@@ -118,6 +150,7 @@ class Manager(WebSocketClient):
             utils.log("INFO", "States loaded.",('__act_recipe',self))
         else:
             utils.log("WARNING", "Version '%s' is already the current version."%(version),('__act_recipe',self))
+
 
     # Waited state succeed
     def __act_wait(self, data):
@@ -148,7 +181,7 @@ class Manager(WebSocketClient):
     def __init_dir(self):
         dirs = [
             self.__config['global']['watch'],
-            self.__config['salt']['file_roots'],
+            self.__config['salt']['srv_root'],
             self.__config['salt']['extension_modules'],
             self.__config['salt']['cachedir'],
             ]
@@ -156,7 +189,7 @@ class Manager(WebSocketClient):
         for dir in dirs:
             try:
                 if not os.path.isdir(dir):
-                    os.makedirs(dir,0755)
+                    os.makedirs(dir,0700)
                 if not os.access(dir, os.W_OK):
                     raise ManagerInitDirDeniedException
             except ManagerInitDirDeniedException:
@@ -233,7 +266,7 @@ class Manager(WebSocketClient):
         if reset:
             utils.log("INFO", "Reset flag set, reseting states execution ...",('__close',self))
             self.__states_worker.kill()
-#            self.__states_worker.reset()
+#            self.__states_worker.reset() TODO: remove?
             utils.log("DEBUG", "Reset succeed",('__close',self))
         utils.log("DEBUG", "Closing socket ...",('__close',self))
         self.close(code, reason)
@@ -316,6 +349,8 @@ class Manager(WebSocketClient):
                     utils.log("ERROR", "Invalid states format",('received_message',self))
                 except ManagerInvalidWaitFormatException:
                     utils.log("ERROR", "Invalid wait format",('received_message',self))
+                except ManagerInvalidStatesRepoException:
+                    utils.log("ERROR", "Invalid states repository",('received_message',self))
                 except Exception as e:
                     utils.log("ERROR", "Unknown exception caught '%s'"%(e),('received_message',self))
                 else:

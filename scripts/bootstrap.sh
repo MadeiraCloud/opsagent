@@ -20,7 +20,7 @@ elif [ $(which yum) ]; then
         yum -y -q install python26
     fi
     # install other dependencies
-    yum -y -q install expect
+    yum -y -q install expect yum-utils
 fi
 # define python version
 if [ $(which python2.7) ]; then
@@ -40,17 +40,22 @@ cp -r ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_LIBS_DIR}/ws4py ${OA_ENV_DIR}/lib/${PYTHO
 cp -r ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_LIBS_DIR}/{msgpack,yaml,jinja2,markupsafe} ${OA_ENV_DIR}/lib/${PYTHON}/site-packages/
 # copy opsagent sources
 cp -r ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_SOURCES_DIR}/opsagent ${OA_ENV_DIR}/lib/${PYTHON}/site-packages/
-# copy config files
-mkdir -p ${OA_ENV_DIR}/etc
-cp -r ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_CONF_DIR}/* ${OA_ENV_DIR}/etc/
-chmod -R 640 ${OA_ENV_DIR}/etc/*
+# TODO: remove
+## copy config files
+#mkdir -p ${OA_ENV_DIR}/etc
+#cp -r ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_CONF_DIR}/* ${OA_ENV_DIR}/etc/
+#chmod -R 640 ${OA_ENV_DIR}/etc/*
+# /TODO
+
 # set ownership to right user
 chown -R ${OA_USER}:root ${OA_ENV_DIR}
 
-# link config file
-if [ ! -f ${OA_CONFIG_FILE} ]; then
-    ln -s ${OA_ENV_DIR}/etc/opsagent.conf ${OA_CONFIG_FILE}
-fi
+# TODO: remove
+## link config file
+#if [ ! -f ${OA_CONFIG_FILE} ]; then
+#    ln -s ${OA_ENV_DIR}/etc/opsagent.conf ${OA_CONFIG_FILE}
+#fi
+# /TODO
 
 # Copy launch script editing shebang
 sed -e "s|#!/usr/bin/python|#!/${OA_ENV_DIR}/bin/python|g" < ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_SCRIPTS_DIR}/opsagent > ${OA_ENV_DIR}/bin/opsagent

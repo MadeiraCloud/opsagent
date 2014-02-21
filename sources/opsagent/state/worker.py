@@ -18,9 +18,6 @@ import hashlib
 from opsagent import utils
 from opsagent.objects import send
 from opsagent.exception import *
-
-from opsagent.state.adaptor import StateAdaptor
-from opsagent.state.runner import StateRunner
 ##
 
 ## DEFINES
@@ -44,11 +41,14 @@ class StateWorker(threading.Thread):
         self.__config = config
         self.__manager = None
 
-        # state transfer
-        self.__state_adaptor = StateAdaptor()
-
+        # state adaptor
+        self.__state_adaptor = None
+#        from opsagent.state.adaptor import StateAdaptor
+#        self.__state_adaptor = StateAdaptor()
         # state runner
-        self.__state_runner = StateRunner(config=config['salt'])
+        self.__state_runner = None
+#        from opsagent.state.runner import StateRunner
+#        self.__state_runner = StateRunner(config=config['salt'])
 
         # events
         self.__cv = threading.Condition()
@@ -202,6 +202,26 @@ class StateWorker(threading.Thread):
         self.__cv.acquire()
         utils.log("DEBUG", "Conditional lock acquired.",('load',self))
         self.__version = version
+
+        # state adaptor
+        if self.__state_adaptor:
+            utils.log("DEBUG", "Deleting adaptor...",('load',self))
+            del self.__state_adaptor
+        utils.log("DEBUG", "Loading adaptor...",('load',self))
+        import opsagent.state.adaptor
+        reload(opsagent.state.adaptor)
+        from opsagent.state.adaptor import StateAdaptor
+        self.__state_adaptor = StateAdaptor()
+        # state runner
+        if self.__state_runner:
+            utils.log("DEBUG", "Deleting runner...",('load',self))
+            del self.__state_runner
+        utils.log("DEBUG", "Loading runner...",('load',self))
+        import opsagent.state.runner
+        reload(opsagent.state.runner)
+        from opsagent.state.runner import StateRunner
+        self.__state_runner = StateRunner(config=self.__config['salt'])
+
         if states:
             utils.log("INFO", "Loading new states.",('load',self))
             self.__states = states

@@ -10,6 +10,7 @@ import ConfigParser
 from ConfigParser import SafeConfigParser
 from copy import deepcopy
 import sys
+import os
 
 # Custon imports
 from opsagent import utils
@@ -19,38 +20,57 @@ from opsagent.exception import *
 # Config class
 class Config():
     requiredKeys = {
-#        'foo': {
-#            'bar': "bar represents blablabla",
-#            },
+        'global': {
+            'envroot': "Virtual environment root"
+            'token': "Unique identification file path",
+            'watch': "Watched files checksum location",
+            'logfile': "Log file location",
+            },
+        'network': {
+            'ws_uri': "Backend connection URI",
+            },
+        'module': {
+            'root': "Salt modules repo root",
+            'name': "Salt modules repo name",
+            'bootstrap': "Salt modules bootstrap script",
+            'mod_repo': "Salt modules repo URI",
+            'mod_tag': "Salt modules repo tag",
+            },
         }
 
     defaultValues = {
         'global': {
             'loglvl': 'WARNING',
             'proc': '/proc',
-            'watch': '/tmp/opsagent/opsagent/watch',
             'pidfile': '/tmp/opsagentd.pid',
             'haltfile': '/tmp/opsagentd.halt',
-            'token': '/etc/opsagent.d/token',
-            'end': '/etc/opsagent.d/token',
-            'logfile': '/var/log/madeira/agent.log',
+#            'watch': '/etc/opsagent.d/watch',
+#            'token': '/etc/opsagent.d/token',
+#            'logfile': '/var/log/madeira/agent.log',
             },
         'runtime': {
             'proc': False,
+            'config_path': None,
             },
         'network': {
-            'ws_uri': "wss://api.madeiracloud.com/agent/",
             'instance_id': "http://169.254.169.254/latest/meta-data/instance-id",
-            'user_data': "http://169.254.169.254/latest/user-data",
+#            'ws_uri': "wss://api.madeiracloud.com/agent/",
+#            'user_data': "http://169.254.169.254/latest/user-data",
             },
         'salt': {
-            'update_file': '/tmp/opsagent.salt.update',
-            'file_roots': '/opt/madeira/env/srv/salt',
-            'extension_modules': '/opt/madeira/env/var/cache/salt/minion/extmods',
-            'cachedir': '/opt/madeira/env/var/cache/madeira',
+#            'update_file': '/tmp/opsagent.salt.update',
+            'srv_root': '/srv/salt',
+            'extension_modules': '/var/cache/salt/minion/extmods',
+            'cachedir': '/var/cache/madeira',
             'delay': '1',
             'timeout': '30',
-            }
+            },
+        'module': {
+            },
+        }
+
+    chrootKeys = {
+        'salt': ['srv_root','extension_modules','cachedir'],
         }
 
     def __init__(self, file=None):
@@ -63,6 +83,7 @@ class Config():
             try:
                 self.parse_file()
                 self.check_required(Config.requiredKeys)
+                self.chroot(root=self.__c['global']['envroot'], mod=Config.chrootKeys)
             except Exception as e:
                 sys.stderr.write("ERROR: Invalid config file '%s': %s\n"%(file,e))
                 raise ConfigFileException
@@ -105,3 +126,9 @@ class Config():
 
     def getConfig(self, copy=False):
         return (self.__c if not copy else deepcopy(self.__c))
+
+    def chroot(self, root, mod):
+        for section in mod:
+            for key in mod[section]:
+                if self.__c['section'].get('key'):
+                    self.__c['section']['key'] = os.path.normpath(root+'/'+self.__c['section']['key'])

@@ -42,7 +42,7 @@ class StateRunner(object):
 		}
 
 		# file roots
-		for path in config['file_roots'].split(':'):
+		for path in config['srv_root'].split(':'):
 			# check and make path
 			if not self.__mkdir(path):
 				continue
