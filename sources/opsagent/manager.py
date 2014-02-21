@@ -83,7 +83,7 @@ class Manager(WebSocketClient):
 
         # check version
         version = data.get("recipe_version")
-        if not version or type(version) is not str:
+        if not version or type(version) is not int:
             utils.log("ERROR", "Invalid version.",('__act_recipe',self))
             raise ManagerInvalidStateFormatException
 
@@ -159,11 +159,11 @@ class Manager(WebSocketClient):
     def __act_wait(self, data):
         utils.log("INFO", "Waited state done received.",('__act_wait',self))
         version = data.get("recipe_version")
-        if not version:
+        if not version or type(version) is not int:
             utils.log("ERROR", "Invalid version.",('__act_wait',self))
             raise ManagerInvalidWaitFormatException
         state_id = data.get("id")
-        if not state_id:
+        if not state_id or type(state_id) is not str:
             utils.log("ERROR", "Invalid state id.",('__act_wait',self))
             raise ManagerInvalidWaitFormatException
 
