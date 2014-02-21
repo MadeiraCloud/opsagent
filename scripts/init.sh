@@ -19,9 +19,6 @@ SRC_SOURCES_DIR=sources
 # Config file destination
 OA_CONFIG_FILE=/etc/opsagent.conf
 
-## salt update trigger
-#SALT_UPDATE_FILE=/tmp/opsagent.salt.update
-
 # OpsAgent files
 OA_AGENT=opsagent
 OA_SALT=salt
