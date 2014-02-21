@@ -10,12 +10,13 @@ import sys
 import os
 import time
 import atexit
-from signal import SIGTERM,SIGINT,SIGKILL
+from signal import SIGTERM
 
 
 # Daemon class
 class Daemon():
     def __init__(self, config, stdin='/dev/null', stdout='/dev/null', stderr='/dev/null'):
+        self.sw = None
         self.config = config
         self.pidfile = config['global']['pidfile']
         self.haltfile = config['global']['haltfile']

@@ -10,7 +10,7 @@ import json
 from salt.state import State
 
 from opsagent import utils
-from opsagent.exception import ExcutionException, OpsAgentException
+from opsagent.exception import ExecutionException
 
 class StateRunner(object):
 
@@ -48,19 +48,19 @@ class StateRunner(object):
 		}
 
 		# file roots
-		for path in config['file_roots'].split(':'):
+		for path in config['srv_root'].split(':'):
 			# check and make path
 			if not self.__mkdir(path):
 				continue
 
 			self._salt_opts['file_roots']['base'].append(path)
 
-		if len(self._salt_opts['file_roots']['base']) == 0:		raise ExcutionException("Missing file roots argument")
-		if not self.__mkdir(config['extension_modules']):		raise ExcutionException("Missing extension modules argument")
+		if len(self._salt_opts['file_roots']['base']) == 0:		raise ExecutionException("Missing file roots argument")
+		if not self.__mkdir(config['extension_modules']):		raise ExecutionException("Missing extension modules argument")
 
 		self._salt_opts['extension_modules'] = config['extension_modules']
 
-		if not self.__mkdir(config['cachedir']):	raise ExcutionException("Missing cachedir argument")
+		if not self.__mkdir(config['cachedir']):	raise ExecutionException("Missing cachedir argument")
 
 		self._salt_opts['cachedir'] = config['cachedir']
 
@@ -282,46 +282,46 @@ class StateRunner(object):
 
 def main():
 
-		import json
+#        import json
 
-		salt_opts = {
-				'file_client':       'local',
-				'renderer':          'yaml_jinja',
-				'failhard':          False,
-				'state_top':         'salt://top.sls',
-				'nodegroups':        {},
-				'file_roots':        '/srv/salt',
-				'state_auto_order':  False,
-				'extension_modules': '/var/cache/salt/minion/extmods',
-				'id':                '',
-				'pillar_roots':      '',
-				'cachedir':          '/var/cache/madeira/',
-				'test':              False,
-				}
+        salt_opts = {
+                'file_client':       'local',
+                'renderer':          'yaml_jinja',
+                'failhard':          False,
+                'state_top':         'salt://top.sls',
+                'nodegroups':        {},
+                'file_roots':        '/srv/salt',
+                'state_auto_order':  False,
+                'extension_modules': '/var/cache/salt/minion/extmods',
+                'id':                '',
+                'pillar_roots':      '',
+                'cachedir':          '/var/cache/madeira/',
+                'test':              False,
+                }
 
-		states = {
-				'_scribe_1_scm_git_git://github.com/facebook/scribe.git_latest' : {
-						"git": [
-								"latest",
-								{
-										"name": "git://github.com/facebook/scribe.gits",
-										"rev": "master",
-										"target": "/madeira/deps/scribe",
-										"user": "root"
-								}
-						]
-				}
-		}
+        states = {
+                '_scribe_1_scm_git_git://github.com/facebook/scribe.git_latest' : {
+                        "git": [
+                                "latest",
+                                {
+                                        "name": "git://github.com/facebook/scribe.gits",
+                                        "rev": "master",
+                                        "target": "/madeira/deps/scribe",
+                                        "user": "root"
+                                }
+                        ]
+                }
+        }
 
-		runner = StateRunner(salt_opts)
+        runner = StateRunner(salt_opts)
 
-		ret = runner.exec_salt(states)
+        ret = runner.exec_salt(states)
 
-		if ret:
-				print json.dumps(ret, sort_keys=True,
-						  indent=4, separators=(',', ': '))
-		else:
-				print "wait failed"
+        if ret:
+                print json.dumps(ret, sort_keys=True,
+                          indent=4, separators=(',', ': '))
+        else:
+                print "wait failed"
 
 if __name__ == '__main__':
 		main()

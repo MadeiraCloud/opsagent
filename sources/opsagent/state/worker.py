@@ -17,10 +17,7 @@ import hashlib
 # Custom imports
 from opsagent import utils
 from opsagent.objects import send
-from opsagent.exception import *
-
-from opsagent.state.adaptor import StateAdaptor
-from opsagent.state.runner import StateRunner
+from opsagent.exception import SWNoManagerException,StateException,ExecutionException,SWWaitFormatException
 ##
 
 ## DEFINES
@@ -44,11 +41,14 @@ class StateWorker(threading.Thread):
         self.__config = config
         self.__manager = None
 
-        # state transfer
-        self.__state_adaptor = StateAdaptor()
-
+        # state adaptor
+        self.__state_adaptor = None
+#        from opsagent.state.adaptor import StateAdaptor
+#        self.__state_adaptor = StateAdaptor()
         # state runner
-        self.__state_runner = StateRunner(config=config['salt'])
+        self.__state_runner = None
+#        from opsagent.state.runner import StateRunner
+#        self.__state_runner = StateRunner(config=config['salt'])
 
         # events
         self.__cv = threading.Condition()
@@ -130,7 +130,11 @@ class StateWorker(threading.Thread):
         if not end:
             self.__run = False
             if self.__waitpid:
-                os.kill(self.__waitpid, SIGTERM)
+                try:
+                    while True:
+                        os.kill(self.__waitpid, signal.SIGKILL)
+                        time.sleep(0.1)
+                except Exception: pass
         if kill:
             self.kill()
 
@@ -155,7 +159,7 @@ class StateWorker(threading.Thread):
     def __kill_childs(self):
         utils.log("DEBUG", "Killing states execution...",('__kill_childs',self))
         if not self.__config['runtime']['proc']:
-            utils.log("WARNING", "/!\ procfs is disabled, and you shouldn't do this. Potential hazardous behaviour can happen ...",('__kill_childs',self))
+            utils.log("WARNING", "/!\\ procfs is disabled, and you shouldn't do this. Potential hazardous behaviour can happen ...",('__kill_childs',self))
             return
         proc = self.__config['global']['proc']
         flag = False
@@ -164,8 +168,8 @@ class StateWorker(threading.Thread):
         for pid in pids:
             try:
                 filename = os.path.join(proc, pid, 'status')
-                file = open(filename, "r")
-                for line in file:
+                f = open(filename, "r")
+                for line in f:
                     if re.search(r'PPid.*%s'%(cur_pid), line):
                         utils.log("INFO", "State execution process found #%s. Killing ..."%(pid),('kill',self))
                         os.kill(int(pid),signal.SIGKILL)
@@ -202,6 +206,26 @@ class StateWorker(threading.Thread):
         self.__cv.acquire()
         utils.log("DEBUG", "Conditional lock acquired.",('load',self))
         self.__version = version
+
+        # state adaptor
+        if self.__state_adaptor:
+            utils.log("DEBUG", "Deleting adaptor...",('load',self))
+            del self.__state_adaptor
+        utils.log("DEBUG", "Loading adaptor...",('load',self))
+        import opsagent.state.adaptor
+        reload(opsagent.state.adaptor)
+        from opsagent.state.adaptor import StateAdaptor
+        self.__state_adaptor = StateAdaptor()
+        # state runner
+        if self.__state_runner:
+            utils.log("DEBUG", "Deleting runner...",('load',self))
+            del self.__state_runner
+        utils.log("DEBUG", "Loading runner...",('load',self))
+        import opsagent.state.runner
+        reload(opsagent.state.runner)
+        from opsagent.state.runner import StateRunner
+        self.__state_runner = StateRunner(config=self.__config['salt'])
+
         if states:
             utils.log("INFO", "Loading new states.",('load',self))
             self.__states = states
@@ -220,19 +244,19 @@ class StateWorker(threading.Thread):
 
     ## WAIT PROCESS
     # Add state to done list
-    def state_done(self, id):
-        utils.log("DEBUG", "Adding id '%s' to done states list."%(id),('state_done',self))
-        self.__done.append(id)
+    def state_done(self, sid):
+        utils.log("DEBUG", "Adding id '%s' to done states list."%(sid),('state_done',self))
+        self.__done.append(sid)
         self.__wait_event.set()
     ##
 
 
     ## MAIN EXECUTION
     # Action on wait
-    def __exec_wait(self, id, module, parameter):
+    def __exec_wait(self, sid, module, parameter):
         utils.log("INFO", "Waiting for external states ...",('__exec_wait',self))
         self.__waiting = True
-        while (id not in self.__done) and (self.__run):
+        while (sid not in self.__done) and (self.__run):
             self.__wait_event.wait()
             self.__wait_event.clear()
             utils.log("INFO", "New state status received, analysing ...",('__exec_wait',self))
@@ -246,20 +270,19 @@ class StateWorker(threading.Thread):
         return (value,None,None)
 
     # Write hash
-    def __create_hash(self, target, hash, file):
-        utils.log("DEBUG", "Writing new hash for file '%s' in '%s': '%s'"%(file, target, hash),('__create_hash',self))
+    def __create_hash(self, target, fhash, filename):
+        utils.log("DEBUG", "Writing new hash for file '%s' in '%s': '%s'"%(filename,target,fhash),('__create_hash',self))
         with open(target, 'w') as f:
-            f.write(hash)
+            f.write(fhash)
 
     # Call salt library
-    def __exec_salt(self, id, module, parameter):
-        utils.log("INFO", "Loading state ID '%s' from module '%s' ..."%(id,module),('__exec_salt',self))
-        first = True
+    def __exec_salt(self, sid, module, parameter):
+        utils.log("INFO", "Loading state ID '%s' from module '%s' ..."%(sid,module),('__exec_salt',self))
 
         # Watch process
         if parameter and type(parameter) is dict and parameter.get("watch"):
-            utils.log("DEBUG", "Watched state detected."%(watch),('__exec_salt',self))
             watch = parameter.get("watch")
+            utils.log("DEBUG", "Watched state detected."%(watch),('__exec_salt',self))
             del parameter["watch"]
             try:
                 if not os.path.isfile(watch):
@@ -271,7 +294,6 @@ class StateWorker(threading.Thread):
                     curent_hash = hashlib.md5(watch).hexdigest()
                     cs = os.path.join(self.__config['global']['watch'], id)
                     if os.path.isfile(cs):
-                        first = False
                         with open(cs, 'r') as f:
                             old_hash = f.read()
                         if old_hash != curent_hash:
@@ -282,7 +304,7 @@ class StateWorker(threading.Thread):
                             utils.log("DEBUG","No watched event triggered.",('__exec_salt',self))
                     else:
                         utils.log("DEBUG","No old record, creating hash and executing normal command ...",('__exec_salt',self))
-                        self.__create_hash(cs, curent_hash, file)
+                        self.__create_hash(cs, curent_hash, watch)
                         utils.log("DEBUG","Hash stored.",('__exec_salt',self))
             except Exception as e:
                 err = "Unknown error during watch process on file '%s': %s."%(watch,e)
@@ -292,7 +314,7 @@ class StateWorker(threading.Thread):
         try:
             # state convert
             utils.log("INFO", "Begin to convert salt states...", ('__exec_salt', self))
-            salt_states = self.__state_adaptor.convert(id, module, parameter, self.__state_runner.os_type)
+            salt_states = self.__state_adaptor.convert(sid, module, parameter, self.__state_runner.os_type)
 
             # exec salt state
             utils.log("INFO", "Begin to execute salt states...", ('__exec_salt', self))
@@ -300,14 +322,14 @@ class StateWorker(threading.Thread):
         except StateException, err:
             utils.log("ERROR", str(err), ('__exec_salt',self))
             return (FAIL, str(err), None)
-        except ExcutionException, err:
+        except ExecutionException, err:
             utils.log("ERROR", str(err), ('__exec_salt', self))
             return (FAIL, str(err), None)
         except Exception as err:
             utils.log("ERROR", str(err), ('__exec_salt',self))
             return (FAIL, str(err), None)
 
-        utils.log("INFO", "State ID '%s' from module '%s' done, result '%s'."%(id,module,result),('__exec_salt',self))
+        utils.log("INFO", "State ID '%s' from module '%s' done, result '%s'."%(sid,module,result),('__exec_salt',self))
         utils.log("DEBUG", "State out log='%s'"%(out_log),('__exec_salt',self))
         utils.log("DEBUG", "State comment='%s'"%(comment),('__exec_salt',self))
         return (result,comment,out_log)
@@ -316,11 +338,11 @@ class StateWorker(threading.Thread):
     def __recipe_delay(self):
         utils.log("INFO", "Last state reached, execution paused for %s minutes."%(self.__config['salt']['delay']),('__recipe_delay',self))
         self.__waitpid = os.fork()
-        if (pid == 0): # son
+        if (self.__waitpid == 0): # son
             time.sleep(int(self.__config['salt']['delay'])*60)
             sys.exit(0)
         else:
-            os.waitpid(self.__haltpid,0)
+            os.waitpid(self.__waitpid,0)
         self.__waitpid = None
         utils.log("INFO", "Delay passed, execution restarting...",('__recipe_delay',self))
 
@@ -358,7 +380,7 @@ class StateWorker(threading.Thread):
                 utils.log("INFO", "Execution complete, reporting logs to backend.",('__runner',self))
                 self.__send(send.statelog(init=self.__config['init'],
                                           version=self.__version,
-                                          id=state['id'],
+                                          sid=state['id'],
                                           result=result,
                                           comment=comment,
                                           out_log=out_log))

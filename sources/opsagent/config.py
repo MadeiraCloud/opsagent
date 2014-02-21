@@ -10,79 +10,101 @@ import ConfigParser
 from ConfigParser import SafeConfigParser
 from copy import deepcopy
 import sys
+import os
 
 # Custon imports
-from opsagent import utils
-from opsagent.exception import *
+from opsagent.exception import ConfigFileFormatException, ConfigFileException
 
 
 # Config class
 class Config():
     requiredKeys = {
-#        'foo': {
-#            'bar': "bar represents blablabla",
-#            },
+        'global': {
+            'envroot': "Virtual environment root",
+            'token': "Unique identification file path",
+            'watch': "Watched files checksum location",
+            'logfile': "Log file location",
+            },
+        'network': {
+            'ws_uri': "Backend connection URI",
+            'app_id': "Application ID",
+            },
+        'module': {
+            'root': "Salt modules repo root",
+            'name': "Salt modules repo name",
+            'bootstrap': "Salt modules bootstrap script",
+            'mod_repo': "Salt modules repo URI",
+            'mod_tag': "Salt modules repo tag",
+            },
         }
 
     defaultValues = {
         'global': {
-            'loglvl': 'WARNING',
+#            'loglvl': 'WARNING', #TODO: witch
+            'loglvl': 'DEBUG',
             'proc': '/proc',
-            'watch': '/tmp/opsagent/opsagent/watch',
             'pidfile': '/tmp/opsagentd.pid',
             'haltfile': '/tmp/opsagentd.halt',
-            'token': '/etc/opsagent.d/token',
-            'end': '/etc/opsagent.d/token',
-            'logfile': '/var/log/madeira/agent.log',
+#            'watch': '/etc/opsagent.d/watch',
+#            'token': '/etc/opsagent.d/token',
+#            'logfile': '/var/log/madeira/agent.log',
             },
         'runtime': {
             'proc': False,
+            'config_path': None,
             },
         'network': {
-            'ws_uri': "wss://api.madeiracloud.com/agent/",
             'instance_id': "http://169.254.169.254/latest/meta-data/instance-id",
-            'user_data': "http://169.254.169.254/latest/user-data",
+#            'ws_uri': "wss://api.madeiracloud.com/agent/",
+#            'user_data': "http://169.254.169.254/latest/user-data",
             },
         'salt': {
-            'update_file': '/tmp/opsagent.salt.update',
-            'file_roots': '/opt/madeira/env/srv/salt',
-            'extension_modules': '/opt/madeira/env/var/cache/salt/minion/extmods',
-            'cachedir': '/opt/madeira/env/var/cache/madeira',
+#            'update_file': '/tmp/opsagent.salt.update',
+            'srv_root': '/srv/salt',
+            'extension_modules': '/var/cache/salt/minion/extmods',
+            'cachedir': '/var/cache/madeira',
             'delay': '1',
             'timeout': '30',
-            }
+            },
+        'module': {
+            },
         }
 
-    def __init__(self, file=None):
+    chrootKeys = {
+        'salt': ['srv_root','extension_modules','cachedir'],
+        }
+
+    def __init__(self, f=None):
         self.__parser = SafeConfigParser(allow_no_value=True)
         self.__c = (deepcopy(Config.defaultValues)
                     if Config.defaultValues
                     else {})
-        if file:
-            self.__read_file(file)
+        if f:
+            self.__read_file(f)
             try:
                 self.parse_file()
                 self.check_required(Config.requiredKeys)
-            except Exception as e:
-                sys.stderr.write("ERROR: Invalid config file '%s': %s\n"%(file,e))
-                raise ConfigFileException
+                self.chroot(root=self.__c['global']['envroot'], mod=Config.chrootKeys)
             except ConfigFileFormatException:
-                sys.stderr.write("ERROR: Invalid config file '%s'.\n"%(file))
+                sys.stderr.write("ERROR: Invalid config file '%s'.\n"%(f))
+                raise ConfigFileException
+            except Exception as e:
+                sys.stderr.write("ERROR: Invalid config file '%s': %s\n"%(f,e))
                 raise ConfigFileException
             else:
-                sys.stdout.write("Config file loaded '%s'.\n"%(file))
+                sys.stdout.write("Config file loaded '%s'.\n"%(f))
 
-    def __read_file(self, file):
+    def __read_file(self, f):
         try:
-            self.__parser.read(file)
+            self.__parser.read(f)
         except ConfigParser.ParsingError as e:
-            sys.stderr.write("ERROR: Can't load config file %s, %s.\n"%(file,e))
+            sys.stderr.write("ERROR: Can't load config file %s, %s.\n"%(f,e))
         else:
-            sys.stdout.write("Config file parsed '%s'.\n"%(file))
+            sys.stdout.write("Config file parsed '%s'.\n"%(f))
 
-    def parse_file(self, file=None):
-        if file:
-            self.__read_file(file)
+    def parse_file(self, f=None):
+        if f:
+            self.__read_file(f)
         for name in self.__parser.sections():
             if name is 'runtime': continue
             self.__c.setdefault(name, {})
@@ -105,3 +127,9 @@ class Config():
 
     def getConfig(self, copy=False):
         return (self.__c if not copy else deepcopy(self.__c))
+
+    def chroot(self, root, mod):
+        for section in mod:
+            for key in mod[section]:
+                if self.__c[section].get(key):
+                    self.__c[section][key] = os.path.normpath(root+'/'+self.__c[section][key])

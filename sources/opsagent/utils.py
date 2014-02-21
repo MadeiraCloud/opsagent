@@ -4,11 +4,15 @@ Madeira OpsAgent utilities
 @author: Thibault BRONCHAIN
 '''
 
-import collections
-
 # System imports
 import logging
 import time
+import collections
+import subprocess
+import os
+
+# Custom imports
+from opsagent.exception import ManagerInvalidStatesRepoException
 
 # Defines
 DEBUG_DELAY=0.1
@@ -55,6 +59,38 @@ def uni2str(data):
     elif isinstance(data, collections.Mapping):
         return dict(map(uni2str, data.iteritems()))
     elif isinstance(data, collections.Iterable):
-    	return type(data)(map(uni2str, data))
+        return type(data)(map(uni2str, data))
     else:
         return data
+
+# clone a git repository
+def clone_repo(path, name, uri):
+    try:
+        subprocess.check_output(("git clone %s %s"%(uri,name)).split(),cmd=path)
+    except Exception as e:
+        log("ERROR", "Can't clone %s repo from %s: %s"%(name,uri,e),('clone_repo','utils'))
+        raise ManagerInvalidStatesRepoException
+    return True
+
+# clone a git branch/tag
+def checkout_repo(path, name, tag, uri, n=0):
+    commands = [
+        "git reset --hard FETCH_HEAD",
+        "git clean -df",
+        "git pull",
+        "git checkout %s"%(tag),
+        "git pull",
+        ]
+    path = os.path.normpath(path+'/'+name)
+    for cmd in commands:
+        try:
+            subprocess.check_output(cmd.split(),cmd=path)
+        except Exception as e:
+            log("WARNING", "Can't update %s repo on %s tag: %s"%(name,tag,e),('checkout_repo','utils'))
+            clone_repo(path, name, uri)
+            if n == 0:
+                checkout_repo(path, name, tag, uri, n+1)
+            else:
+                log("ERROR", "Can't switch to requested after cloning clean repo, aborting.",('checkout_repo','utils'))
+                raise ManagerInvalidStatesRepoException
+            break

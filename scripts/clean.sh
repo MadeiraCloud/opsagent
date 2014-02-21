@@ -46,10 +46,11 @@ if [ "$2" = "debug" ]; then
         echo "Fatal: no service manager"
         exit 1
     fi
-    cd ${OA_SALT_DIR}
-    git checkout develop
-    cd -
+#    cd ${OA_SALT_DIR}
+#    git checkout develop
+#    cd -
 fi
+
 
 exit 0
 # EOF

@@ -5,10 +5,6 @@ Madeira OpsAgent exceptions
 '''
 
 
-# Custom imports
-from opsagent import utils
-
-
 # Configuration Parser exceptions
 class ConfigFileFormatException(Exception): pass
 class ConfigFileException(Exception): pass
@@ -22,6 +18,7 @@ class AWSNotFoundException(Exception): pass
 # Manager exceptions
 class ManagerInvalidStateFormatException(Exception): pass
 class ManagerInvalidWaitFormatException(Exception): pass
+class ManagerInvalidStatesRepoException(Exception): pass
 class ManagerInitDirDeniedException(Exception): pass
 
 # StatesWorker exceptions
@@ -32,11 +29,15 @@ class SWNoWaitFileException(Exception): pass
 # State exceptions
 class StateException(Exception): pass
 
-# Excution exceptions
-class ExcutionException(Exception): pass
+# Execution exceptions
+class ExecutionException(Exception): pass
 
 # General Exception
 class OpsAgentException(Exception): pass
+
+
+# Custom imports
+from opsagent import utils
 
 
 # Decorators
@@ -48,7 +49,7 @@ def GeneralException(func):
             return func(self, *args, **kwargs)
         except Exception as e:
             utils.log("ERROR", "Uncaught error '%s'"%(str(e)),(func_name,class_name))
-            raise OpsAgentException, e
+            raise OpsAgentException(e)
     return __action_with_decorator
 
 def ThrowNoException(func):

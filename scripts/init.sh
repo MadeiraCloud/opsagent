@@ -10,11 +10,6 @@ PATH=${PATH}:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
 # OpsAgent run user
 OA_USER=root
 
-# OpsAgent directories
-OA_ROOT_DIR=/opt/madeira
-OA_BOOT_DIR=${OA_ROOT_DIR}/bootstrap
-OA_ENV_DIR=${OA_ROOT_DIR}/env
-
 # Source directories
 SRC_SCRIPTS_DIR=scripts
 SRC_CONF_DIR=conf
@@ -24,12 +19,15 @@ SRC_SOURCES_DIR=sources
 # Config file destination
 OA_CONFIG_FILE=/etc/opsagent.conf
 
-# salt update trigger
-SALT_UPDATE_FILE=/tmp/opsagent.salt.update
-
 # OpsAgent files
 OA_AGENT=opsagent
 OA_SALT=salt
+
+# Token
+OA_TOKEN=${OA_CONF_DIR}/token
+
+# Log file
+OA_LOG_FILE=${OA_LOG_DIR}/agent.log
 
 
 # Create main directories
@@ -39,28 +37,50 @@ mkdir -p ${OA_ROOT_DIR}
 mkdir -p ${OA_BOOT_DIR}
 
 # Generate token
-if [ ! -f ${OA_CONF_DIR}/token ]; then
-    ssh-keygen -b 2048 -q -P '' -f ${OA_CONF_DIR}/token
-    rm -f ${OA_CONF_DIR}/token.pub
+if [ ! -f ${OA_TOKEN} ]; then
+    ssh-keygen -b 2048 -q -P '' -f ${OA_TOKEN}
+    rm -f ${OA_TOKEN}.pub
 fi
-chown ${OA_USER}:root ${OA_CONF_DIR}/token
-chmod 400 ${OA_CONF_DIR}/token
+chown ${OA_USER}:root ${OA_TOKEN}
+chmod 400 ${OA_TOKEN}
 
 # Set agent log with restrictive access rights
-if [ ! -f ${OA_LOG_DIR}/agent.log ]; then
-    touch ${OA_LOG_DIR}/agent.log
+if [ ! -f ${OA_LOG_FILE} ]; then
+    touch ${OA_LOG_FILE}
 fi
-chown ${OA_USER}:root ${OA_LOG_DIR}/agent.log
-chmod 640 ${OA_LOG_DIR}/agent.log
+chown ${OA_USER}:root ${OA_LOG_FILE}
+chmod 640 ${OA_LOG_FILE}
 
-# setup git
+# Generates config file
+if [ ! -f ${OA_CONFIG_FILE} ]; then
+cat <<EOF > ${OA_CONFIG_FILE}
+[global]
+envroot=${OA_ENV_DIR}
+token=${OA_TOKEN}
+watch=${OA_WATCH_DIR}
+logfile=${OA_LOG_FILE}
+[network]
+ws_uri=${WS_URI}
+app_id=${APP_ID}
+[module]
+root=${OA_BOOT_DIR}
+name=${OA_SALT}
+bootstrap=${SRC_SCRIPTS_DIR}/bootstrap.sh
+mod_repo=
+mod_tag=
+EOF
+fi
+chown ${OA_USER}:root ${OA_CONFIG_FILE}
+chmod 640 ${OA_CONFIG_FILE}
+
+# Setup git
 if [ $(which apt-get) ]; then
     apt-get -y -q install git
 elif [ $(which yum) ]; then
     yum -y -q install git
 fi
 
-# sources update check
+# Sources update check
 function update_sources() {
     RET=0
     if [ -f ${OA_BOOT_DIR}/${1}.tgz ]; then
@@ -126,26 +146,26 @@ if [ ${UPDATE_AGENT} -ne 0 ]; then
 else
     echo "don't update agent"
 fi
-# get salt repo
-if [ ! -d ${OA_BOOT_DIR}/${OA_SALT} ]; then
-    git clone ${SALT_REPO_URI} ${OA_BOOT_DIR}/${OA_SALT}
-    cd ${OA_BOOT_DIR}/${OA_SALT}
-    git checkout ${SALT_REPO_BRANCH}
-    cd -
-    UPDATE_SALT=2
-elif [ -f ${SALT_UPDATE_FILE} ]; then
-    cd ${OA_BOOT_DIR}/${OA_SALT}
-    CHANGE=$(git fetch origin ${SALT_REPO_BRANCH} | grep "origin/${SALT_REPO_BRANCH}" | wc -l)
-    if [ ${CHANGE} -ne 0 ]; then
-        UPDATE_SALT=1
-    else
-        UPDATE_SALT=0
-        rm -f ${SALT_UPDATE_FILE}
-    fi
-    cd -
-else
-    UPDATE_SALT=0
-fi
+## get salt repo
+#if [ ! -d ${OA_BOOT_DIR}/${OA_SALT} ]; then
+#    git clone ${SALT_REPO_URI} ${OA_BOOT_DIR}/${OA_SALT}
+#    cd ${OA_BOOT_DIR}/${OA_SALT}
+#    git checkout ${SALT_REPO_BRANCH}
+#    cd -
+#    UPDATE_SALT=2
+#elif [ -f ${SALT_UPDATE_FILE} ]; then
+#    cd ${OA_BOOT_DIR}/${OA_SALT}
+#    CHANGE=$(git fetch origin ${SALT_REPO_BRANCH} | grep "origin/${SALT_REPO_BRANCH}" | wc -l)
+#    if [ ${CHANGE} -ne 0 ]; then
+#        UPDATE_SALT=1
+#    else
+#        UPDATE_SALT=0
+#        rm -f ${SALT_UPDATE_FILE}
+#    fi
+#    cd -
+#else
+#    UPDATE_SALT=0
+#fi
 #UPDATE_SALT=$(update_sources ${OA_SALT})
 #echo "UPDATESALT=$UPDATE_SALT"
 #if [ ${UPDATE_SALT} -ne 0 ]; then
@@ -176,27 +196,28 @@ else
     echo "don't bootstrap agent"
 fi
 
-# bootstrap salt
-if [ ${UPDATE_AGENT} -ne 0 ] || [ ${UPDATE_SALT} -ne 0 ]; then
-    if [ ${UPDATE_AGENT} -eq 0 ]; then
-        echo "stop agent (bootstrap salt)"
-        service opsagentd stop-end
-    fi
-    echo "bootstrap salt"
-    if [ ${UPDATE_SALT} -eq 1 ]; then
-        cd ${OA_BOOT_DIR}/${OA_SALT}
-        git reset --hard FETCH_HEAD
-        git clean -df
-        rm -f ${SALT_UPDATE_FILE}
-        cd -
-    fi
-    source ${OA_BOOT_DIR}/${OA_SALT}/${SRC_SCRIPTS_DIR}/bootstrap.sh
-else
-    echo "don't bootstrap salt"
-fi
+## bootstrap salt
+#if [ ${UPDATE_AGENT} -ne 0 ] || [ ${UPDATE_SALT} -ne 0 ]; then
+#    if [ ${UPDATE_AGENT} -eq 0 ]; then
+#        echo "stop agent (bootstrap salt)"
+#        service opsagentd stop-end
+#    fi
+#    echo "bootstrap salt"
+#    if [ ${UPDATE_SALT} -eq 1 ]; then
+#        cd ${OA_BOOT_DIR}/${OA_SALT}
+#        git reset --hard FETCH_HEAD
+#        git clean -df
+#        rm -f ${SALT_UPDATE_FILE}
+#        cd -
+#    fi
+#    source ${OA_BOOT_DIR}/${OA_SALT}/${SRC_SCRIPTS_DIR}/bootstrap.sh
+#else
+#    echo "don't bootstrap salt"
+#fi
 
 # load agent
-if [ ${UPDATE_AGENT} -ne 0 ] || [ ${UPDATE_SALT} -ne 0 ]; then
+#if [ ${UPDATE_AGENT} -ne 0 ] || [ ${UPDATE_SALT} -ne 0 ]; then
+if [ ${UPDATE_AGENT} -ne 0 ]; then
     echo "load agent"
     service opsagentd start
 else
