@@ -177,7 +177,6 @@ def main():
     if options.verbose: loglvl = 'DEBUG'
     elif options.quiet: loglvl = 'ERROR'
     logfile = (options.log_file if options.log_file else config['global'].get('logfile'))
-    print "logfile=%s"%logfile
     __log(loglvl, (logfile if not options.debug else None))
 
     # run

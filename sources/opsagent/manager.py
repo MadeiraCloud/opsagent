@@ -75,7 +75,7 @@ class Manager(WebSocketClient):
         utils.log("INFO", "Retrying in %s seconds."%(WAIT_CONNECT),('__act_retry_hs',self))
         time.sleep(WAIT_CONNECT)
         utils.log("DEBUG", "Reconnecting ...",('__act_retry_hs',self))
-        self.send_json(send.handshake(self.__config['init'], [self.__error_proc,self.__error_dir]))
+        self.send_json(send.handshake(self.__config['init'], self.__error_proc+self.__error_dir))
 
     # Recipe object received
     def __act_recipe(self, data):
@@ -203,7 +203,7 @@ class Manager(WebSocketClient):
                 err = "Can't create '%s' directory: '%s'. FATAL."%(directory,e)
                 utils.log("ERROR", err,('__init_dir',self))
                 errors.append(err)
-        return (" ".join(errors) if errors else None)
+        return (errors)
 
     # Mount proc FileSystem
     def __mount_proc_try(self, proc, directory=False):
@@ -234,9 +234,9 @@ class Manager(WebSocketClient):
         except Exception as e:
             err = "Unknown error: can't mount procfs on %s: '%s'. FATAL."%(e,proc)
             utils.log("ERROR", err,('__mount_proc',self))
-            return err
+            return [err]
         self.__config['runtime']['proc'] = True
-        return None
+        return []
 
     # Get instance id and user data from AWS
     def __get_id(self):
@@ -327,7 +327,7 @@ class Manager(WebSocketClient):
     def opened(self):
         utils.log("INFO", "Socket opened, initiating handshake ...",('opened',self))
         self.__connected = True
-        self.send_json(send.handshake(self.__config['init'], [self.__error_proc,self.__error_dir]))
+        self.send_json(send.handshake(self.__config['init'], self.__error_proc+self.__error_dir))
         utils.log("DEBUG", "Handshake init message send",('opened',self))
 
     # On message received
