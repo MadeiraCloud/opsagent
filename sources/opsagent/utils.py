@@ -11,6 +11,9 @@ import collections
 import subprocess
 import os
 
+# Custom imports
+from opsagent.exception import ManagerInvalidStatesRepoException
+
 # Defines
 DEBUG_DELAY=0.1
 DEBUG=10
@@ -56,7 +59,7 @@ def uni2str(data):
     elif isinstance(data, collections.Mapping):
         return dict(map(uni2str, data.iteritems()))
     elif isinstance(data, collections.Iterable):
-    	return type(data)(map(uni2str, data))
+        return type(data)(map(uni2str, data))
     else:
         return data
 
@@ -70,7 +73,7 @@ def clone_repo(path, name, uri):
     return True
 
 # clone a git branch/tag
-def checkout_repo(action, path, name, tag, uri, n=0):
+def checkout_repo(path, name, tag, uri, n=0):
     commands = [
         "git reset --hard FETCH_HEAD",
         "git clean -df",

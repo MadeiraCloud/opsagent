@@ -17,8 +17,11 @@ from ws4py.client.threadedclient import WebSocketClient
 from opsagent.objects import codes
 from opsagent.objects import send
 from opsagent.objects import aws
-from opsagent.state.worker import StateWorker
-from opsagent.exception import *
+from opsagent.exception import \
+    ManagerInvalidStateFormatException, \
+    ManagerInitDirDeniedException, \
+    ManagerInvalidWaitFormatException, \
+    ManagerInvalidStatesRepoException
 from opsagent import utils
 ##
 
@@ -127,9 +130,9 @@ class Manager(WebSocketClient):
                     f.seek(0)
                     f.write(content)
             except Exception as e:
-                utils.log("WARNING", "Can't save URI repo in config file '%s'."%(),('__act_recipe',self))
+                utils.log("WARNING", "Can't save URI repo in config file '%s': %e"%(self.__config['runtime']['config_path'],e),('__act_recipe',self))
         if clone or module_tag != self.__config['module']['mod_tag']:
-            utils.checkout_repo(self.__config['module']['root'],self.__config['module']['name'],module_tag)
+            utils.checkout_repo(self.__config['module']['root'],self.__config['module']['name'],module_tag,module_repo)
             self.__config['module']['mod_tag'] = module_tag
             try:
                 with open(self.__config['runtime']['config_path'], 'r+') as f:
@@ -137,7 +140,7 @@ class Manager(WebSocketClient):
                     f.seek(0)
                     f.write(content)
             except Exception as e:
-                utils.log("WARNING", "Can't save tag version in config file '%s'."%(),('__act_recipe',self))
+                utils.log("WARNING", "Can't save tag version in config file '%s': %s"%(self.__config['runtime']['config_path'],e),('__act_recipe',self))
 
         # load recipes
         curent_version = self.__states_worker.get_version()
@@ -159,8 +162,8 @@ class Manager(WebSocketClient):
         if not version:
             utils.log("ERROR", "Invalid version.",('__act_wait',self))
             raise ManagerInvalidWaitFormatException
-        id = data.get("id")
-        if not id:
+        state_id = data.get("id")
+        if not state_id:
             utils.log("ERROR", "Invalid state id.",('__act_wait',self))
             raise ManagerInvalidWaitFormatException
 
@@ -168,9 +171,9 @@ class Manager(WebSocketClient):
 
         curent_version = self.__states_worker.get_version()
         if (curent_version) and (curent_version == version):
-            utils.log("INFO", "Adding state '%s' to done list."%(id),('__act_wait',self))
-            self.__states_worker.state_done(id)
-            utils.log("DEBUG", "State '%s' added to done list."%(id),('__act_wait',self))
+            utils.log("INFO", "Adding state '%s' to done list."%(state_id),('__act_wait',self))
+            self.__states_worker.state_done(state_id)
+            utils.log("DEBUG", "State '%s' added to done list."%(state_id),('__act_wait',self))
         else:
             utils.log("WARNING", "Wrong version number, curent='%s', received='%s'"%(curent_version,version),('__act_wait',self))
     ##
@@ -186,26 +189,26 @@ class Manager(WebSocketClient):
             self.__config['salt']['cachedir'],
             ]
         errors = []
-        for dir in dirs:
+        for directory in dirs:
             try:
-                if not os.path.isdir(dir):
-                    os.makedirs(dir,0700)
-                if not os.access(dir, os.W_OK):
+                if not os.path.isdir(directory):
+                    os.makedirs(directory,0700)
+                if not os.access(directory, os.W_OK):
                     raise ManagerInitDirDeniedException
             except ManagerInitDirDeniedException:
-                err = "'%s' directory not writable. FATAL."%(dir)
+                err = "'%s' directory not writable. FATAL."%(directory)
                 utils.log("ERROR", err,('__init_dir',self))
                 errors.append(err)
             except Exception as e:
-                err = "Can't create '%s' directory: '%s'. FATAL."%(dir,e)
+                err = "Can't create '%s' directory: '%s'. FATAL."%(directory,e)
                 utils.log("ERROR", err,('__init_dir',self))
                 errors.append(err)
         return (" ".join(errors) if errors else None)
 
     # Mount proc FileSystem
-    def __mount_proc_try(self, proc, dir=False):
+    def __mount_proc_try(self, proc, directory=False):
         utils.log("WARNING", "procfs not present, attempting to mount...",('__mount_proc_try',self))
-        if not dir:
+        if not directory:
             try:
                 os.makedirs(proc,0755)
             except Exception as e:
@@ -224,9 +227,9 @@ class Manager(WebSocketClient):
         proc = self.__config['global']['proc']
         try:
             if not os.path.isdir(proc):
-                return self.__mount_proc_try(proc, dir=False)
+                return self.__mount_proc_try(proc, directory=False)
             elif not os.path.isfile(os.path.join(proc, 'stat')):
-                return self.__mount_proc_try(proc, dir=True)
+                return self.__mount_proc_try(proc, directory=True)
             self.__config['runtime']['proc'] = True
         except Exception as e:
             err = "Unknown error: can't mount procfs on %s: '%s'. FATAL."%(e,proc)
@@ -240,7 +243,7 @@ class Manager(WebSocketClient):
         utils.log("INFO", "Fetching instance data from AWS ...",('__get_id',self))
         instance_id = aws.instance_id(self.__config, self)
         utils.log("INFO", "Instance ID: '%s'"%(instance_id),('__get_id',self))
-        app_id = aws.app_id(self.__config, self)
+        app_id = self.__config['network']['app_id']
         utils.log("INFO", "App ID: '%s'"%(app_id),('__get_id',self))
         token = aws.token(self.__config)
         utils.log("DEBUG", "Token: '%s'"%(token),('__get_id',self))
@@ -310,7 +313,7 @@ class Manager(WebSocketClient):
 
     ## WEBSOCKET ABSTRACT METHOD IMPLEMENTATION
     # On socket closing
-    def closed(self, code, reason):
+    def closed(self, code, reason=None):
         utils.log("INFO", "Socket closed: %s, code '%s'"%(reason,code),('closed',self))
         utils.log("INFO", "Reconnection will start in '%s' seconds ..."%(WAIT_RECONNECT),('closed',self))
         self.__connected = False

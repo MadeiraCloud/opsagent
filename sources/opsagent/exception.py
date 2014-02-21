@@ -33,8 +33,8 @@ class SWNoWaitFileException(Exception): pass
 # State exceptions
 class StateException(Exception): pass
 
-# Excution exceptions
-class ExcutionException(Exception): pass
+# Execution exceptions
+class ExecutionException(Exception): pass
 
 # General Exception
 class OpsAgentException(Exception): pass
@@ -49,7 +49,7 @@ def GeneralException(func):
             return func(self, *args, **kwargs)
         except Exception as e:
             utils.log("ERROR", "Uncaught error '%s'"%(str(e)),(func_name,class_name))
-            raise OpsAgentException, e
+            raise OpsAgentException(e)
     return __action_with_decorator
 
 def ThrowNoException(func):

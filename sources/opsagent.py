@@ -7,19 +7,17 @@ Madeira OpsAgent launcher script
 
 
 # System imports
-from optparse import *
+from optparse import OptionParser
 import logging
 import time
 import sys
 import signal
-import re
-import threading, Queue
 
 # Custom imports
 from opsagent.daemon import Daemon
 from opsagent.config import Config
 from opsagent import utils
-from opsagent.exception import *
+from opsagent.exception import ConfigFileException
 from opsagent.manager import Manager
 from opsagent.state.worker import StateWorker
 
@@ -33,10 +31,10 @@ VERSION = '%prog '+VERSION_NBR
 # logger settings
 LOGLVL_VALUES=['DEBUG','INFO','WARNING','ERROR']
 LOG_FORMAT = '[%(levelname)s]-%(asctime)s: %(message)s'
-def __log(lvl, file=None):
+def __log(lvl, f=None):
     level = logging.getLevelName(lvl)
     formatter = logging.Formatter(LOG_FORMAT)
-    handler = (logging.FileHandler(file) if file else logging.StreamHandler())
+    handler = (logging.FileHandler(f) if f else logging.StreamHandler())
     logger = logging.getLogger()
     handler.setFormatter(formatter)
     logger.setLevel(level)
@@ -109,7 +107,7 @@ class OpsAgentRunner(Daemon):
         # handle termination
         for sig in [signal.SIGTERM, signal.SIGINT, signal.SIGHUP, signal.SIGQUIT]:
             try: signal.signal(sig, handler)
-            except: pass #pass some signals if not POSIX
+            except Exception: pass #pass some signals if not POSIX
 
         # start
         self.sw.start()
@@ -167,14 +165,14 @@ def main():
     except ConfigFileException:
         config = Config().getConfig()
     except Exception as e:
-        sys.stderr.write("ERROR: Unknown fatal config exception: %s, loading default.\n"%(e),('main',self))
+        sys.stderr.write("ERROR: Unknown fatal config exception: %s, loading default.\n"%(e))
         config = Config().getConfig()
     config['runtime']['config_path'] = options.config_file
 
     # set log level
     loglvl = config['global']['loglvl']
     if loglvl and loglvl not in LOGLVL_VALUES:
-        sys.stderr.write("WARNING: Wrong loglvl '%s' (check config file). Loading in default mode (INFO).\n"%(loglvl),('main',self))
+        sys.stderr.write("WARNING: Wrong loglvl '%s' (check config file). Loading in default mode (INFO).\n"%(loglvl))
         loglvl = 'INFO'
     if options.verbose: loglvl = 'DEBUG'
     elif options.quiet: loglvl = 'ERROR'

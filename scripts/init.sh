@@ -64,6 +64,7 @@ watch=${OA_WATCH_DIR}
 logfile=${OA_LOG_FILE}
 [network]
 ws_uri=${WS_URI}
+app_id=${APP_ID}
 [module]
 root=${OA_BOOT_DIR}
 name=${OA_SALT}

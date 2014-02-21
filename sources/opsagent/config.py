@@ -13,21 +13,21 @@ import sys
 import os
 
 # Custon imports
-from opsagent import utils
-from opsagent.exception import *
+from opsagent.exception import ConfigFileFormatException, ConfigFileException
 
 
 # Config class
 class Config():
     requiredKeys = {
         'global': {
-            'envroot': "Virtual environment root"
+            'envroot': "Virtual environment root",
             'token': "Unique identification file path",
             'watch': "Watched files checksum location",
             'logfile': "Log file location",
             },
         'network': {
             'ws_uri': "Backend connection URI",
+            'app_id': "Application ID",
             },
         'module': {
             'root': "Salt modules repo root",
@@ -73,37 +73,37 @@ class Config():
         'salt': ['srv_root','extension_modules','cachedir'],
         }
 
-    def __init__(self, file=None):
+    def __init__(self, f=None):
         self.__parser = SafeConfigParser(allow_no_value=True)
         self.__c = (deepcopy(Config.defaultValues)
                     if Config.defaultValues
                     else {})
-        if file:
-            self.__read_file(file)
+        if f:
+            self.__read_file(f)
             try:
                 self.parse_file()
                 self.check_required(Config.requiredKeys)
                 self.chroot(root=self.__c['global']['envroot'], mod=Config.chrootKeys)
-            except Exception as e:
-                sys.stderr.write("ERROR: Invalid config file '%s': %s\n"%(file,e))
-                raise ConfigFileException
             except ConfigFileFormatException:
-                sys.stderr.write("ERROR: Invalid config file '%s'.\n"%(file))
+                sys.stderr.write("ERROR: Invalid config file '%s'.\n"%(f))
+                raise ConfigFileException
+            except Exception as e:
+                sys.stderr.write("ERROR: Invalid config file '%s': %s\n"%(f,e))
                 raise ConfigFileException
             else:
-                sys.stdout.write("Config file loaded '%s'.\n"%(file))
+                sys.stdout.write("Config file loaded '%s'.\n"%(f))
 
-    def __read_file(self, file):
+    def __read_file(self, f):
         try:
-            self.__parser.read(file)
+            self.__parser.read(f)
         except ConfigParser.ParsingError as e:
-            sys.stderr.write("ERROR: Can't load config file %s, %s.\n"%(file,e))
+            sys.stderr.write("ERROR: Can't load config file %s, %s.\n"%(f,e))
         else:
-            sys.stdout.write("Config file parsed '%s'.\n"%(file))
+            sys.stdout.write("Config file parsed '%s'.\n"%(f))
 
-    def parse_file(self, file=None):
-        if file:
-            self.__read_file(file)
+    def parse_file(self, f=None):
+        if f:
+            self.__read_file(f)
         for name in self.__parser.sections():
             if name is 'runtime': continue
             self.__c.setdefault(name, {})
@@ -130,5 +130,5 @@ class Config():
     def chroot(self, root, mod):
         for section in mod:
             for key in mod[section]:
-                if self.__c['section'].get('key'):
-                    self.__c['section']['key'] = os.path.normpath(root+'/'+self.__c['section']['key'])
+                if self.__c['section'].get(key):
+                    self.__c['section'][key] = os.path.normpath(root+'/'+self.__c['section'][key])
