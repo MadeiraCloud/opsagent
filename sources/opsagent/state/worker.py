@@ -336,7 +336,7 @@ class StateWorker(threading.Thread):
     def __recipe_delay(self):
         utils.log("INFO", "Last state reached, execution paused for %s minutes."%(self.__config['salt']['delay']),('__recipe_delay',self))
         self.__waitpid = os.fork()
-        if (pid == 0): # son
+        if (self.__waitpid == 0): # son
             time.sleep(int(self.__config['salt']['delay'])*60)
             sys.exit(0)
         else:
