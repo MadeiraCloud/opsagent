@@ -24,9 +24,11 @@ class StateRunner(object):
 		# init state
 		self._init_state()
 
-		# get os type
-		self.os_type = self.state.opts['grains']['os'].lower() if self.state.opts and \
-			'grains' in self.state.opts and 'os' in self.state.opts['grains'] else 'unknown'
+		# init os type
+		self._init_ostype()
+
+		# pkg cache dir
+		self._pkg_cache = config['pkg_cache'] if 'pkg_cache' in config and config['pkg_cache'] and isinstance(config['pkg_cache']) else '/tmp/'
 
 	def _init_opts(self, config):
 
@@ -69,6 +71,37 @@ class StateRunner(object):
 
 		self.state = State(self._salt_opts)
 
+	def _init_ostype(self):
+
+		try:
+			self.os_type = self.state.opts['grains']['os'].lower() if self.state.opts and \
+				'grains' in self.state.opts and 'os' in self.state.opts['grains'] else 'unknown'
+
+			if self.os_type == 'unknown':
+				import subprocess
+
+				config_file = self.__is_existed(['/etc/issue', '/etc/redhat-release'])
+
+				cmd = 'grep -io -E  "ubuntu|debian|centos|redhat|amazon" ' + config_file
+				subprocess.Popen(
+					cmd,
+					shell=True,
+					stdout=subprocess.PIPE,
+					stderr=subprocess.PIPE)
+
+				if process.returncode != 0:
+					utils.log("ERROR", "Excute cmd %s failed..."%cmd, ("_init_ostype", self))
+					raise ExcutionException("Excute cmd %s failed"%cmd)
+
+				out, err = process.communicate()
+				self.os_type = out
+		except ExcutionException, e:
+			utils.log("ERROR", "System config file unknown and cannot get agent os type", ("_init_ostype", self))
+			raise ExcutionException()
+		except Exception, e:
+			utils.log("ERROR", "Fetch agent's os type failed...", ("_init_ostype", self))
+			raise ExcutionException("Fetch agent's os type failed")
+
 	def exec_salt(self, states):
 		"""
 			Transfer and exec salt state.
@@ -80,79 +113,135 @@ class StateRunner(object):
 		out_log = ''
 
 		# check
+		if not states:
+			out_log = "Null states"
+			return (result, comment, out_log)
 		if not states or not isinstance(states, list):
-			out_log = "invalid state"
+			out_log = "Invalid state format %s" % str(states)
 			return (result, comment, out_log)
 
-		utils.log("INFO", "Begin to execute salt state...", ("exec_salt", self))
-		for idx, state in enumerate(states):
-			utils.log("INFO", "Begin to execute the %dth salt state..." % (idx+1), ("exec_salt", self))
-			ret = self.state.call_high(state)
-			if ret:
-				# parse the ret and return
-				utils.log("INFO", json.dumps(ret), ("exec_salt", self))
+		try:
+			# check whether contain specail module
+			if self._is_special(states):
+				self._enable_epel()
 
-				# set comment and output log
-				require_in_comment = ''
-				require_in_log = ''
-				for r_tag, r_value in ret.items():
-					if 'result' not in r_value:	continue 	# filter no result
+			utils.log("INFO", "Begin to execute salt state...", ("exec_salt", self))
+			for idx, state in enumerate(states):
+				utils.log("INFO", "Begin to execute the %dth salt state..." % (idx+1), ("exec_salt", self))
+				ret = self.state.call_high(state)
+				if ret:
+					# parse the ret and return
+					utils.log("INFO", json.dumps(ret), ("exec_salt", self))
 
-					# parse require in result
-					if 'require_in' in r_tag:
-						require_in_comment = '{0}{1}{2}'.format(
-								require_in_comment,
-								'\n\n' if require_in_comment else '',
+					# set comment and output log
+					require_in_comment = ''
+					require_in_log = ''
+					for r_tag, r_value in ret.items():
+						if 'result' not in r_value:	continue 	# filter no result
+
+						# parse require in result
+						if 'require_in' in r_tag:
+							require_in_comment = '{0}{1}{2}'.format(
+									require_in_comment,
+									'\n\n' if require_in_comment else '',
+									r_value['comment'] if 'comment' in r_value and r_value['comment'] else ''
+								)
+							require_in_log = '{0}{1}{2}'.format(
+									require_in_log,
+									'\n\n' if require_in_log else '',
+									r_value['state_stdout'] if 'state_stdout' in r_value and r_value['state_stdout'] else ''
+								)
+
+						# parse require result
+						elif 'require' in r_tag:
+							comment = '{0}{1}{2}'.format(
+								r_value['comment'] if 'comment' in r_value and r_value['comment'] else '',
+								'\n\n' if comment else '',
+								comment
+								)
+							out_log = '{0}{1}{2}'.format(
+								r_value['state_stdout'] if 'state_stdout' in r_value and r_value['state_stdout'] else '',
+								'\n\n' if out_log else '',
+								out_log
+								)
+
+						# parse common result
+						else:
+							comment = '{0}{1}{2}'.format(
+								comment,
+								'\n\n' if comment else '',
 								r_value['comment'] if 'comment' in r_value and r_value['comment'] else ''
-							)
-						require_in_log = '{0}{1}{2}'.format(
-								require_in_log,
-								'\n\n' if require_in_log else '',
+								)
+							out_log = '{0}{1}{2}'.format(
+								out_log,
+								'\n\n' if out_log else '',
 								r_value['state_stdout'] if 'state_stdout' in r_value and r_value['state_stdout'] else ''
-							)
+								)
 
-					# parse require result
-					elif 'require' in r_tag:
-						comment = '{0}{1}{2}'.format(
-							r_value['comment'] if 'comment' in r_value and r_value['comment'] else '',
-							'\n\n' if comment else '',
-							comment
-							)
-						out_log = '{0}{1}{2}'.format(
-							r_value['state_stdout'] if 'state_stdout' in r_value and r_value['state_stdout'] else '',
-							'\n\n' if out_log else '',
-							out_log
-							)
+						result = r_value['result']
+						# break when one state runs failed
+						if not result:
+							break
 
-					# parse common result
-					else:
-						comment = '{0}{1}{2}'.format(
-							comment,
-							'\n\n' if comment else '',
-							r_value['comment'] if 'comment' in r_value and r_value['comment'] else ''
-							)
-						out_log = '{0}{1}{2}'.format(
-							out_log,
-							'\n\n' if out_log else '',
-							r_value['state_stdout'] if 'state_stdout' in r_value and r_value['state_stdout'] else ''
-							)
+					# add require in comment and log
+					if require_in_comment:
+						comment += '\n\n' + require_in_comment
 
-					result = r_value['result']
-					# break when one state runs failed
-					if not result:
-						break
+					if require_in_log:
+						out_log += '\n\n' + require_in_log
 
-				# add require in comment and log
-				if require_in_comment:
-					comment += '\n\n' + require_in_comment
+				else:
+					out_log = "wait failed"
 
-				if require_in_log:
-					out_log += '\n\n' + require_in_log
+			return (result, comment, out_log)
+		except Exception, e:
+			utils.log("ERROR", str(e), ("exec_salt", self))
+			return (False, str(e), None)
 
-			else:
-				out_log = "wait failed"
+	def _is_special(self, states):
+		"""
+			Check whether contain gem/npm/pip state.
+		"""
+		is_special = False
+		for state in states:
+			for tag, module in state.iteritems():
+				if len([ m for m in module.keys() if m in['gem', 'npm', 'pip'] ]) > 0:
+					is_special = True
+					break
 
-		return (result, comment, out_log)
+		return is_special
+
+	def _enable_epel(self):
+		"""
+			Install and enbale epel in yum package manager system.
+		"""
+		if self.os_type not in ['centos', 'redhat', 'amazon']:	return
+
+		try:
+			if not self._pkg_cache.endswith('/'):	self._pkg_cache += '/'
+			self.__is_existed(self._pkg_cache+'epel-release-6-8.noarch.rpm')
+
+			import subprocess
+			if self.os_type in ['centos', 'redhat']:	# install with rpm on centos|redhat
+				cmd = 'rpm -ivh ' + self._pkg_cache + 'epel-release-6-8.noarch.rpm'
+			else:	# install with yum on amazon ami
+				cmd = 'yum -y install epel-release'
+
+			cmd += '; yum-config-manager --enable epel'
+
+			devnull = open('/dev/null', 'w')
+			subprocess.Popen(
+				cmd,
+				shell=True,
+				stdout=devnull,
+				stderr=devnull,
+				)
+		except ExcutionException, e:
+			util.log("ERROR", "Cannot find the epel rpm package in %s" % self._pkg_cache, ("_enable_epel", self))
+			raise ExcutionException("Cannot find the epel rpm package in %s" % self._pkg_cache)
+		except Exception, e:
+			utils.log("ERROR", "Enable epel repo failed...",("_enable_epel", self))
+			raise ExcutionException("Enable epel repo failed")
 
 	def __mkdir(self, path):
 		"""
@@ -166,6 +255,30 @@ class StateRunner(object):
 				return False
 
 		return True
+
+	def __is_existed(self, files):
+		"""
+			Check files whether existed.
+		"""
+		file_list = []
+
+		if isinstance(files, basestring):
+			file_list.append(files)
+		elif isinstance(files, list):
+			file_list = files
+		else:
+			raise ExcutionException("Not input files to check")
+
+		the_file = None
+		for file in file_list:
+			if os.path.isfile(file):
+				the_file = file
+				break
+
+		if not the_file:
+			raise ExcutionException("No files in %s existed." % files)
+
+		return the_file
 
 def main():
 
@@ -211,4 +324,4 @@ def main():
                 print "wait failed"
 
 if __name__ == '__main__':
-        main()
+		main()
