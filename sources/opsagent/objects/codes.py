@@ -14,8 +14,6 @@ PROTOCOL_VERSION=1
 HANDSHAKE="Handshake"
 # Init Answers
 APP_NOT_EXIST="AppNotReady"
-## Update Salt Modules TODO: remove
-#SALT_UPDATE="SaltUpdate" TODO: remove
 # States Server Push
 RECIPE_DATA="RecipeMetadata"
 # Wait Server Push
@@ -30,7 +28,7 @@ M_INVALID_WRITE="Can't write on socket"
 M_STOP="Shutting down"
 
 ## ERROR CODES
-C_INVALID_JSON_SEND=1000
-C_INVALID_JSON_RECV=1000
-C_INVALID_WRITE=1000
-C_STOP=1000
+C_INVALID_JSON_SEND=1101
+C_INVALID_JSON_RECV=1102
+C_INVALID_WRITE=1103
+C_STOP=1104

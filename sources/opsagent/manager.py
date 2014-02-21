@@ -103,7 +103,7 @@ class Manager(WebSocketClient):
             raise ManagerInvalidStateFormatException
 
         # check states
-        states = data.get("states")
+        states = data.get("state")
         if states:
             if type(states) is not list:
                 utils.log("ERROR", "Invalid states: not list.",('__act_recipe',self))
