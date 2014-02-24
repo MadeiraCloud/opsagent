@@ -46,31 +46,6 @@ def instance_id(config, manager):
         return instance_id(config, manager)
     return iid
 
-## Get app ID from AWS passed by Madeira
-#def app_id(config, manager):
-#    if not manager.running():
-#        utils.log("WARNING", "Execution aborting, exiting ...",('app_id','aws'))
-#        return None
-#    utils.log("DEBUG", "Getting app id ...",('instance_id','aws'))
-#    try:
-#        user_data = get_aws_data(config['network']['user_data'])
-#    except AWSNotFoundException:
-#        utils.log("ERROR", "User data not found, retrying in '%s' seconds."%(WAIT_RETRY),('user_data','aws'))
-#        time.sleep(WAIT_RETRY)
-#        return app_id(config)
-#    except Exception as e:
-#        utils.log("ERROR", "User data failure, unknown error: '%s', retrying in '%s' seconds."%(e,WAIT_RETRY),('user_data','aws'))
-#        time.sleep(WAIT_RETRY)
-#        return app_id(config)
-#    try:
-#        r = re.search("#app_id=(.+)\n",user_data)
-#        app_id = r.group(1)
-#    except Exception as e:
-#        utils.log("ERROR", "Can't get appid '%s', retrying in '%s' seconds."%(e,WAIT_RETRY),('user_data','aws'))
-#        time.sleep(WAIT_RETRY)
-#        return app_id(config)
-#    return app_id
-
 # Get token from disk
 def token(config):
     f = config['global'].get('token')
@@ -82,11 +57,3 @@ def token(config):
     except Exception as e:
         utils.log("ERROR", "Can't get retreive token file (%s): %s."%(f,e),('token','aws'))
     return t
-
-## TODO: remove
-#def app_id_t(config, manager):
-#    return ('ethylic')
-#def instance_id_t(config, manager):
-#    return ('slurry')
-#def token_t(config):
-#    return ('token')

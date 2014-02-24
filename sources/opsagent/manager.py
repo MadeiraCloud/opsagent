@@ -91,11 +91,11 @@ class Manager(WebSocketClient):
         module = data.get("module")
         if module and type(module) is dict:
             module_repo = module.get("repo")
-            if not module_repo or type(module_repo) is not str:
-                utils.log("ERROR", "Invalid modules branch.",('__act_recipe',self))
+            if not module_repo or not isinstance(module_repo, basestring):
+                utils.log("ERROR", "Invalid modules repo URI.",('__act_recipe',self))
                 raise ManagerInvalidStateFormatException
             module_tag = module.get("tag")
-            if not module_tag or type(module_tag) is not str:
+            if not module_tag or not isinstance(module_tag, basestring):
                 utils.log("ERROR", "Invalid modules tag.",('__act_recipe',self))
                 raise ManagerInvalidStateFormatException
         else:
@@ -163,7 +163,7 @@ class Manager(WebSocketClient):
             utils.log("ERROR", "Invalid version.",('__act_wait',self))
             raise ManagerInvalidWaitFormatException
         state_id = data.get("id")
-        if not state_id or type(state_id) is not str:
+        if not state_id or not isinstance(state_id, basestring):
             utils.log("ERROR", "Invalid state id.",('__act_wait',self))
             raise ManagerInvalidWaitFormatException
 
@@ -269,7 +269,6 @@ class Manager(WebSocketClient):
         if reset:
             utils.log("INFO", "Reset flag set, reseting states execution ...",('__close',self))
             self.__states_worker.kill()
-#            self.__states_worker.reset() TODO: remove?
             utils.log("DEBUG", "Reset succeed",('__close',self))
         utils.log("DEBUG", "Closing socket ...",('__close',self))
         self.close(code, reason)

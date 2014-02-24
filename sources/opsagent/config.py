@@ -40,14 +40,11 @@ class Config():
 
     defaultValues = {
         'global': {
-#            'loglvl': 'WARNING', #TODO: witch
+#            'loglvl': 'WARNING', #TODO: switch
             'loglvl': 'DEBUG',
             'proc': '/proc',
             'pidfile': '/tmp/opsagentd.pid',
             'haltfile': '/tmp/opsagentd.halt',
-#            'watch': '/etc/opsagent.d/watch',
-#            'token': '/etc/opsagent.d/token',
-#            'logfile': '/var/log/madeira/agent.log',
             },
         'runtime': {
             'proc': False,
@@ -55,11 +52,8 @@ class Config():
             },
         'network': {
             'instance_id': "http://169.254.169.254/latest/meta-data/instance-id",
-#            'ws_uri': "wss://api.madeiracloud.com/agent/",
-#            'user_data': "http://169.254.169.254/latest/user-data",
             },
         'salt': {
-#            'update_file': '/tmp/opsagent.salt.update',
             'srv_root': '/srv/salt',
             'extension_modules': '/var/cache/salt/minion/extmods',
             'cachedir': '/var/cache/madeira',

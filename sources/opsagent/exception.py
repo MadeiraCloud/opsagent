@@ -37,7 +37,7 @@ class OpsAgentException(Exception): pass
 
 
 # Custom imports
-from opsagent import utils
+from opsagent.utils import log
 
 
 # Decorators
@@ -48,7 +48,7 @@ def GeneralException(func):
             func_name = func.__name__
             return func(self, *args, **kwargs)
         except Exception as e:
-            utils.log("ERROR", "Uncaught error '%s'"%(str(e)),(func_name,class_name))
+            log("ERROR", "Uncaught error '%s'"%(str(e)),(func_name,class_name))
             raise OpsAgentException(e)
     return __action_with_decorator
 
@@ -59,5 +59,5 @@ def ThrowNoException(func):
             func_name = func.__name__
             return func(self, *args, **kwargs)
         except Exception as e:
-            utils.log("ERROR", "Uncaught error '%s'"%(str(e)),(func_name,class_name))
+            log("ERROR", "Uncaught error '%s'"%(str(e)),(func_name,class_name))
     return __action_with_decorator

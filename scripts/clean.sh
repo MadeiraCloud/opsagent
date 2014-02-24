@@ -4,6 +4,7 @@
 ## (c) 2014 MadeiraCloud LTD.
 ##
 
+OA_CONF_FILE=/etc/opsagent.conf
 OA_CONF_DIR=/etc/opsagent.d
 OA_LOG_DIR=/var/log/madeira
 OA_SRC_DIR=/opt/madeira
@@ -19,6 +20,7 @@ for id in `ps aux | grep opsagent | sed -e 's/  */ /g' | cut -d ' ' -f 2`; do
     kill -9 $id
 done
 
+rm -rf ${OA_CONF_FILE}
 rm -rf ${OA_CONF_DIR}
 rm -rf ${OA_LOG_DIR}
 rm -rf ${OA_SRC_DIR}
@@ -46,9 +48,6 @@ if [ "$2" = "debug" ]; then
         echo "Fatal: no service manager"
         exit 1
     fi
-#    cd ${OA_SALT_DIR}
-#    git checkout develop
-#    cd -
 fi
 
 

@@ -43,12 +43,8 @@ class StateWorker(threading.Thread):
 
         # state adaptor
         self.__state_adaptor = None
-#        from opsagent.state.adaptor import StateAdaptor
-#        self.__state_adaptor = StateAdaptor()
         # state runner
         self.__state_runner = None
-#        from opsagent.state.runner import StateRunner
-#        self.__state_runner = StateRunner(config=config['salt'])
 
         # events
         self.__cv = threading.Condition()
@@ -68,8 +64,8 @@ class StateWorker(threading.Thread):
 
         # builtins methods map
         self.__builtins = {
-            'meta.wait' : self.__exec_wait,
-            'meta.comment' : None,
+            'meta.wait': self.__exec_wait,
+            'meta.comment': None,
             }
 
         # wait pid
@@ -232,8 +228,6 @@ class StateWorker(threading.Thread):
             self.__states = states
         else:
             utils.log("INFO", "No change in states.",('load',self))
-#        utils.log("DEBUG", "Reseting status.",('load',self))
-#        self.reset()
         utils.log("DEBUG", "Allow to run.",('load',self))
         self.__run = True
         utils.log("DEBUG", "Notify execution thread.",('load',self))

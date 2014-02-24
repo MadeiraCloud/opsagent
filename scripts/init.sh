@@ -53,7 +53,7 @@ chmod 640 ${OA_LOG_FILE}
 
 # Generates config file
 if [ ! -f ${OA_CONFIG_FILE} ]; then
-cat <<EOF > ${OA_CONFIG_FILE}
+    cat <<EOF > ${OA_CONFIG_FILE}
 [global]
 envroot=${OA_ENV_DIR}
 token=${OA_TOKEN}
@@ -74,9 +74,9 @@ chown ${OA_USER}:root ${OA_CONFIG_FILE}
 chmod 640 ${OA_CONFIG_FILE}
 
 # Setup git
-if [ $(which apt-get) ]; then
+if [ $(which apt-get 2>/dev/null) ]; then
     apt-get -y -q install git
-elif [ $(which yum) ]; then
+elif [ $(which yum 2>/dev/null) ]; then
     yum -y -q install git
 fi
 
@@ -84,17 +84,19 @@ fi
 function update_sources() {
     RET=0
     if [ -f ${OA_BOOT_DIR}/${1}.tgz ]; then
-        CUR_VERSION="$(cat ${OA_BOOT_DIR}/${1}.cksum)"
+        CUR_VERSION="$(cat ${OA_BOOT_DIR}/${1}.cksum 2>/dev/null)"
         RETVAL_CUR=$?
-        LAST_VERSION="$(curl -sSL ${OA_REMOTE}/${1}.cksum)"
+        LAST_VERSION="$(curl -sSL ${OA_REMOTE}/${1}.cksum 2>/dev/null)"
         RETVAL_LAST=$?
         VALID="$(echo $LAST_VERSION | grep ${1}.tgz | wc -l)"
         RETVAL_VALID=$?
+        ## TODO: remove
         echo "RETVAL_CUR=$RETVAL_CUR" 1>&2
         echo "RETVAL_LAST=$RETVAL_LAST" 1>&2
         echo "RETVAL_VALID=$RETVAL_VALID" 1>&2
         echo "VALID=$VALID" 1>&2
         echo "CUR_VERSION=$CUR_VERSION" 1>&2
+        ## /TODO
         if ([ "$RETVAL_CUR" != "0" ]) \
             || \
             ([ "$RETVAL_LAST" = "0" ] && [ "$RETVAL_VALID" = "0" ] && [ "$VALID" = "1" ] && [ "$CUR_VERSION" != "$LAST_VERSION" ])
@@ -146,34 +148,6 @@ if [ ${UPDATE_AGENT} -ne 0 ]; then
 else
     echo "don't update agent"
 fi
-## get salt repo
-#if [ ! -d ${OA_BOOT_DIR}/${OA_SALT} ]; then
-#    git clone ${SALT_REPO_URI} ${OA_BOOT_DIR}/${OA_SALT}
-#    cd ${OA_BOOT_DIR}/${OA_SALT}
-#    git checkout ${SALT_REPO_BRANCH}
-#    cd -
-#    UPDATE_SALT=2
-#elif [ -f ${SALT_UPDATE_FILE} ]; then
-#    cd ${OA_BOOT_DIR}/${OA_SALT}
-#    CHANGE=$(git fetch origin ${SALT_REPO_BRANCH} | grep "origin/${SALT_REPO_BRANCH}" | wc -l)
-#    if [ ${CHANGE} -ne 0 ]; then
-#        UPDATE_SALT=1
-#    else
-#        UPDATE_SALT=0
-#        rm -f ${SALT_UPDATE_FILE}
-#    fi
-#    cd -
-#else
-#    UPDATE_SALT=0
-#fi
-#UPDATE_SALT=$(update_sources ${OA_SALT})
-#echo "UPDATESALT=$UPDATE_SALT"
-#if [ ${UPDATE_SALT} -ne 0 ]; then
-#    echo "update salt"
-#    get_sources ${OA_SALT}
-#else
-#    echo "don't update salt"
-#fi
 
 # shudown agent
 if [ ${UPDATE_AGENT} -ne 0 ] && [ -d ${OA_ENV_DIR} ]; then
@@ -196,27 +170,7 @@ else
     echo "don't bootstrap agent"
 fi
 
-## bootstrap salt
-#if [ ${UPDATE_AGENT} -ne 0 ] || [ ${UPDATE_SALT} -ne 0 ]; then
-#    if [ ${UPDATE_AGENT} -eq 0 ]; then
-#        echo "stop agent (bootstrap salt)"
-#        service opsagentd stop-end
-#    fi
-#    echo "bootstrap salt"
-#    if [ ${UPDATE_SALT} -eq 1 ]; then
-#        cd ${OA_BOOT_DIR}/${OA_SALT}
-#        git reset --hard FETCH_HEAD
-#        git clean -df
-#        rm -f ${SALT_UPDATE_FILE}
-#        cd -
-#    fi
-#    source ${OA_BOOT_DIR}/${OA_SALT}/${SRC_SCRIPTS_DIR}/bootstrap.sh
-#else
-#    echo "don't bootstrap salt"
-#fi
-
 # load agent
-#if [ ${UPDATE_AGENT} -ne 0 ] || [ ${UPDATE_SALT} -ne 0 ]; then
 if [ ${UPDATE_AGENT} -ne 0 ]; then
     echo "load agent"
     service opsagentd start
