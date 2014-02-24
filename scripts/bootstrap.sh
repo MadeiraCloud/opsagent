@@ -51,7 +51,7 @@ cp -r ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_SOURCES_DIR}/opsagent ${OA_ENV_DIR}/lib/$
 chown -R ${OA_USER}:root ${OA_ENV_DIR}
 
 # Copy launch script editing shebang
-sed -e "s|#!/usr/bin/python|#!/${OA_ENV_DIR}/bin/python|g" < ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_SCRIPTS_DIR}/opsagent > ${OA_ENV_DIR}/bin/opsagent
+sed -e "s|#!/usr/bin/python|#!${OA_ENV_DIR}/bin/python|g" < ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_SCRIPTS_DIR}/opsagent > ${OA_ENV_DIR}/bin/opsagent
 chown ${OA_USER}:root ${OA_ENV_DIR}/bin/opsagent
 chmod 554 ${OA_ENV_DIR}/bin/opsagent
 

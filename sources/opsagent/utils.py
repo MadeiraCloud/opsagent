@@ -66,7 +66,7 @@ def uni2str(data):
 # clone a git repository
 def clone_repo(path, name, uri):
     try:
-        subprocess.check_output(("git clone %s %s"%(uri,name)).split(),cmd=path)
+        subprocess.check_output(("git clone %s %s"%(uri,name)).split(),cwd=path)
     except Exception as e:
         log("ERROR", "Can't clone %s repo from %s: %s"%(name,uri,e),('clone_repo','utils'))
         raise ManagerInvalidStatesRepoException
@@ -84,7 +84,7 @@ def checkout_repo(path, name, tag, uri, n=0):
     path = os.path.normpath(path+'/'+name)
     for cmd in commands:
         try:
-            subprocess.check_output(cmd.split(),cmd=path)
+            subprocess.check_output(cmd.split(),cwd=path)
         except Exception as e:
             log("WARNING", "Can't update %s repo on %s tag: %s"%(name,tag,e),('checkout_repo','utils'))
             clone_repo(path, name, uri)

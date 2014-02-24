@@ -121,7 +121,7 @@ class Manager(WebSocketClient):
         # update repo
         clone = False
         if module_repo != self.__config['module']['mod_repo']:
-            utils.log("DEBUG", ".",('__act_recipe',self))
+            utils.log("DEBUG", "Cloning repo...",('__act_recipe',self))
             clone = utils.clone_repo(self.__config['module']['root'],self.__config['module']['name'],module_repo)
             self.__config['module']['mod_repo'] = module_repo
             try:
