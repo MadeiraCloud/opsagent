@@ -41,11 +41,11 @@ OA_EXEC_FILE=${OA_EXEC_FILE}
 
 if [ -f \${OA_EXEC_FILE} ]; then
     OLD_PID="\$(cat \${OA_EXEC_FILE})"
-    if [ $(ps aux | grep \${OLD_PID} | wc -l) -eq 0 ]; then
-        rm -f \${OA_EXEC_FILE}
-    else
+    if [ $(ps -eo pid,comm | tr -d ' ' | grep \${OLD_PID} | wc -l) -ne 0 ]; then
         echo "Bootstrap already running ..."
         exit 0
+    else
+        rm -f \${OA_EXEC_FILE}
     fi
 fi
 
@@ -62,7 +62,7 @@ APP_ID=${APP_ID}
 WS_URI=${WS_URI}
 
 # set working file
-echo \$$ > \${OA_EXEC_FILE}
+ps -eo pid,comm | tr -d ' ' | grep '^\$$' > \${OA_EXEC_FILE}
 
 # Set bootstrap log with restrictive access rights
 if [ ! -f \${OA_LOG_DIR}/bootstrap.log ]; then

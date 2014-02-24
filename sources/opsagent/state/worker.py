@@ -17,7 +17,12 @@ import hashlib
 # Custom imports
 from opsagent import utils
 from opsagent.objects import send
-from opsagent.exception import SWNoManagerException,StateException,ExecutionException,SWWaitFormatException
+from opsagent.exception import \
+    OpsAgentException, \
+    SWNoManagerException, \
+    StateException, \
+    ExecutionException, \
+    SWWaitFormatException
 ##
 
 ## DEFINES
@@ -204,36 +209,43 @@ class StateWorker(threading.Thread):
         utils.log("DEBUG", "Conditional lock acquired.",('load',self))
         self.__version = version
 
-        # state adaptor
-        if self.__state_adaptor:
-            utils.log("DEBUG", "Deleting adaptor...",('load',self))
-            del self.__state_adaptor
-        utils.log("DEBUG", "Loading adaptor...",('load',self))
-        import opsagent.state.adaptor
-        reload(opsagent.state.adaptor)
-        from opsagent.state.adaptor import StateAdaptor
-        self.__state_adaptor = StateAdaptor()
-        # state runner
-        if self.__state_runner:
-            utils.log("DEBUG", "Deleting runner...",('load',self))
-            del self.__state_runner
-        utils.log("DEBUG", "Loading runner...",('load',self))
-        import opsagent.state.runner
-        reload(opsagent.state.runner)
-        from opsagent.state.runner import StateRunner
-        self.__state_runner = StateRunner(config=self.__config['salt'])
+        exp = None
+        try:
+            # state adaptor
+            if self.__state_adaptor:
+                utils.log("DEBUG", "Deleting adaptor...",('load',self))
+                del self.__state_adaptor
+            utils.log("DEBUG", "Loading adaptor...",('load',self))
+            import opsagent.state.adaptor
+            reload(opsagent.state.adaptor)
+            from opsagent.state.adaptor import StateAdaptor
+            self.__state_adaptor = StateAdaptor()
+            # state runner
+            if self.__state_runner:
+                utils.log("DEBUG", "Deleting runner...",('load',self))
+                del self.__state_runner
+            utils.log("DEBUG", "Loading runner...",('load',self))
+            import opsagent.state.runner
+            reload(opsagent.state.runner)
+            from opsagent.state.runner import StateRunner
+            self.__state_runner = StateRunner(config=self.__config['salt'])
 
-        if states:
-            utils.log("INFO", "Loading new states.",('load',self))
-            self.__states = states
-        else:
-            utils.log("INFO", "No change in states.",('load',self))
-        utils.log("DEBUG", "Allow to run.",('load',self))
-        self.__run = True
+            if states:
+                utils.log("INFO", "Loading new states.",('load',self))
+                self.__states = states
+            else:
+                utils.log("INFO", "No change in states.",('load',self))
+            utils.log("DEBUG", "Allow to run.",('load',self))
+            self.__run = True
+        except Exception as e:
+            exp = OpsAgentException(e)
+
         utils.log("DEBUG", "Notify execution thread.",('load',self))
         self.__cv.notify()
         utils.log("DEBUG", "Release conditional lock.",('load',self))
         self.__cv.release()
+
+        if exp: raise exp
     ##
 
 
