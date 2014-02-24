@@ -24,7 +24,7 @@ from opsagent.state.worker import StateWorker
 
 # general defines
 USAGE = 'usage: %prog [-hqv] [-l logfile] [-c configfile] (start|stop|restart|stop-wait|restart-wait)'
-VERSION_NBR = '0.0.1a'
+VERSION_NBR = '0.1a'
 VERSION = '%prog '+VERSION_NBR
 
 

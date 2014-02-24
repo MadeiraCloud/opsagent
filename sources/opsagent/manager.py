@@ -122,7 +122,7 @@ class Manager(WebSocketClient):
         clone = False
         if module_repo != self.__config['module']['mod_repo']:
             utils.log("DEBUG", "Cloning repo...",('__act_recipe',self))
-            clone = utils.clone_repo(self.__config['module']['root'],self.__config['module']['name'],module_repo)
+            clone = utils.clone_repo(self.__config, self.__config['module']['root'],self.__config['module']['name'],module_repo)
             self.__config['module']['mod_repo'] = module_repo
             try:
                 with open(self.__config['runtime']['config_path'], 'r+') as f:
@@ -132,7 +132,7 @@ class Manager(WebSocketClient):
             except Exception as e:
                 utils.log("WARNING", "Can't save URI repo in config file '%s': %e"%(self.__config['runtime']['config_path'],e),('__act_recipe',self))
         if clone or module_tag != self.__config['module']['mod_tag']:
-            utils.checkout_repo(self.__config['module']['root'],self.__config['module']['name'],module_tag,module_repo)
+            utils.checkout_repo(self.__config, self.__config['module']['root'],self.__config['module']['name'],module_tag,module_repo)
             self.__config['module']['mod_tag'] = module_tag
             try:
                 with open(self.__config['runtime']['config_path'], 'r+') as f:

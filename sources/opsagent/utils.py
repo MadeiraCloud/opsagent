@@ -10,9 +10,11 @@ import time
 import collections
 import subprocess
 import os
+import shutil
 
 # Custom imports
 from opsagent.exception import ManagerInvalidStatesRepoException
+
 
 # Defines
 DEBUG_DELAY=0.1
@@ -64,18 +66,30 @@ def uni2str(data):
         return data
 
 # clone a git repository
-def clone_repo(path, name, uri):
+def clone_repo(config, path, name, uri):
     try:
+        shutil.rmtree(os.path.normpath(path+'/'+name))
+#        subprocess.check_output(("rm -rf %s"%(os.path.normpath(path+'/'+name))).split(),cwd=path) # TODO: remove
         subprocess.check_output(("git clone %s %s"%(uri,name)).split(),cwd=path)
+        try:
+            os.unlink(os.path.normpath(config['global']['package_path']+'/'+config['module']['name']))
+        except Exception:
+            log("DEBUG", "Exception while unlinking %s: %s"%(os.path.normpath(config['global']['package_path']+'/'+config['module']['name']),e),('clone_repo','utils'))
+        os.link(os.path.normpath(path+'/'+name+'/'+config['module']['src_salt']),os.path.normpath(config['global']['package_path']+'/'+config['module']['name']))
+        try:
+            os.unlink(os.path.normpath(config['global']['package_path']+'/'+config['module']['dst_adaptor']))
+        except Exception:
+            log("DEBUG", "Exception while unlinking %s: %s"%(os.path.normpath(config['global']['package_path']+'/'+config['module']['dst_adaptor']),e),('clone_repo','utils'))
+        os.link(os.path.normpath(path+'/'+name+'/'+config['module']['src_adaptor']),os.path.normpath(config['global']['package_path']+'/'+config['module']['dst_adaptor']))
     except Exception as e:
         log("ERROR", "Can't clone %s repo from %s: %s"%(name,uri,e),('clone_repo','utils'))
         raise ManagerInvalidStatesRepoException
     return True
 
 # clone a git branch/tag
-def checkout_repo(path, name, tag, uri, n=0):
+def checkout_repo(config, path, name, tag, uri, n=0):
     commands = [
-        "git reset --hard FETCH_HEAD",
+#        "git reset --hard FETCH_HEAD",
         "git clean -df",
         "git pull",
         "git checkout %s"%(tag),
@@ -87,9 +101,9 @@ def checkout_repo(path, name, tag, uri, n=0):
             subprocess.check_output(cmd.split(),cwd=path)
         except Exception as e:
             log("WARNING", "Can't update %s repo on %s tag: %s"%(name,tag,e),('checkout_repo','utils'))
-            clone_repo(path, name, uri)
+            clone_repo(config, path, name, uri)
             if n == 0:
-                checkout_repo(path, name, tag, uri, n+1)
+                checkout_repo(config, path, name, tag, uri, n+1)
             else:
                 log("ERROR", "Can't switch to requested after cloning clean repo, aborting.",('checkout_repo','utils'))
                 raise ManagerInvalidStatesRepoException

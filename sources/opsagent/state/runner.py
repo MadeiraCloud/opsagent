@@ -28,7 +28,7 @@ class StateRunner(object):
 		self._init_ostype()
 
 		# pkg cache dir
-		self._pkg_cache = config['pkg_cache'] if 'pkg_cache' in config and config['pkg_cache'] and isinstance(config['pkg_cache']) else '/tmp/'
+		self._pkg_cache = (config['pkg_cache'] if 'pkg_cache' in config and config['pkg_cache'] and isinstance(config['pkg_cache']) else '/tmp/')
 
 	def _init_opts(self, config):
 
@@ -83,7 +83,7 @@ class StateRunner(object):
 				config_file = self.__is_existed(['/etc/issue', '/etc/redhat-release'])
 
 				cmd = 'grep -io -E  "ubuntu|debian|centos|redhat|amazon" ' + config_file
-				subprocess.Popen(
+				process = subprocess.Popen(
 					cmd,
 					shell=True,
 					stdout=subprocess.PIPE,
@@ -91,16 +91,16 @@ class StateRunner(object):
 
 				if process.returncode != 0:
 					utils.log("ERROR", "Excute cmd %s failed..."%cmd, ("_init_ostype", self))
-					raise ExcutionException("Excute cmd %s failed"%cmd)
+					raise ExecutionException("Excute cmd %s failed"%cmd)
 
 				out, err = process.communicate()
 				self.os_type = out
-		except ExcutionException, e:
+		except ExecutionException, e:
 			utils.log("ERROR", "System config file unknown and cannot get agent os type", ("_init_ostype", self))
-			raise ExcutionException()
+			raise ExecutionException()
 		except Exception, e:
 			utils.log("ERROR", "Fetch agent's os type failed...", ("_init_ostype", self))
-			raise ExcutionException("Fetch agent's os type failed")
+			raise ExecutionException("Fetch agent's os type failed")
 
 	def exec_salt(self, states):
 		"""
@@ -236,12 +236,12 @@ class StateRunner(object):
 				stdout=devnull,
 				stderr=devnull,
 				)
-		except ExcutionException, e:
-			util.log("ERROR", "Cannot find the epel rpm package in %s" % self._pkg_cache, ("_enable_epel", self))
-			raise ExcutionException("Cannot find the epel rpm package in %s" % self._pkg_cache)
+		except ExecutionException, e:
+			utils.log("ERROR", "Cannot find the epel rpm package in %s" % self._pkg_cache, ("_enable_epel", self))
+			raise ExecutionException("Cannot find the epel rpm package in %s" % self._pkg_cache)
 		except Exception, e:
 			utils.log("ERROR", "Enable epel repo failed...",("_enable_epel", self))
-			raise ExcutionException("Enable epel repo failed")
+			raise ExecutionException("Enable epel repo failed")
 
 	def __mkdir(self, path):
 		"""
@@ -267,7 +267,7 @@ class StateRunner(object):
 		elif isinstance(files, list):
 			file_list = files
 		else:
-			raise ExcutionException("Not input files to check")
+			raise ExecutionException("Not input files to check")
 
 		the_file = None
 		for file in file_list:
@@ -276,7 +276,7 @@ class StateRunner(object):
 				break
 
 		if not the_file:
-			raise ExcutionException("No files in %s existed." % files)
+			raise ExecutionException("No files in %s existed." % files)
 
 		return the_file
 

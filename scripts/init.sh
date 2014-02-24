@@ -56,6 +56,7 @@ if [ ! -f ${OA_CONFIG_FILE} ]; then
     cat <<EOF > ${OA_CONFIG_FILE}
 [global]
 envroot=${OA_ENV_DIR}
+package_path=${OA_ENV_DIR}/lib/${PYTHON}/site-packages
 token=${OA_TOKEN}
 watch=${OA_WATCH_DIR}
 logfile=${OA_LOG_FILE}

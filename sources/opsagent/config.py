@@ -21,6 +21,7 @@ class Config():
     requiredKeys = {
         'global': {
             'envroot': "Virtual environment root",
+            'package_path': "Relative to envroot runtime package location",
             'token': "Unique identification file path",
             'watch': "Watched files checksum location",
             'logfile': "Log file location",
@@ -61,6 +62,9 @@ class Config():
             'timeout': '30',
             },
         'module': {
+            'dst_adaptor': 'opsagent/state/adaptor.py',
+            'src_salt': 'sources/salt',
+            'src_adaptor': 'sources/adaptor.py',
             },
         }
 
