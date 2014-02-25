@@ -187,6 +187,7 @@ class Manager(WebSocketClient):
             self.__config['salt']['srv_root'],
             self.__config['salt']['extension_modules'],
             self.__config['salt']['cachedir'],
+            self.__config['module']['root'],
             ]
         errors = []
         for directory in dirs:

@@ -73,12 +73,12 @@ def clone_repo(config, path, name, uri):
         subprocess.check_output(("git clone %s %s"%(uri,name)).split(),cwd=path)
         try:
             os.unlink(os.path.normpath(config['global']['package_path']+'/'+config['module']['name']))
-        except Exception:
+        except Exception as e:
             log("DEBUG", "Exception while unlinking %s: %s"%(os.path.normpath(config['global']['package_path']+'/'+config['module']['name']),e),('clone_repo','utils'))
-        os.link(os.path.normpath(path+'/'+name+'/'+config['module']['src_salt']),os.path.normpath(config['global']['package_path']+'/'+config['module']['name']))
+        os.symlink(os.path.normpath(path+'/'+name+'/'+config['module']['src_salt']),os.path.normpath(config['global']['package_path']+'/'+config['module']['name']))
         try:
             os.unlink(os.path.normpath(config['global']['package_path']+'/'+config['module']['dst_adaptor']))
-        except Exception:
+        except Exception as e:
             log("DEBUG", "Exception while unlinking %s: %s"%(os.path.normpath(config['global']['package_path']+'/'+config['module']['dst_adaptor']),e),('clone_repo','utils'))
         os.link(os.path.normpath(path+'/'+name+'/'+config['module']['src_adaptor']),os.path.normpath(config['global']['package_path']+'/'+config['module']['dst_adaptor']))
     except Exception as e:
