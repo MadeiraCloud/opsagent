@@ -55,6 +55,7 @@ class Config():
             'instance_id': "http://169.254.169.254/latest/meta-data/instance-id",
             },
         'salt': {
+            'pkg_cache': '/var/cache/pkg'
             'srv_root': '/srv/salt',
             'extension_modules': '/var/cache/salt/minion/extmods',
             'cachedir': '/var/cache/madeira',
@@ -62,14 +63,17 @@ class Config():
             'timeout': '30',
             },
         'module': {
+            # Locations relatives to modules directory (default /opt/madeira/env/lib/python-*/sites-package)
             'dst_adaptor': 'opsagent/state/adaptor.py',
+            # Locations relatives to salt repository (default /opt/madeira/boostrap/salt)
             'src_salt': 'sources/salt',
             'src_adaptor': 'sources/adaptor.py',
             },
         }
 
     chrootKeys = {
-        'salt': ['srv_root','extension_modules','cachedir'],
+        # 'Chrooted' to curent environment (default /opt/madeira/env)
+        'salt': ['pkg_cache','srv_root','extension_modules','cachedir'],
         }
 
     def __init__(self, f=None):

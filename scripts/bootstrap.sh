@@ -65,6 +65,8 @@ chmod 640 ${OA_CONFIG_FILE}
 
 # create virtualenv
 ${PYTHON} ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_LIBS_DIR}/virtualenv/virtualenv.py ${OA_ENV_DIR}
+# copy EPEL rpm
+cp -r ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_LIBS_DIR}/epel/`uname -p`/${OA_EPEL_FILE} ${OA_PKG_CACHE_DIR}/
 # copy websocket libs
 cp -r ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_LIBS_DIR}/ws4py ${OA_ENV_DIR}/lib/${PYTHON}/site-packages/
 # copy salt dependencies
