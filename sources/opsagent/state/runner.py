@@ -237,11 +237,11 @@ class StateRunner(object):
 				stderr=devnull,
 				)
 		except ExecutionException, e:
-			utils.log("ERROR", "Cannot find the epel rpm package in %s" % self._pkg_cache, ("_enable_epel", self))
-			raise ExecutionException("Cannot find the epel rpm package in %s" % self._pkg_cache)
+			utils.log("WARNING", "Cannot find the epel rpm package in %s" % self._pkg_cache, ("_enable_epel", self))
+			return
 		except Exception, e:
-			utils.log("ERROR", "Enable epel repo failed...",("_enable_epel", self))
-			raise ExecutionException("Enable epel repo failed")
+			utils.log("WARNING", "Enable epel repo failed...",("_enable_epel", self))
+			return
 
 	def __mkdir(self, path):
 		"""
