@@ -21,7 +21,7 @@ OA_CONFIG_FILE=/etc/opsagent.conf
 
 # Packages cache directory
 OA_PKG_CACHE_DIR=${OA_ENV_DIR}/var/cache/pkg
-OA_EPEL_FILE=epel-release-6-8.noarch.rpm
+OA_EPEL_FILE="epel-release-6-8.noarch.rpm"
 
 # OpsAgent files
 OA_AGENT=opsagent
@@ -40,10 +40,6 @@ mkdir -p ${OA_LOG_DIR}
 mkdir -p ${OA_ROOT_DIR}
 mkdir -p ${OA_BOOT_DIR}
 mkdir -p ${OA_PKG_CACHE_DIR}
-
-# set cache directory
-chown ${OA_USER}:root ${OA_PKG_CACHE_DIR}
-chmod 755 ${OA_PKG_CACHE_DIR}
 
 # Generate token
 if [ ! -f ${OA_TOKEN} ]; then

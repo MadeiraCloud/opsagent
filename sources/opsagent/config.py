@@ -55,7 +55,7 @@ class Config():
             'instance_id': "http://169.254.169.254/latest/meta-data/instance-id",
             },
         'salt': {
-            'pkg_cache': '/var/cache/pkg'
+            'pkg_cache': '/var/cache/pkg',
             'srv_root': '/srv/salt',
             'extension_modules': '/var/cache/salt/minion/extmods',
             'cachedir': '/var/cache/madeira',

@@ -8,20 +8,20 @@
 if [ $(which apt-get 2>/dev/null) ]; then
     # install python
     echo "Platform: APT"
-    apt-get -y -q install python2.7
+    apt-get -y -q install python2.7 2>/dev/null
     if [ $? -ne 0 ]; then
         echo "Failed to install python 2.7, trying with python 2.6 ..."
-        apt-get -y -q install python2.6
+        apt-get -y -q install python2.6 2>/dev/null
     fi
     # install other dependencies
     apt-get -y -q install python-apt expect-dev
 elif [ $(which yum 2>/dev/null) ]; then
     # install python
     echo "Platform: YUM"
-    yum -y -q install python27
+    yum -y -q install python27 2>/dev/null
     if [ $? -ne 0 ]; then
         echo "Failed to install python 2.7, trying with python 2.6 ..."
-        yum -y -q install python26
+        yum -y -q install python26 2>/dev/null
     fi
     # install other dependencies
     yum -y -q install expect yum-utils
@@ -65,8 +65,12 @@ chmod 640 ${OA_CONFIG_FILE}
 
 # create virtualenv
 ${PYTHON} ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_LIBS_DIR}/virtualenv/virtualenv.py ${OA_ENV_DIR}
+# set cache directory
+chown ${OA_USER}:root ${OA_PKG_CACHE_DIR}
+chmod 755 ${OA_PKG_CACHE_DIR}
 # copy EPEL rpm
-cp -r ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_LIBS_DIR}/epel/`uname -p`/${OA_EPEL_FILE} ${OA_PKG_CACHE_DIR}/
+ARCH=`uname -p`
+cp -r ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_LIBS_DIR}/epel/${ARCH}/${OA_EPEL_FILE} ${OA_PKG_CACHE_DIR}/
 # copy websocket libs
 cp -r ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_LIBS_DIR}/ws4py ${OA_ENV_DIR}/lib/${PYTHON}/site-packages/
 # copy salt dependencies
