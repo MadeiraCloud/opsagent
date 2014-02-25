@@ -38,6 +38,31 @@ else
     exit 1
 fi
 
+
+# Generates config file
+if [ ! -f ${OA_CONFIG_FILE} ]; then
+    cat <<EOF > ${OA_CONFIG_FILE}
+[global]
+envroot=${OA_ENV_DIR}
+package_path=${OA_ENV_DIR}/lib/${PYTHON}/site-packages
+token=${OA_TOKEN}
+watch=${OA_WATCH_DIR}
+logfile=${OA_LOG_FILE}
+[network]
+ws_uri=${WS_URI}
+app_id=${APP_ID}
+[module]
+root=${OA_BOOT_DIR}
+name=${OA_SALT}
+bootstrap=${SRC_SCRIPTS_DIR}/bootstrap.sh
+mod_repo=
+mod_tag=
+EOF
+fi
+chown ${OA_USER}:root ${OA_CONFIG_FILE}
+chmod 640 ${OA_CONFIG_FILE}
+
+
 # create virtualenv
 ${PYTHON} ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_LIBS_DIR}/virtualenv/virtualenv.py ${OA_ENV_DIR}
 # copy websocket libs

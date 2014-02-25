@@ -51,29 +51,6 @@ fi
 chown ${OA_USER}:root ${OA_LOG_FILE}
 chmod 640 ${OA_LOG_FILE}
 
-# Generates config file
-if [ ! -f ${OA_CONFIG_FILE} ]; then
-    cat <<EOF > ${OA_CONFIG_FILE}
-[global]
-envroot=${OA_ENV_DIR}
-package_path=${OA_ENV_DIR}/lib/${PYTHON}/site-packages
-token=${OA_TOKEN}
-watch=${OA_WATCH_DIR}
-logfile=${OA_LOG_FILE}
-[network]
-ws_uri=${WS_URI}
-app_id=${APP_ID}
-[module]
-root=${OA_BOOT_DIR}
-name=${OA_SALT}
-bootstrap=${SRC_SCRIPTS_DIR}/bootstrap.sh
-mod_repo=
-mod_tag=
-EOF
-fi
-chown ${OA_USER}:root ${OA_CONFIG_FILE}
-chmod 640 ${OA_CONFIG_FILE}
-
 # Setup git
 if [ $(which apt-get 2>/dev/null) ]; then
     apt-get -y -q install git

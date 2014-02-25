@@ -68,19 +68,22 @@ def uni2str(data):
 # clone a git repository
 def clone_repo(config, path, name, uri):
     try:
-        shutil.rmtree(os.path.normpath(path+'/'+name))
+        try:
+            shutil.rmtree(os.path.normpath(path+'/'+name))
+        except Exception as e:
+            log("DEBUG", "Exception while removing directory %s: %s"%(os.path.normpath(path+'/'+name),e),('clone_repo','utils'))
 #        subprocess.check_output(("rm -rf %s"%(os.path.normpath(path+'/'+name))).split(),cwd=path) # TODO: remove
         subprocess.check_output(("git clone %s %s"%(uri,name)).split(),cwd=path)
         try:
             os.unlink(os.path.normpath(config['global']['package_path']+'/'+config['module']['name']))
-        except Exception:
+        except Exception as e:
             log("DEBUG", "Exception while unlinking %s: %s"%(os.path.normpath(config['global']['package_path']+'/'+config['module']['name']),e),('clone_repo','utils'))
-        os.link(os.path.normpath(path+'/'+name+'/'+config['module']['src_salt']),os.path.normpath(config['global']['package_path']+'/'+config['module']['name']))
+        os.symlink(os.path.normpath(path+'/'+name+'/'+config['module']['src_salt']),os.path.normpath(config['global']['package_path']+'/'+config['module']['name']))
         try:
             os.unlink(os.path.normpath(config['global']['package_path']+'/'+config['module']['dst_adaptor']))
-        except Exception:
+        except Exception as e:
             log("DEBUG", "Exception while unlinking %s: %s"%(os.path.normpath(config['global']['package_path']+'/'+config['module']['dst_adaptor']),e),('clone_repo','utils'))
-        os.link(os.path.normpath(path+'/'+name+'/'+config['module']['src_adaptor']),os.path.normpath(config['global']['package_path']+'/'+config['module']['dst_adaptor']))
+        os.symlink(os.path.normpath(path+'/'+name+'/'+config['module']['src_adaptor']),os.path.normpath(config['global']['package_path']+'/'+config['module']['dst_adaptor']))
     except Exception as e:
         log("ERROR", "Can't clone %s repo from %s: %s"%(name,uri,e),('clone_repo','utils'))
         raise ManagerInvalidStatesRepoException

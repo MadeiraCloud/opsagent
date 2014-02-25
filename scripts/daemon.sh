@@ -28,7 +28,7 @@ case "$1" in
     ;;
   restart)
     echo "Restarting opsagent"
-    ${OA_ROOT}/env/bin/opsagent restart
+    ${OA_ROOT}/env/bin/opsagent -c /etc/opsagent.conf restart
     ;;
   stop-wait)
     echo "Stopping opsagent waiting state end"
@@ -36,7 +36,7 @@ case "$1" in
     ;;
   restart-wait)
     echo "Restarting opsagent waiting state end"
-    ${OA_ROOT}/env/bin/opsagent restart-wait
+    ${OA_ROOT}/env/bin/opsagent -c /etc/opsagent.conf restart-wait
     ;;
   stop-end)
     echo "Stopping opsagent waiting recipe end"
@@ -44,7 +44,7 @@ case "$1" in
     ;;
   restart-end)
     echo "Restarting opsagent waiting recipe end"
-    ${OA_ROOT}/env/bin/opsagent restart-end
+    ${OA_ROOT}/env/bin/opsagent -c /etc/opsagent.conf restart-end
     ;;
   status)
     ${OA_ROOT}/env/bin/opsagent status
