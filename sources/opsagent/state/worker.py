@@ -73,8 +73,8 @@ class StateWorker(threading.Thread):
             'meta.comment': None,
             }
 
-        # wait pid
-        self.__waitpid = None
+        # delay pid
+        self.__delaypid = None
 
 
     ## NETWORK RELAY
@@ -131,14 +131,11 @@ class StateWorker(threading.Thread):
         self.__abort = True
         if not end:
             self.__run = False
-            if self.__waitpid:
-                try:
-                    while True:
-                        os.kill(self.__waitpid, signal.SIGKILL)
-                        time.sleep(0.1)
-                except Exception: pass
+
         if kill:
             self.kill()
+        else:
+            self.__kill_delay()
 
         if self.__cv_wait:
             utils.log("DEBUG", "Aquire conditional lock ...",('abort',self))
@@ -158,6 +155,19 @@ class StateWorker(threading.Thread):
 
     ## KILL PROCESS
     # Kill child process
+    def __kill_delay(self):
+        if self.__delaypid:
+            utils.log("DEBUG", "Recipe ended and in delay process, aborting ...",('__kill_delay',self))
+            try:
+                while True:
+                    os.kill(self.__delaypid, signal.SIGKILL)
+                    time.sleep(0.1)
+            except Exception:
+                self.__delaypid = None
+            utils.log("DEBUG", "Delay process killed.",('__kill_delay',self))
+        else:
+            utils.log("DEBUG", "Recipe not in delay process.",('__kill_delay',self))
+
     def __kill_childs(self):
         utils.log("DEBUG", "Killing states execution...",('__kill_childs',self))
         if not self.__config['runtime']['proc']:
@@ -184,16 +194,20 @@ class StateWorker(threading.Thread):
 
     # Halt wait
     def __kill_wait(self):
-        utils.log("DEBUG", "killing wait status",('kill',self))
-        self.__wait_event.set()
+        if self.__waiting:
+            utils.log("DEBUG", "killing wait status",('kill_wait',self))
+            self.__wait_event.set()
+            self.__waiting = False
+        else:
+            utils.log("DEBUG", "worker not waiting",('kill_wait',self))
 
     # Kill the current execution
     def kill(self):
         if self.__run:
             utils.log("DEBUG", "Sending stop execution signal.",('kill',self))
             self.__run = False
-            if self.__waiting:
-                self.__kill_wait()
+            self.__kill_delay()
+            self.__kill_wait()
             self.__kill_childs()
             utils.log("INFO", "Execution killed.",('kill',self))
         else:
@@ -338,13 +352,13 @@ class StateWorker(threading.Thread):
     # Delay at the end of the states
     def __recipe_delay(self):
         utils.log("INFO", "Last state reached, execution paused for %s minutes."%(self.__config['salt']['delay']),('__recipe_delay',self))
-        self.__waitpid = os.fork()
-        if (self.__waitpid == 0): # son
+        self.__delaypid = os.fork()
+        if (self.__delaypid == 0): # son
             time.sleep(int(self.__config['salt']['delay'])*60)
             sys.exit(0)
         else:
-            os.waitpid(self.__waitpid,0)
-        self.__waitpid = None
+            os.waitpid(self.__delaypid,0)
+        self.__delaypid = None
         utils.log("INFO", "Delay passed, execution restarting...",('__recipe_delay',self))
 
     # Render recipes
@@ -393,7 +407,10 @@ class StateWorker(threading.Thread):
                     if self.__status >= len(self.__states):
                         utils.log("INFO", "All good, last state succeed! Back to first one.",('__runner',self))
                         self.__recipe_delay()
-                        self.__status = 0
+                        if not self.__abort:
+                            self.__status = 0
+                        else:
+                            self.__run = False
                     else:
                         utils.log("INFO", "All good, switching to next state.",('__runner',self))
                 else:

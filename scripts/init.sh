@@ -39,7 +39,6 @@ mkdir -p ${OA_CONF_DIR}
 mkdir -p ${OA_LOG_DIR}
 mkdir -p ${OA_ROOT_DIR}
 mkdir -p ${OA_BOOT_DIR}
-mkdir -p ${OA_PKG_CACHE_DIR}
 
 # Generate token
 if [ ! -f ${OA_TOKEN} ]; then

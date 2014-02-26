@@ -77,7 +77,8 @@ class Config():
         }
 
     def __init__(self, f=None):
-        self.__parser = SafeConfigParser(allow_no_value=True)
+#        self.__parser = SafeConfigParser(allow_no_value=True) # Python 2.7 only
+        self.__parser = SafeConfigParser()
         self.__c = (deepcopy(Config.defaultValues)
                     if Config.defaultValues
                     else {})
