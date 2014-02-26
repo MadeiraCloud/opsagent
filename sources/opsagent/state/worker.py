@@ -409,7 +409,7 @@ class StateWorker(threading.Thread):
                         if not self.__abort:
                             self.__recipe_delay()
                             self.__status = 0
-                        else:
+                        if self.__abort:
                             self.__run = False
                     else:
                         utils.log("INFO", "All good, switching to next state.",('__runner',self))

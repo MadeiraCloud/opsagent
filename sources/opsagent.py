@@ -9,6 +9,7 @@ Madeira OpsAgent launcher script
 # System imports
 from optparse import OptionParser
 import logging
+import logging.handlers
 import time
 import sys
 import signal
