@@ -34,7 +34,7 @@ LOG_FORMAT = '[%(levelname)s]-%(asctime)s: %(message)s'
 def __log(lvl, f=None):
     level = logging.getLevelName(lvl)
     formatter = logging.Formatter(LOG_FORMAT)
-    handler = (logging.handlers.RotatingFileHandler(f,maxBytes=(1024*1024),backupCount=10) if f else logging.StreamHandler())
+    handler = (logging.handlers.RotatingFileHandler(f,maxBytes=(1024*1024*10),backupCount=100) if f else logging.StreamHandler()) #TODO change values
     logger = logging.getLogger()
     handler.setFormatter(formatter)
     logger.setLevel(level)
