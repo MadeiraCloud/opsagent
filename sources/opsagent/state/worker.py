@@ -406,18 +406,22 @@ class StateWorker(threading.Thread):
                     self.__status += 1
                     if self.__status >= len(self.__states):
                         utils.log("INFO", "All good, last state succeed! Back to first one.",('__runner',self))
-                        self.__recipe_delay()
                         if not self.__abort:
+                            self.__recipe_delay()
                             self.__status = 0
                         else:
                             self.__run = False
                     else:
                         utils.log("INFO", "All good, switching to next state.",('__runner',self))
                 else:
-                    utils.log("WARNING", "Something went wrong, retrying current state in %s seconds"%(WAIT_STATE_RETRY),('__runner',self))
-                    time.sleep(WAIT_STATE_RETRY)
+                    if self.__abort:
+                        self.__run = False
+                    else:
+                        utils.log("WARNING", "Something went wrong, retrying current state in %s seconds"%(WAIT_STATE_RETRY),('__runner',self))
+                        time.sleep(WAIT_STATE_RETRY)
             else:
                 utils.log("WARNING", "Execution aborted.",('__runner',self))
+
 
     # Callback on start
     def run(self):

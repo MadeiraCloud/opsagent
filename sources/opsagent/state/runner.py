@@ -28,7 +28,7 @@ class StateRunner(object):
 		self._init_ostype()
 
 		# pkg cache dir
-		self._pkg_cache = (config['pkg_cache'] if 'pkg_cache' in config and config['pkg_cache'] and isinstance(config['pkg_cache']) else '/tmp/')
+		self._pkg_cache = (config['pkg_cache'] if 'pkg_cache' in config and config['pkg_cache'] and isinstance(config['pkg_cache'], basestring) else '/tmp/')
 
 	def _init_opts(self, config):
 
