@@ -280,10 +280,8 @@ class StateRunner(object):
 
 		return the_file
 
+# For unit tests only
 def main():
-
-#        import json
-
         salt_opts = {
                 'file_client':       'local',
                 'renderer':          'yaml_jinja',

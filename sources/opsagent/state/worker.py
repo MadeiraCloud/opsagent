@@ -154,7 +154,7 @@ class StateWorker(threading.Thread):
 
 
     ## KILL PROCESS
-    # Kill child process
+    # Kill end of recipe delay
     def __kill_delay(self):
         if self.__delaypid:
             utils.log("DEBUG", "Recipe ended and in delay process, aborting ...",('__kill_delay',self))
@@ -168,6 +168,7 @@ class StateWorker(threading.Thread):
         else:
             utils.log("DEBUG", "Recipe not in delay process.",('__kill_delay',self))
 
+    # Kill child process
     def __kill_childs(self):
         utils.log("DEBUG", "Killing states execution...",('__kill_childs',self))
         if not self.__config['runtime']['proc']:
@@ -409,7 +410,7 @@ class StateWorker(threading.Thread):
                         if not self.__abort:
                             self.__recipe_delay()
                             self.__status = 0
-                        if self.__abort:
+                        if self.__abort: # don't "else" as abort may happen during the delay
                             self.__run = False
                     else:
                         utils.log("INFO", "All good, switching to next state.",('__runner',self))

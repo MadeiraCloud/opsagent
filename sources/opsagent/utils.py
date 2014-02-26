@@ -72,7 +72,6 @@ def clone_repo(config, path, name, uri):
             shutil.rmtree(os.path.normpath(path+'/'+name))
         except Exception as e:
             log("DEBUG", "Exception while removing directory %s: %s"%(os.path.normpath(path+'/'+name),e),('clone_repo','utils'))
-#        subprocess.check_output(("rm -rf %s"%(os.path.normpath(path+'/'+name))).split(),cwd=path) # TODO: remove
         subprocess.check_output(("git clone %s %s"%(uri,name)).split(),cwd=path)
         try:
             os.unlink(os.path.normpath(config['global']['package_path']+'/'+config['module']['name']))
