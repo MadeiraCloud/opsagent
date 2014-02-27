@@ -60,7 +60,10 @@ class OpsAgentRunner(Daemon):
             utils.log("ERROR", "Network error: '%s'"%(e),('run_manager','OpsAgentRunner'))
             if manager.connected():
                 utils.log("INFO", "Connection not closed. Closing ...",('run_manager','OpsAgentRunner'))
-                manager.close()
+                try:
+                    manager.close()
+                except Exception:
+                    utils.log("DEBUG", "Can't close connection (already closed?).",('run_manager','OpsAgentRunner'))
                 utils.log("DEBUG", "Connection closed.",('run_manager','OpsAgentRunner'))
             else:
                 utils.log("DEBUG", "Connection already closed.",('run_manager','OpsAgentRunner'))

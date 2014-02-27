@@ -47,7 +47,7 @@ class Daemon():
         # disable coredump
         os.umask(0)
 
-        # second fork (linux trick)
+        # second fork (linux daemon trick)
         try:
             pid = os.fork()
             if pid > 0:

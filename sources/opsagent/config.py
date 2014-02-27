@@ -41,7 +41,7 @@ class Config():
 
     defaultValues = {
         'global': {
-#            'loglvl': 'WARNING', #TODO: switch
+#            'loglvl': 'INFO', #TODO: switch
             'loglvl': 'DEBUG',
             'proc': '/proc',
             'pidfile': '/tmp/opsagentd.pid',

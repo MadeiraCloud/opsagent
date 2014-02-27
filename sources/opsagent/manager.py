@@ -61,7 +61,7 @@ class Manager(WebSocketClient):
 
 
     ## HELPERS
-    # runnign status
+    # running status
     def running(self):
         return self.__run
     ##
@@ -314,12 +314,12 @@ class Manager(WebSocketClient):
     # On socket closing
     def closed(self, code, reason=None):
         utils.log("INFO", "Socket closed: %s, code '%s'"%(reason,code),('closed',self))
-        utils.log("INFO", "Reconnection will start in '%s' seconds ..."%(WAIT_RECONNECT),('closed',self))
+#        utils.log("INFO", "Reconnection will start in '%s' seconds ..."%(WAIT_RECONNECT),('closed',self))
         self.__connected = False
         self.__run = False
-        if self.__states_worker and self.__states_worker.is_alive():
-            self.__states_worker.set_manager(None)
-        time.sleep(WAIT_RECONNECT)
+#        if self.__states_worker and self.__states_worker.is_alive():
+#            self.__states_worker.set_manager(None)
+#        time.sleep(WAIT_RECONNECT)
         utils.log("DEBUG", "Ready to reconnect",('closed',self))
 
     # On socket opening

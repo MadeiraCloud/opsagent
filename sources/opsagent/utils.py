@@ -72,7 +72,8 @@ def clone_repo(config, path, name, uri):
             shutil.rmtree(os.path.normpath(path+'/'+name))
         except Exception as e:
             log("DEBUG", "Exception while removing directory %s: %s"%(os.path.normpath(path+'/'+name),e),('clone_repo','utils'))
-        subprocess.check_output(("git clone %s %s"%(uri,name)).split(),cwd=path)
+        r = subprocess.check_output(("git clone %s %s"%(uri,name)).split(),cwd=path)
+        log("INFO", "repo %s from %s successfully cloned in %s: %s"%(name,uri,path,r),('clone_repo','utils'))
         try:
             os.unlink(os.path.normpath(config['global']['package_path']+'/'+config['module']['name']))
         except Exception as e:
@@ -91,22 +92,25 @@ def clone_repo(config, path, name, uri):
 # clone a git branch/tag
 def checkout_repo(config, path, name, tag, uri, n=0):
     commands = [
-        "git clean -df",
-        "git reset --hard HEAD",
+#        "git clean -df",
+#        "git reset --hard HEAD",
+        "git checkout master",
         "git pull",
         "git checkout %s"%(tag),
-        "git pull",
         ]
-    path = os.path.normpath(path+'/'+name)
+    spath = os.path.normpath(path+'/'+name)
     for cmd in commands:
         try:
-            subprocess.check_output(cmd.split(),cwd=path)
+            r = subprocess.check_output(cmd.split(),cwd=spath)
+            log("INFO", "Command succeed %s: %s"%(cmd,r),('checkout_repo','utils'))
         except Exception as e:
             log("WARNING", "Can't update %s repo on %s tag: %s"%(name,tag,e),('checkout_repo','utils'))
             clone_repo(config, path, name, uri)
             if n == 0:
                 checkout_repo(config, path, name, tag, uri, n+1)
             else:
-                log("ERROR", "Can't switch to requested after cloning clean repo, aborting.",('checkout_repo','utils'))
+                log("ERROR", "Can't switch to requested tag after cloning clean repo, aborting.",('checkout_repo','utils'))
                 raise ManagerInvalidStatesRepoException
             break
+    if n == 0:
+        log("INFO", "Repo %s in %s successfully checkout at %s tag."%(name,spath,tag),('checkout_repo','utils'))

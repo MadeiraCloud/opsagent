@@ -303,35 +303,38 @@ class StateWorker(threading.Thread):
 
         # Watch process
         if parameter and type(parameter) is dict and parameter.get("watch"):
-            watch = parameter.get("watch")
+            watchs = parameter.get("watch")
             utils.log("DEBUG", "Watched state detected."%(watch),('__exec_salt',self))
             del parameter["watch"]
-            try:
-                if not os.path.isfile(watch):
-                    err = "Can't access watched file '%s'."%(watch)
+            for watch in watchs:
+                try:
+                    if not os.path.isfile(watch):
+                        err = "Can't access watched file '%s'."%(watch)
+                        utils.log("ERROR", err,('__exec_salt',self))
+                        return (FAIL,err,None)
+                    else:
+                        utils.log("DEBUG", "Watched file '%s' found."%(watch),('__exec_salt',self))
+                        curent_hash = hashlib.md5(watch).hexdigest()
+                        cs = os.path.join(self.__config['global']['watch'], id)
+                        if os.path.isfile(cs):
+                            with open(cs, 'r') as f:
+                                old_hash = f.read()
+                            if old_hash != curent_hash:
+                                utils.log("INFO","Watch event triggered, replacing standard action ...",('__exec_salt',self))
+                                parameter["watch"] = True
+                                utils.log("DEBUG","Standard action replaced.",('__exec_salt',self))
+                            else:
+                                utils.log("DEBUG","No watched event triggered.",('__exec_salt',self))
+                        else:
+                            utils.log("DEBUG","No old record, creating hash and executing normal command ...",('__exec_salt',self))
+                            self.__create_hash(cs, curent_hash, watch)
+                            utils.log("DEBUG","Hash stored.",('__exec_salt',self))
+                except Exception as e:
+                    err = "Unknown error during watch process on file '%s': %s."%(watch,e)
                     utils.log("ERROR", err,('__exec_salt',self))
                     return (FAIL,err,None)
-                else:
-                    utils.log("DEBUG", "Watched file '%s' found."%(watch),('__exec_salt',self))
-                    curent_hash = hashlib.md5(watch).hexdigest()
-                    cs = os.path.join(self.__config['global']['watch'], id)
-                    if os.path.isfile(cs):
-                        with open(cs, 'r') as f:
-                            old_hash = f.read()
-                        if old_hash != curent_hash:
-                            utils.log("INFO","Watch event triggered, replacing standard action ...",('__exec_salt',self))
-                            parameter["watch"] = True
-                            utils.log("DEBUG","Standard action replaced.",('__exec_salt',self))
-                        else:
-                            utils.log("DEBUG","No watched event triggered.",('__exec_salt',self))
-                    else:
-                        utils.log("DEBUG","No old record, creating hash and executing normal command ...",('__exec_salt',self))
-                        self.__create_hash(cs, curent_hash, watch)
-                        utils.log("DEBUG","Hash stored.",('__exec_salt',self))
-            except Exception as e:
-                err = "Unknown error during watch process on file '%s': %s."%(watch,e)
-                utils.log("WARNING", err,('__exec_salt',self))
-                return (FAIL,err,None)
+#            if fail is True:
+#                return (FAIL,"; ".join(err),None)
 
         try:
             # state convert
