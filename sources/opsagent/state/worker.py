@@ -63,8 +63,8 @@ class StateWorker(threading.Thread):
 
         # flags
         self.__cv_wait = False
-        self.__run = False
         self.__waiting = False
+        self.__run = False
         self.__abort = False
 
         # builtins methods map
@@ -79,22 +79,26 @@ class StateWorker(threading.Thread):
 
     ## NETWORK RELAY
     # retry sending after disconnection
+    # TODO change to loop
     def __send(self, data):
         utils.log("DEBUG", "Attempting to send data to backend ...",('__send',self))
-        try:
-            if not self.__manager:
-                raise SWNoManagerException
-            self.__manager.send_json(data)
-        except Exception as e:
-            utils.log("ERROR", "Can't send data '%s', reason: '%s'."%(data,e),('__send',self))
-            if self.__run:
-                utils.log("WARNING", "Still running, retrying in %s seconds.",('__send',self))
-                time.sleep(WAIT_RESEND)
-                self.__send(data)
+        success = False
+        while not success:
+            try:
+                if not self.__manager:
+                    raise SWNoManagerException
+                self.__manager.send_json(data)
+            except Exception as e:
+                utils.log("ERROR", "Can't send data '%s', reason: '%s'."%(data,e),('__send',self))
+                if self.__run:
+                    utils.log("WARNING", "Still running, retrying in %s seconds.",('__send',self))
+                    time.sleep(WAIT_RESEND)
+                else:
+                    utils.log("WARNING", "Not running, aborting send.",('__send',self))
+                    break
             else:
-                utils.log("WARNING", "Not running, aborting send.",('__send',self))
-        else:
-            utils.log("DEBUG", "Data successfully sent.",('__send',self))
+                success = True
+                utils.log("DEBUG", "Data successfully sent.",('__send',self))
     ##
 
 
@@ -148,6 +152,9 @@ class StateWorker(threading.Thread):
 
 
     # Program status
+    def is_running(self):
+        return self.__run
+
     def aborted(self):
         return self.__abort
     ##
@@ -304,7 +311,7 @@ class StateWorker(threading.Thread):
         # Watch process
         if parameter and type(parameter) is dict and parameter.get("watch"):
             watchs = parameter.get("watch")
-            utils.log("DEBUG", "Watched state detected."%(watch),('__exec_salt',self))
+            utils.log("DEBUG", "Watched state detected.",('__exec_salt',self))
             del parameter["watch"]
             for watch in watchs:
                 try:
@@ -386,6 +393,7 @@ class StateWorker(threading.Thread):
                     (result,comment,out_log) = self.__exec_salt(state['id'],
                                                                 state['module'],
                                                                 state['parameter'])
+            # TODO use other field for errors?
             except SWWaitFormatException:
                 utils.log("ERROR", "Wrong wait request",('__runner',self))
                 result = FAIL
@@ -394,7 +402,7 @@ class StateWorker(threading.Thread):
             except Exception as e:
                 utils.log("ERROR", "Unknown exception: '%s'."%(e),('__runner',self))
                 result = FAIL
-                comment = "Unknown exception: '%s'."%(e)
+                comment = "Error: '%s'."%(e)
                 out_log = None
             self.__waiting = False
             if self.__run:

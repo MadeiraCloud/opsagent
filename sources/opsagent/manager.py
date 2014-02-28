@@ -144,7 +144,7 @@ class Manager(WebSocketClient):
 
         # load recipes
         curent_version = self.__states_worker.get_version()
-        if (not curent_version) or (curent_version != version):
+        if (not curent_version) or (curent_version != version) or not self.__states_worker.is_running():
             utils.log("INFO", "Killing current execution ...",('__act_recipe',self))
             self.__states_worker.kill()
             utils.log("DEBUG", "Execution killed.",('__act_recipe',self))
@@ -272,11 +272,6 @@ class Manager(WebSocketClient):
             utils.log("DEBUG", "Reset succeed",('__close',self))
         utils.log("DEBUG", "Closing socket ...",('__close',self))
         self.close(code, reason)
-# TODO don't?
-#        try:
-#            self.terminated = True
-#        except Exception as e:
-#            utils.log("WARNING", "Can't set terminated attribute: %s."%e,('__close',self))
         utils.log("INFO", "Socket closed, connection terminated.",('__close',self))
 
     # Send data to backend
@@ -288,7 +283,7 @@ class Manager(WebSocketClient):
             json_data = json.dumps(raw_data)
             utils.log("DEBUG", "Sending data successfully converted to json",('send_json',self))
         except Exception as e:
-            utils.log("ERROR", "Can't convert received data to json. FATAL",('send_json',self))
+            utils.log("CRITICAL", "Can't convert received data to json. FATAL",('send_json',self))
             self.__close(reset=True,
                          code=codes.C_INVALID_JSON_SEND,
                          reason=codes.M_INVALID_JSON_SEND)
@@ -314,12 +309,8 @@ class Manager(WebSocketClient):
     # On socket closing
     def closed(self, code, reason=None):
         utils.log("INFO", "Socket closed: %s, code '%s'"%(reason,code),('closed',self))
-#        utils.log("INFO", "Reconnection will start in '%s' seconds ..."%(WAIT_RECONNECT),('closed',self))
         self.__connected = False
         self.__run = False
-#        if self.__states_worker and self.__states_worker.is_alive():
-#            self.__states_worker.set_manager(None)
-#        time.sleep(WAIT_RECONNECT)
         utils.log("DEBUG", "Ready to reconnect",('closed',self))
 
     # On socket opening
@@ -338,7 +329,7 @@ class Manager(WebSocketClient):
             data = json.loads(u'%s'%(raw_data))
             utils.log("INFO", "Message converted from json.",('received_message',self))
         except Exception as e:
-            utils.log("ERROR", "Can't convert received json data to dict '%s'. FATAL"%(e),('received_message',self))
+            utils.log("CRITICAL", "Can't convert received json data to dict '%s'. FATAL"%(e),('received_message',self))
             self.__close(reset=True,
                          code=codes.C_INVALID_JSON_RECV,
                          reason=codes.M_INVALID_JSON_RECV)

@@ -4,64 +4,6 @@
 ## (c) 2014 MadeiraCloud LTD.
 ##
 
-# setup dependencies
-if [ $(which apt-get 2>/dev/null) ]; then
-    # install python
-    echo "Platform: APT"
-    apt-get -y -q install python2.7 2>/dev/null
-    if [ $? -ne 0 ]; then
-        echo "Failed to install python 2.7, trying with python 2.6 ..."
-        apt-get -y -q install python2.6 2>/dev/null
-    fi
-    # install other dependencies
-    apt-get -y -q install python-apt expect-dev
-elif [ $(which yum 2>/dev/null) ]; then
-    # install python
-    echo "Platform: YUM"
-    yum -y -q install python27 2>/dev/null
-    if [ $? -ne 0 ]; then
-        echo "Failed to install python 2.7, trying with python 2.6 ..."
-        yum -y -q install python26 2>/dev/null
-    fi
-    # install other dependencies
-    yum -y -q install expect yum-utils
-fi
-# define python version
-if [ $(which python2.7 2>/dev/null) ]; then
-    echo "python 2.7 found"
-    PYTHON="python2.7"
-elif [ $(which python2.6 2>/dev/null) ]; then
-    echo "python 2.6 found"
-    PYTHON="python2.6"
-else
-    echo "Fatal: Python2 non installed"
-    exit 1
-fi
-
-
-# Generates config file
-if [ ! -f ${OA_CONFIG_FILE} ]; then
-    cat <<EOF > ${OA_CONFIG_FILE}
-[global]
-envroot=${OA_ENV_DIR}
-package_path=${OA_ENV_DIR}/lib/${PYTHON}/site-packages
-token=${OA_TOKEN}
-watch=${OA_WATCH_DIR}
-logfile=${OA_LOG_FILE}
-[network]
-ws_uri=${WS_URI}
-app_id=${APP_ID}
-[module]
-root=${OA_BOOT_DIR}
-name=${OA_SALT}
-bootstrap=${SRC_SCRIPTS_DIR}/bootstrap.sh
-mod_repo=
-mod_tag=
-EOF
-fi
-chown ${OA_USER}:root ${OA_CONFIG_FILE}
-chmod 640 ${OA_CONFIG_FILE}
-
 
 # create virtualenv
 ${PYTHON} ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_LIBS_DIR}/virtualenv/virtualenv.py ${OA_ENV_DIR}
@@ -104,7 +46,7 @@ fi
 
 # set service script rights
 chown root:root /etc/init.d/opsagentd
-chmod 554 /etc/init.d/opsagentd
+chmod 550 /etc/init.d/opsagentd
 
 ##
 # TMP (AGENT START)

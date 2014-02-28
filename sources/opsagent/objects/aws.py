@@ -30,20 +30,20 @@ def get_aws_data(url):
 
 # Get instance ID from AWS
 def instance_id(config, manager):
-    if not manager.running():
-        utils.log("WARNING", "Execution aborting, exiting ...",('instance_id','aws'))
-        return None
-    utils.log("DEBUG", "Getting instance id ...",('instance_id','aws'))
-    try:
-        iid = get_aws_data(config['network']['instance_id'])
-    except AWSNotFoundException:
-        utils.log("ERROR", "Instance ID not found, retrying in '%s' seconds."%(WAIT_RETRY),('instance_id','aws'))
-        time.sleep(WAIT_RETRY)
-        return instance_id(config, manager)
-    except Exception as e:
-        utils.log("ERROR", "Instance ID failure, unknown error: '%s', retrying in '%s' seconds."%(e,WAIT_RETRY),('instance_id','aws'))
-        time.sleep(WAIT_RETRY)
-        return instance_id(config, manager)
+    iid = None
+    while not iid:
+        if not manager.running():
+            utils.log("WARNING", "Execution aborting, exiting ...",('instance_id','aws'))
+            return None
+        utils.log("DEBUG", "Getting instance id ...",('instance_id','aws'))
+        try:
+            iid = get_aws_data(config['network']['instance_id'])
+        except AWSNotFoundException:
+            utils.log("ERROR", "Instance ID not found, retrying in '%s' seconds."%(WAIT_RETRY),('instance_id','aws'))
+            time.sleep(WAIT_RETRY)
+        except Exception as e:
+            utils.log("ERROR", "Instance ID failure, unknown error: '%s', retrying in '%s' seconds."%(e,WAIT_RETRY),('instance_id','aws'))
+            time.sleep(WAIT_RETRY)
     return iid
 
 # Get token from disk

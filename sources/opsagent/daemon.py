@@ -87,6 +87,7 @@ class Daemon():
 
         # if pid exists, daemon running, don't do anything
         if pid:
+            # TODO remove file is obsolete
             sys.stderr.write("pidfile %s already exist. Daemon already running?\n"%(self.pidfile))
             sys.exit(1)
 

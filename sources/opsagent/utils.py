@@ -23,18 +23,20 @@ COLOR=True
 
 # Logging defines
 LOGGING_EQ = {
-    "DEBUG"   : logging.debug,
-    "INFO"    : logging.info,
-    "WARNING" : logging.warning,
-    "ERROR"   : logging.error
+    "DEBUG"    : logging.debug,
+    "INFO"     : logging.info,
+    "WARNING"  : logging.warning,
+    "ERROR"    : logging.error,
+    "CRITICAL" : logging.critical,
     }
 
 # Colors defines
 COLORS_EQ = {
-    "DEBUG"   : ("\x1b[38;5;6m","\x1b[0m"),
-    "INFO"    : ("\x1b[38;5;15m","\x1b[0m"),
-    "WARNING" : ("\x1b[38;5;3m","\x1b[0m"),
-    "ERROR"   : ("\x1b[38;5;1m","\x1b[0m"),
+    "DEBUG"    : ("\x1b[38;5;6m","\x1b[0m"),
+    "INFO"     : ("\x1b[38;5;15m","\x1b[0m"),
+    "WARNING"  : ("\x1b[38;5;3m","\x1b[0m"),
+    "ERROR"    : ("\x1b[38;5;1m","\x1b[0m"),
+    "CRITICAL" : ("\x1b[38;5;1m","\x1b[0m"),
     }
 
 

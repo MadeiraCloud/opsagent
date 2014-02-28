@@ -62,6 +62,74 @@ elif [ $(which yum 2>/dev/null) ]; then
     yum -y -q install git
 fi
 
+# TODO exit if no git
+if [ ! $(which git 2>/dev/null) ]; then
+    echo "FATAL: No git found! (can't install?)" 1>&2
+    exit 1
+fi
+
+
+# setup dependencies
+# TODO check python packages names
+if [ $(which apt-get 2>/dev/null) ]; then
+    # install python
+    echo "Platform: APT"
+    apt-get -y -q install python2.7 2>/dev/null
+    if [ $? -ne 0 ]; then
+        echo "Failed to install python 2.7, trying with python 2.6 ..."
+        apt-get -y -q install python2.6 2>/dev/null
+    fi
+    # install other dependencies
+    apt-get -y -q install python-apt expect-dev
+elif [ $(which yum 2>/dev/null) ]; then
+    # install python
+    echo "Platform: YUM"
+    yum -y -q install python27 2>/dev/null
+    if [ $? -ne 0 ]; then
+        echo "Failed to install python 2.7, trying with python 2.6 ..."
+        yum -y -q install python26 2>/dev/null
+    fi
+    # install other dependencies
+    yum -y -q install expect yum-utils
+fi
+# define python version
+if [ $(which python2.7 2>/dev/null) ]; then
+    echo "python 2.7 found"
+    PYTHON="python2.7"
+elif [ $(which python2.6 2>/dev/null) ]; then
+    echo "python 2.6 found"
+    PYTHON="python2.6"
+else
+    echo "FATAL: Python2 non installed! (can't install!)"
+    exit 1
+fi
+
+
+# TODO update if userdata change (check)
+# Generates config file
+#if [ ! -f ${OA_CONFIG_FILE} ]; then
+cat <<EOF > ${OA_CONFIG_FILE}
+[global]
+envroot=${OA_ENV_DIR}
+package_path=${OA_ENV_DIR}/lib/${PYTHON}/site-packages
+token=${OA_TOKEN}
+watch=${OA_WATCH_DIR}
+logfile=${OA_LOG_FILE}
+[network]
+ws_uri=${WS_URI}
+app_id=${APP_ID}
+[module]
+root=${OA_BOOT_DIR}
+name=${OA_SALT}
+bootstrap=${SRC_SCRIPTS_DIR}/bootstrap.sh
+mod_repo=
+mod_tag=
+EOF
+#fi
+chown ${OA_USER}:root ${OA_CONFIG_FILE}
+chmod 640 ${OA_CONFIG_FILE}
+
+
 # Sources update check
 function update_sources() {
     RET=0
@@ -70,7 +138,7 @@ function update_sources() {
         RETVAL_CUR=$?
         LAST_VERSION="$(curl -sSL ${OA_REMOTE}/${1}.cksum 2>/dev/null)"
         RETVAL_LAST=$?
-        VALID="$(echo $LAST_VERSION | grep ${1}.tgz | wc -l)"
+        VALID="$(echo ${LAST_VERSION} | grep ${1}.tgz | wc -l)"
         RETVAL_VALID=$?
         ## TODO: remove
         echo "RETVAL_CUR=$RETVAL_CUR" 1>&2
@@ -106,6 +174,7 @@ function get_sources() {
         if [ "$CRC" = "$REF_CRC" ]; then
             break
         else
+            # TODO change sleep value?
             echo "${1} checksum check failed, retryind in 1 second" >&2
             sleep 1
         fi

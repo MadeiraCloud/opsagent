@@ -11,7 +11,7 @@ WS_URI=@{ws_uri}
 #WS_URI=wss://api.madeiracloud.com/agent/
 
 # opsagent config directory
-OA_CONF_DIR=/etc/opsagent.d
+OA_CONF_DIR=/var/lib/madeira/opsagent
 # ops agent watch files crc directory
 OA_WATCH_DIR=${OA_CONF_DIR}/watch
 # opsagent logs directory
@@ -49,17 +49,17 @@ if [ -f \${OA_EXEC_FILE} ]; then
     fi
 fi
 
-OA_CONF_DIR=${OA_CONF_DIR}
-OA_WATCH_DIR=${OA_WATCH_DIR}
-OA_LOG_DIR=${OA_LOG_DIR}
-OA_REMOTE=${OA_REMOTE}
+export OA_CONF_DIR=${OA_CONF_DIR}
+export OA_WATCH_DIR=${OA_WATCH_DIR}
+export OA_LOG_DIR=${OA_LOG_DIR}
+export OA_REMOTE=${OA_REMOTE}
 
-OA_ROOT_DIR=${OA_ROOT_DIR}
-OA_BOOT_DIR=${OA_BOOT_DIR}
-OA_ENV_DIR=${OA_ENV_DIR}
+export OA_ROOT_DIR=${OA_ROOT_DIR}
+export OA_BOOT_DIR=${OA_BOOT_DIR}
+export OA_ENV_DIR=${OA_ENV_DIR}
 
-APP_ID=${APP_ID}
-WS_URI=${WS_URI}
+export APP_ID=${APP_ID}
+export WS_URI=${WS_URI}
 
 # set working file
 ps -eo pid,comm | tr -d ' ' | grep '^\$$' > \${OA_EXEC_FILE}
@@ -86,16 +86,17 @@ while true; do
         sleep 1
     fi
 done
-source \${OA_CONF_DIR}/init.sh
+bash \${OA_CONF_DIR}/init.sh
 rm -f \${OA_EXEC_FILE}
 EOF
 
 # set cron
 chown root:root ${OA_CONF_DIR}/cron.sh
 chmod 540 ${OA_CONF_DIR}/cron.sh
-CRON=$(crontab -l | grep ${OA_CONF_DIR}/cron.sh | wc -l)
+CRON=$(grep ${OA_CONF_DIR}/cron.sh /etc/crontab | wc -l)
 if [ $CRON -eq 0 ]; then
-    echo "*/1 * * * * ${OA_CONF_DIR}/cron.sh >> ${OA_LOG_DIR}/bootstrap.log 2>&1" | crontab
+    # TODO change time?
+    echo "*/1 * * * * ${OA_CONF_DIR}/cron.sh >> ${OA_LOG_DIR}/bootstrap.log 2>&1" >> /etc/crontab
 fi
 
 exit 0
