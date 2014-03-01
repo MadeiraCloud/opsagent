@@ -81,6 +81,8 @@ class StateRunner(object):
 				import subprocess
 
 				config_file = self.__is_existed(['/etc/issue', '/etc/redhat-release'])
+				if not config_file:
+					raise ExecutionException("Cannot find the system config file")
 
 				cmd = 'grep -io -E  "ubuntu|debian|centos|redhat|amazon" ' + config_file
 				process = subprocess.Popen(
@@ -95,9 +97,6 @@ class StateRunner(object):
 
 				out, err = process.communicate()
 				self.os_type = out
-		except ExecutionException, e:
-			utils.log("ERROR", "System config file unknown and cannot get agent os type", ("_init_ostype", self))
-			raise ExecutionException()
 		except Exception, e:
 			utils.log("ERROR", "Fetch agent's os type failed...", ("_init_ostype", self))
 			raise ExecutionException("Fetch agent's os type failed")
@@ -120,83 +119,88 @@ class StateRunner(object):
 			out_log = "Invalid state format %s" % str(states)
 			return (result, comment, out_log)
 
+		# check whether contain specail module
 		try:
-			# check whether contain specail module
 			if self._is_special(states):
 				self._enable_epel()
+		except:
+			utils.log("WARNING", "Enable epel repo failed...",("exec_salt", self))
+			pass
 
-			utils.log("INFO", "Begin to execute salt state...", ("exec_salt", self))
-			for idx, state in enumerate(states):
-				utils.log("INFO", "Begin to execute the %dth salt state..." % (idx+1), ("exec_salt", self))
+		utils.log("INFO", "Begin to execute salt state...", ("exec_salt", self))
+		for idx, state in enumerate(states):
+			utils.log("INFO", "Begin to execute the %dth salt state..." % (idx+1), ("exec_salt", self))
+			try:
 				ret = self.state.call_high(state)
-				if ret:
-					# parse the ret and return
-					utils.log("INFO", json.dumps(ret), ("exec_salt", self))
+			except Exception, e:
+				utils.log("ERROR", "Execute salt state %s failed: %s"% (json.dumps(state), str(e)), ("exec_salt", self))
+				return (False, "Execute salt state exception", "")
 
-					# set comment and output log
-					require_in_comment = ''
-					require_in_log = ''
-					for r_tag, r_value in ret.items():
-						if 'result' not in r_value:	continue 	# filter no result
+			if ret:
+				# parse the ret and return
+				utils.log("INFO", json.dumps(ret), ("exec_salt", self))
 
-						# parse require in result
-						if 'require_in' in r_tag:
-							require_in_comment = '{0}{1}{2}'.format(
-									require_in_comment,
-									'\n\n' if require_in_comment else '',
-									r_value['comment'] if 'comment' in r_value and r_value['comment'] else ''
-								)
-							require_in_log = '{0}{1}{2}'.format(
-									require_in_log,
-									'\n\n' if require_in_log else '',
-									r_value['state_stdout'] if 'state_stdout' in r_value and r_value['state_stdout'] else ''
-								)
+				# set comment and output log
+				require_in_comment = ''
+				require_in_log = ''
+				for r_tag, r_value in ret.items():
+					if 'result' not in r_value:	continue 	# filter no result
 
-						# parse require result
-						elif 'require' in r_tag:
-							comment = '{0}{1}{2}'.format(
-								r_value['comment'] if 'comment' in r_value and r_value['comment'] else '',
-								'\n\n' if comment else '',
-								comment
-								)
-							out_log = '{0}{1}{2}'.format(
-								r_value['state_stdout'] if 'state_stdout' in r_value and r_value['state_stdout'] else '',
-								'\n\n' if out_log else '',
-								out_log
-								)
-
-						# parse common result
-						else:
-							comment = '{0}{1}{2}'.format(
-								comment,
-								'\n\n' if comment else '',
+					# parse require in result
+					if 'require_in' in r_tag:
+						require_in_comment = '{0}{1}{2}'.format(
+								require_in_comment,
+								'\n\n' if require_in_comment else '',
 								r_value['comment'] if 'comment' in r_value and r_value['comment'] else ''
-								)
-							out_log = '{0}{1}{2}'.format(
-								out_log,
-								'\n\n' if out_log else '',
+							)
+						require_in_log = '{0}{1}{2}'.format(
+								require_in_log,
+								'\n\n' if require_in_log else '',
 								r_value['state_stdout'] if 'state_stdout' in r_value and r_value['state_stdout'] else ''
-								)
+							)
 
-						result = r_value['result']
-						# break when one state runs failed
-						if not result:
-							break
+					# parse require result
+					elif 'require' in r_tag:
+						comment = '{0}{1}{2}'.format(
+							r_value['comment'] if 'comment' in r_value and r_value['comment'] else '',
+							'\n\n' if comment else '',
+							comment
+							)
+						out_log = '{0}{1}{2}'.format(
+							r_value['state_stdout'] if 'state_stdout' in r_value and r_value['state_stdout'] else '',
+							'\n\n' if out_log else '',
+							out_log
+							)
 
-					# add require in comment and log
-					if require_in_comment:
-						comment += '\n\n' + require_in_comment
+					# parse common result
+					else:
+						comment = '{0}{1}{2}'.format(
+							comment,
+							'\n\n' if comment else '',
+							r_value['comment'] if 'comment' in r_value and r_value['comment'] else ''
+							)
+						out_log = '{0}{1}{2}'.format(
+							out_log,
+							'\n\n' if out_log else '',
+							r_value['state_stdout'] if 'state_stdout' in r_value and r_value['state_stdout'] else ''
+							)
 
-					if require_in_log:
-						out_log += '\n\n' + require_in_log
+					result = r_value['result']
+					# break when one state runs failed
+					if not result:
+						break
 
-				else:
-					out_log = "wait failed"
+				# add require in comment and log
+				if require_in_comment:
+					comment += '\n\n' + require_in_comment
 
-			return (result, comment, out_log)
-		except Exception, e:
-			utils.log("ERROR", str(e), ("exec_salt", self))
-			return (False, str(e), None)
+				if require_in_log:
+					out_log += '\n\n' + require_in_log
+
+			else:
+				out_log = "wait failed"
+
+		return (result, comment, out_log)
 
 	def _is_special(self, states):
 		"""
@@ -219,7 +223,9 @@ class StateRunner(object):
 
 		try:
 			if not self._pkg_cache.endswith('/'):	self._pkg_cache += '/'
-			self.__is_existed(self._pkg_cache+'epel-release-6-8.noarch.rpm')
+			if not self.__is_existed(self._pkg_cache+'epel-release-6-8.noarch.rpm'):
+				utils.log("WARNING", "Cannot find the epel rpm package in %s" % self._pkg_cache, ("_enable_epel", self))
+				return
 
 			import subprocess
 			if self.os_type in ['centos', 'redhat']:	# install with rpm on centos|redhat
@@ -236,11 +242,8 @@ class StateRunner(object):
 				stdout=devnull,
 				stderr=devnull,
 				)
-		except ExecutionException, e:
-			utils.log("WARNING", "Cannot find the epel rpm package in %s" % self._pkg_cache, ("_enable_epel", self))
-			return
 		except Exception, e:
-			utils.log("WARNING", "Enable epel repo failed...",("_enable_epel", self))
+			utils.log("ERROR", str(e), ("_enable_epel", self))
 			return
 
 	def __mkdir(self, path):
@@ -267,7 +270,8 @@ class StateRunner(object):
 		elif isinstance(files, list):
 			file_list = files
 		else:
-			raise ExecutionException("Not input files to check")
+			utils.log("WARNING", "No input files to check...", ("__is_existed", self))
+			return
 
 		the_file = None
 		for file in file_list:
@@ -276,7 +280,8 @@ class StateRunner(object):
 				break
 
 		if not the_file:
-			raise ExecutionException("No files in %s existed." % files)
+			utils.log("WARNING", "No files in %s existed..." % str(files), ("__is_existed", self))
+			return
 
 		return the_file
 
