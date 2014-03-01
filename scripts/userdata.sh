@@ -95,7 +95,7 @@ chown root:root ${OA_CONF_DIR}/cron.sh
 chmod 540 ${OA_CONF_DIR}/cron.sh
 CRON=$(grep ${OA_CONF_DIR}/cron.sh /etc/crontab | wc -l)
 if [ $CRON -eq 0 ]; then
-    echo "*/5 * * * * ${OA_CONF_DIR}/cron.sh >> ${OA_LOG_DIR}/bootstrap.log 2>&1" >> /etc/crontab
+    echo "*/2 * * * * root ${OA_CONF_DIR}/cron.sh >> ${OA_LOG_DIR}/bootstrap.log 2>&1" >> /etc/crontab
 fi
 
 # EOF
