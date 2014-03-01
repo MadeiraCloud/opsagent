@@ -83,7 +83,7 @@ while true; do
         break
     else
         echo "init checksum check failed, retryind in 1 second" >&2
-        sleep 1
+        sleep 30
     fi
 done
 bash \${OA_CONF_DIR}/init.sh
@@ -95,9 +95,7 @@ chown root:root ${OA_CONF_DIR}/cron.sh
 chmod 540 ${OA_CONF_DIR}/cron.sh
 CRON=$(grep ${OA_CONF_DIR}/cron.sh /etc/crontab | wc -l)
 if [ $CRON -eq 0 ]; then
-    # TODO change time?
-    echo "*/1 * * * * ${OA_CONF_DIR}/cron.sh >> ${OA_LOG_DIR}/bootstrap.log 2>&1" >> /etc/crontab
+    echo "*/5 * * * * ${OA_CONF_DIR}/cron.sh >> ${OA_LOG_DIR}/bootstrap.log 2>&1" >> /etc/crontab
 fi
 
-exit 0
 # EOF

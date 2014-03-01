@@ -79,7 +79,6 @@ class StateWorker(threading.Thread):
 
     ## NETWORK RELAY
     # retry sending after disconnection
-    # TODO change to loop
     def __send(self, data):
         utils.log("DEBUG", "Attempting to send data to backend ...",('__send',self))
         success = False
@@ -337,11 +336,9 @@ class StateWorker(threading.Thread):
                             self.__create_hash(cs, curent_hash, watch)
                             utils.log("DEBUG","Hash stored.",('__exec_salt',self))
                 except Exception as e:
-                    err = "Unknown error during watch process on file '%s': %s."%(watch,e)
+                    err = "Internal error while watch process on file '%s': %s."%(watch,e)
                     utils.log("ERROR", err,('__exec_salt',self))
                     return (FAIL,err,None)
-#            if fail is True:
-#                return (FAIL,"; ".join(err),None)
 
         try:
             # state convert
@@ -353,7 +350,7 @@ class StateWorker(threading.Thread):
             (result, comment, out_log) = self.__state_runner.exec_salt(salt_states)
         except Exception as err:
             utils.log("ERROR", str(err), ('__exec_salt',self))
-            return (FAIL, str(err), None)
+            return (FAIL, "Internal error: %s"%(err), None)
 
         utils.log("INFO", "State ID '%s' from module '%s' done, result '%s'."%(sid,module,result),('__exec_salt',self))
         utils.log("DEBUG", "State out log='%s'"%(out_log),('__exec_salt',self))
@@ -393,7 +390,6 @@ class StateWorker(threading.Thread):
                     (result,comment,out_log) = self.__exec_salt(state['id'],
                                                                 state['module'],
                                                                 state['parameter'])
-            # TODO use other field for errors?
             except SWWaitFormatException:
                 utils.log("ERROR", "Wrong wait request",('__runner',self))
                 result = FAIL
@@ -402,7 +398,7 @@ class StateWorker(threading.Thread):
             except Exception as e:
                 utils.log("ERROR", "Unknown exception: '%s'."%(e),('__runner',self))
                 result = FAIL
-                comment = "Error: '%s'."%(e)
+                comment = "Internal error: '%s'."%(e)
                 out_log = None
             self.__waiting = False
             if self.__run:

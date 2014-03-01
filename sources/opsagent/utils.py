@@ -94,8 +94,6 @@ def clone_repo(config, path, name, uri):
 # clone a git branch/tag
 def checkout_repo(config, path, name, tag, uri, n=0):
     commands = [
-#        "git clean -df",
-#        "git reset --hard HEAD",
         "git checkout master",
         "git pull",
         "git checkout %s"%(tag),

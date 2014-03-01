@@ -62,7 +62,7 @@ elif [ $(which yum 2>/dev/null) ]; then
     yum -y -q install git
 fi
 
-# TODO exit if no git
+# Exit if no git
 if [ ! $(which git 2>/dev/null) ]; then
     echo "FATAL: No git found! (can't install?)" 1>&2
     exit 1
@@ -70,7 +70,6 @@ fi
 
 
 # setup dependencies
-# TODO check python packages names
 if [ $(which apt-get 2>/dev/null) ]; then
     # install python
     echo "Platform: APT"
@@ -105,10 +104,9 @@ else
 fi
 
 
-# TODO update if userdata change (check)
 # Generates config file
-#if [ ! -f ${OA_CONFIG_FILE} ]; then
-cat <<EOF > ${OA_CONFIG_FILE}
+if [ ! -f ${OA_CONFIG_FILE} ]; then
+    cat <<EOF > ${OA_CONFIG_FILE}
 [global]
 envroot=${OA_ENV_DIR}
 package_path=${OA_ENV_DIR}/lib/${PYTHON}/site-packages
@@ -125,7 +123,7 @@ bootstrap=${SRC_SCRIPTS_DIR}/bootstrap.sh
 mod_repo=
 mod_tag=
 EOF
-#fi
+fi
 chown ${OA_USER}:root ${OA_CONFIG_FILE}
 chmod 640 ${OA_CONFIG_FILE}
 
@@ -174,9 +172,8 @@ function get_sources() {
         if [ "$CRC" = "$REF_CRC" ]; then
             break
         else
-            # TODO change sleep value?
             echo "${1} checksum check failed, retryind in 1 second" >&2
-            sleep 1
+            sleep 30
         fi
     done
     if [ -d ${OA_BOOT_DIR}/${1} ]; then

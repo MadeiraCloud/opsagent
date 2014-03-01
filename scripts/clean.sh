@@ -5,7 +5,7 @@
 ##
 
 OA_CONF_FILE=/etc/opsagent.conf
-OA_CONF_DIR=/etc/opsagent.d
+OA_CONF_DIR=/var/lib/madeira/opsagent
 OA_LOG_DIR=/var/log/madeira
 OA_TMP_ROOT=/tmp/opsagent
 OA_ROOT_DIR=/opt/madeira

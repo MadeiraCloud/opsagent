@@ -87,9 +87,12 @@ class Daemon():
 
         # if pid exists, daemon running, don't do anything
         if pid:
-            # TODO remove file is obsolete
-            sys.stderr.write("pidfile %s already exist. Daemon already running?\n"%(self.pidfile))
-            sys.exit(1)
+            pids = [tpid for tpid in os.listdir(proc) if tpid.isdigit()]
+            if pid in pids:
+                sys.stderr.write("pidfile %s already exist. Daemon already running?\n"%(self.pidfile))
+                sys.exit(1)
+            else:
+                os.remove(self.pidfile)
 
         # start the daemon
         self.__daemonize()
