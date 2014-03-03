@@ -147,7 +147,7 @@ class StateRunner(object):
 					if 'result' not in r_value:	continue 	# filter no result
 
 					# parse require in result
-					if 'require_in' in r_tag:
+ 					if 'require_in' in r_tag:
 						require_in_comment = '{0}{1}{2}'.format(
 								require_in_comment,
 								'\n\n' if require_in_comment else '',
