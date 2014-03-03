@@ -55,6 +55,17 @@ def log(action, content, fc=None):
           else "%s%s%s%s"%(COLORS_EQ[action][0],out,content,COLORS_EQ[action][1]))
     LOGGING_EQ[action](pt)
 
+# convert data from unicode to string
+def uni2str(data):
+    if isinstance(data, basestring):
+        return str(data)
+    elif isinstance(data, collections.Mapping):
+        return dict(map(uni2str, data.iteritems()))
+    elif isinstance(data, collections.Iterable):
+    	return type(data)(map(uni2str, data))
+    else:
+        return data
+
 # clone a git repository
 def clone_repo(config, path, name, uri):
     try:
