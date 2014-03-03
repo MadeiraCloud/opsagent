@@ -274,9 +274,9 @@ class StateRunner(object):
 			return
 
 		the_file = None
-		for file in file_list:
-			if os.path.isfile(file):
-				the_file = file
+		for f in file_list:
+			if os.path.isfile(f):
+				the_file = f
 				break
 
 		if not the_file:

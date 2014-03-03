@@ -143,7 +143,7 @@ class Manager(WebSocketClient):
 
         # load recipes
         curent_version = self.__states_worker.get_version()
-        if (not curent_version) or (curent_version != version) or not self.__states_worker.is_running():
+        if (not curent_version) or (curent_version != version) or (not self.__states_worker.is_running()):
             utils.log("INFO", "Killing current execution ...",('__act_recipe',self))
             self.__states_worker.kill()
             utils.log("DEBUG", "Execution killed.",('__act_recipe',self))
@@ -259,7 +259,6 @@ class Manager(WebSocketClient):
     def stop(self):
         utils.log("INFO", "Stopping manager ...",('stop',self))
         self.__close(code=codes.C_STOP,reason=codes.M_STOP)
-        self.__run = False
 
     # Close socket
     def __close(self, code=1000, reason='', reset=False):
@@ -277,6 +276,7 @@ class Manager(WebSocketClient):
     def send_json(self, raw_data):
         utils.log("INFO", "Attempt to send data to backend ...",('send_json',self))
         utils.log("DEBUG", "Data: '%s'"%(raw_data),('send_json',self))
+        success = False
         try:
             utils.log("DEBUG", "Converting sending data to json",('send_json',self))
             json_data = json.dumps(raw_data)
@@ -296,7 +296,9 @@ class Manager(WebSocketClient):
                              code=codes.C_INVALID_WRITE,
                              reason=codes.M_INVALID_WRITE)
             else:
+                success = True
                 utils.log("INFO", "Data successfully sent to backend.",('send_json',self))
+        return success
 
     # Connection status
     def connected(self):

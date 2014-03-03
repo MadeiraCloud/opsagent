@@ -87,7 +87,7 @@ class Daemon():
 
         # if pid exists, daemon running, don't do anything
         if pid:
-            pids = [tpid for tpid in os.listdir(proc) if tpid.isdigit()]
+            pids = [tpid for tpid in os.listdir(self.config['global']['proc']) if tpid.isdigit()]
             if pid in pids:
                 sys.stderr.write("pidfile %s already exist. Daemon already running?\n"%(self.pidfile))
                 sys.exit(1)

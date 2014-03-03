@@ -20,8 +20,6 @@ from opsagent.objects import send
 from opsagent.exception import \
     OpsAgentException, \
     SWNoManagerException, \
-    StateException, \
-    ExecutionException, \
     SWWaitFormatException
 ##
 
@@ -34,6 +32,8 @@ FAIL=False
 WAIT_RESEND=1
 # Time before retrying state execution
 WAIT_STATE_RETRY=1
+# Reset value for recipe version counter (no overflow)
+RECIPE_COUNT_RESET=1000000000
 ##
 
 
@@ -66,6 +66,7 @@ class StateWorker(threading.Thread):
         self.__waiting = False
         self.__run = False
         self.__abort = False
+        self.__recipe_count = 0
 
         # builtins methods map
         self.__builtins = {
@@ -81,23 +82,33 @@ class StateWorker(threading.Thread):
     # retry sending after disconnection
     def __send(self, data):
         utils.log("DEBUG", "Attempting to send data to backend ...",('__send',self))
+#        try:
+#            cdata = copy.deepcopy(data)
+#        except copy.error:
+#            utils.log("ERROR", "Can't copy to-send data, giving up sending ...",('__send',self))
+#            utils.log("INFO", "Stopping manager...",('__send',self))
+#            self.__manager.stop()
+#            utils.log("INFO", "Manager stopped.",('__send',self))
+#            return
         success = False
-        while not success:
+        sent = False
+        cur_count = self.__recipe_count
+        while (not success) and (data) and (self.__run) and (cur_count == self.__recipe_count):
             try:
                 if not self.__manager:
-                    raise SWNoManagerException
-                self.__manager.send_json(data)
+                    raise SWNoManagerException("Can't reach backend ...")
+                sent = self.__manager.send_json(data)
             except Exception as e:
                 utils.log("ERROR", "Can't send data '%s', reason: '%s'."%(data,e),('__send',self))
-                if self.__run:
-                    utils.log("WARNING", "Still running, retrying in %s seconds.",('__send',self))
-                    time.sleep(WAIT_RESEND)
-                else:
-                    utils.log("WARNING", "Not running, aborting send.",('__send',self))
-                    break
+                utils.log("WARNING", "Retrying in %s seconds."%(WAIT_RESEND),('__send',self))
+                time.sleep(WAIT_RESEND)
             else:
-                success = True
-                utils.log("DEBUG", "Data successfully sent.",('__send',self))
+                if sent:
+                    success = True
+                    utils.log("DEBUG", "Data successfully sent.",('__send',self))
+                else:
+                    utils.log("WARNING", "Data not sent, retrying in %s seconds..."%(WAIT_RESEND),('__send',self))
+                    time.sleep(WAIT_RESEND)
     ##
 
 
@@ -230,6 +241,7 @@ class StateWorker(threading.Thread):
         utils.log("DEBUG", "Conditional lock acquired.",('load',self))
         self.__version = version
 
+        self.__recipe_count = (self.__recipe_count+1 if self.__recipe_count < RECIPE_COUNT_RESET else 0)
         exp = None
         try:
             # state adaptor
@@ -253,20 +265,21 @@ class StateWorker(threading.Thread):
 
             if states:
                 utils.log("INFO", "Loading new states.",('load',self))
+                del self.__states
                 self.__states = states
             else:
                 utils.log("INFO", "No change in states.",('load',self))
             utils.log("DEBUG", "Allow to run.",('load',self))
             self.__run = True
         except Exception as e:
-            exp = OpsAgentException(e)
+            exp = e
 
         utils.log("DEBUG", "Notify execution thread.",('load',self))
         self.__cv.notify()
         utils.log("DEBUG", "Release conditional lock.",('load',self))
         self.__cv.release()
 
-        if exp: raise exp
+        if exp: raise OpsAgentException(exp)
     ##
 
 
