@@ -80,7 +80,7 @@ function tree() {
 function publish() {
     rm -rf ${RELEASE_DIR}
     mkdir -p ${RELEASE_DIR}
-    cp ${BUILD_DIR}/{init.cksum,init.sh,opsagent.cksum,opsagent.tgz,userdata.cksum,userdata.sh}
+    cp ${BUILD_DIR}/{init.cksum,init.sh,opsagent.cksum,opsagent.tgz,userdata.cksum,userdata.sh} ${RELEASE_DIR}/
     git add . -A
     git commit -m "release ${1}"
     git pull
