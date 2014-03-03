@@ -7,7 +7,7 @@
 ##
 
 
-USAGE="$0 tree"
+USAGE="$0 tree|release"
 
 SCRIPTS_DIR=scripts
 CONF_DIR=conf
@@ -89,6 +89,9 @@ function publish() {
 
 case $1 in
     tree)
+        tree
+        ;;
+    release)
         echo -n "Please input release name then [ENTER]: "
         read ${RELEASE_NAME}
         ROOT=${PWD}
