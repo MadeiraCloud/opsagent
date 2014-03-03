@@ -15,13 +15,14 @@ LIBS_DIR=libs
 SOURCES_DIR=sources
 
 BUILD_DIR=build
+RELEASE_DIR=release
 OPSAGENT_DIR=opsagent
 
 
 function tree() {
     # Clear (if any) and create build directory
     rm -rf ${BUILD_DIR}
-    # Create agent build directory
+    # Create agent build/release directory
     mkdir -p ${BUILD_DIR}/${OPSAGENT_DIR}/{$SCRIPTS_DIR,$CONF_DIR,$LIBS_DIR,$SOURCES_DIR}
 
     # move to build directory
@@ -76,9 +77,24 @@ function tree() {
     cksum opsagent.tgz > opsagent.cksum
 }
 
+function publish() {
+    rm -rf ${RELEASE_DIR}
+    mkdir -p ${RELEASE_DIR}
+    cp ${BUILD_DIR}/{init.cksum,init.sh,opsagent.cksum,opsagent.tgz,userdata.cksum,userdata.sh}
+    git add . -A
+    git commit -m "release ${1}"
+    git pull
+    git push
+}
+
 case $1 in
     tree)
+        echo -n "Please input release name then [ENTER]: "
+        read ${RELEASE_NAME}
+        ROOT=${PWD}
         tree
+        cd ${ROOT}
+        publish ${RELEASE_NAME}
         ;;
     *)
         echo -e "syntax error\nusage: $USAGE"
