@@ -93,11 +93,11 @@ case $1 in
         ;;
     release)
         echo -n "Please input release name then [ENTER]: "
-        read ${RELEASE_NAME}
+        read RELEASE_NAME
         ROOT=${PWD}
         tree
         cd ${ROOT}
-        publish ${RELEASE_NAME}
+        publish "${RELEASE_NAME}"
         ;;
     *)
         echo -e "syntax error\nusage: $USAGE"
