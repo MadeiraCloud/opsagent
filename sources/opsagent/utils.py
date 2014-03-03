@@ -10,6 +10,7 @@ import time
 import subprocess
 import os
 import shutil
+import collections
 
 # Custom imports
 from opsagent.exception import ManagerInvalidStatesRepoException
