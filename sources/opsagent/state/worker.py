@@ -335,7 +335,7 @@ class StateWorker(threading.Thread):
                         else:
                             utils.log("DEBUG", "Watched file '%s' found."%(watch),('__exec_salt',self))
                             curent_hash = hashlib.md5(watch).hexdigest()
-                            cs = os.path.join(self.__config['global']['watch'], sid)
+                            cs = os.path.join(self.__config['global']['watch'], "%s-%s"(watch,sid))
                             if os.path.isfile(cs):
                                 with open(cs, 'r') as f:
                                     old_hash = f.read()

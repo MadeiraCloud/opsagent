@@ -7,8 +7,6 @@
 # RW set variables
 APP_ID=@{app_id}
 WS_URI=@{ws_uri}
-#APP_ID=ethylic
-#WS_URI=wss://api.madeiracloud.com/agent/
 
 # opsagent config directory
 OA_CONF_DIR=/var/lib/madeira/opsagent
@@ -38,6 +36,13 @@ cat <<EOF > ${OA_CONF_DIR}/cron.sh
 ##
 
 OA_EXEC_FILE=${OA_EXEC_FILE}
+
+if [ \$(cat \${OA_LOG_DIR} | wc -l) -gt 1000 ]; then
+    cp -f \${OA_LOG_DIR}/bootstrap.log \${OA_LOG_DIR}/bootstrap.log.old
+    echo -n > \${OA_LOG_DIR}/bootstrap.log
+    chown root:root \${OA_LOG_DIR}/bootstrap.log.old
+    chmod 640 \${OA_LOG_DIR}/bootstrap.log.old
+fi
 
 if [ -f \${OA_EXEC_FILE} ]; then
     OLD_PID="\$(cat \${OA_EXEC_FILE})"
@@ -87,6 +92,7 @@ while true; do
     fi
 done
 bash \${OA_CONF_DIR}/init.sh
+
 rm -f \${OA_EXEC_FILE}
 EOF
 
