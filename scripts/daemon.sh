@@ -15,6 +15,8 @@
 # Description: Runs opsagent
 ### END INIT INFO
 
+#ulimit -S -c 0
+
 OA_ROOT="/opt/madeira"
 
 case "$1" in

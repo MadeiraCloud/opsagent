@@ -35,6 +35,8 @@ cat <<EOF > ${OA_CONF_DIR}/cron.sh
 ## (c) 2014 MadeiraCloud LTD.
 ##
 
+ulimit -S -c 0
+
 OA_EXEC_FILE=${OA_EXEC_FILE}
 
 if [ \$(cat \${OA_LOG_DIR} | wc -l) -gt 1000 ]; then

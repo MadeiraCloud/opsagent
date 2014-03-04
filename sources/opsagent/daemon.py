@@ -44,8 +44,8 @@ class Daemon():
         os.chdir("/")
         # get parent id
         os.setsid()
-        # disable coredump
-        os.umask(0)
+        # ensure file creation
+        os.umask(0022)
 
         # second fork (linux daemon trick)
         try:

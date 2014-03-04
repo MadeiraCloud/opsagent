@@ -4,7 +4,6 @@
 ## (c) 2014 MadeiraCloud LTD.
 ##
 
-
 # create virtualenv
 ${PYTHON} ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_LIBS_DIR}/virtualenv/virtualenv.py ${OA_ENV_DIR}
 # set cache directory
