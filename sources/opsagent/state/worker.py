@@ -14,6 +14,7 @@ import signal
 import re
 import sys
 import hashlib
+import copy
 # Custom imports
 from opsagent import utils
 from opsagent.objects import send
@@ -319,6 +320,8 @@ class StateWorker(threading.Thread):
     # Call salt library
     def __exec_salt(self, sid, module, parameter):
         utils.log("INFO", "Loading state ID '%s' from module '%s' ..."%(sid,module),('__exec_salt',self))
+
+        parameter = copy.deepcopy(parameter)
 
         # Watch process
         if parameter and type(parameter) is dict and parameter.get("watch"):
