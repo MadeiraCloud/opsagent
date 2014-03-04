@@ -56,7 +56,11 @@ function tree() {
     done
 
     # Copy launcher script
-    cp ../${SOURCES_DIR}/opsagent.py ${OPSAGENT_DIR}/${SCRIPTS_DIR}/opsagent
+    if [ "${1}" != "" ]; then
+        sed "s/VERSION_NBR=.*/VERSION_NBR='${1}'/" < ../${SOURCES_DIR}/opsagent.py > ${OPSAGENT_DIR}/${SCRIPTS_DIR}/opsagent
+    else
+        cp ../${SOURCES_DIR}/opsagent.py ${OPSAGENT_DIR}/${SCRIPTS_DIR}/opsagent
+    fi
 
     # Copy config files
     cp ../${CONF_DIR}/opsagent.conf ${OPSAGENT_DIR}/${CONF_DIR}/
@@ -70,13 +74,19 @@ function tree() {
 }
 
 function publish() {
+    echo "${1}" > curent
     rm -rf ${RELEASE_DIR}
     mkdir -p ${RELEASE_DIR}
     cp ${BUILD_DIR}/{init.cksum,init.sh,opsagent.cksum,opsagent.tgz,userdata.cksum,userdata.sh} ${RELEASE_DIR}/
     git add . -A
+    git commit -m "v${1}"
+    git push
+}
+
+function update() {
+    git add . -A
     git commit -m "${1}"
     git pull
-    git push
 }
 
 case $1 in
@@ -84,10 +94,17 @@ case $1 in
         tree
         ;;
     release)
-        echo -n "Please input release name then [ENTER]: "
+        git status
+        echo
+        echo
+        echo -n "Please input commit message then [ENTER]: "
+        read COMMIT
+        echo -n "Please input release number [ENTER]: "
         read RELEASE_NAME
         ROOT=${PWD}
-        tree
+        update "${COMMIT}"
+        cd ${ROOT}
+        tree "${RELEASE_NAME}"
         cd ${ROOT}
         publish "${RELEASE_NAME}"
         ;;
