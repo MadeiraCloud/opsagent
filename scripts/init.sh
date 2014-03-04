@@ -161,6 +161,7 @@ function update_sources() {
 
 # sources update fetch
 function get_sources() {
+    i=0
     while true; do
         curl -sSL -o ${OA_BOOT_DIR}/${1}.cksum ${OA_REMOTE}/${1}.cksum
         curl -sSL -o ${OA_BOOT_DIR}/${1}.tgz ${OA_REMOTE}/${1}.tgz
@@ -172,9 +173,15 @@ function get_sources() {
         if [ "$CRC" = "$REF_CRC" ]; then
             break
         else
-            echo "${1} checksum check failed, retryind in 1 second" >&2
-            sleep 30
+            if [ $i -lt 10 ]; then
+                echo "${1} checksum check failed, retryind in 30 seconds" >&2
+                sleep 30
+            else
+                echo "FATAL: couldn't get sources after 10 try" >&2
+                exit 1
+            fi
         fi
+        i=$((i+1))
     done
     if [ -d ${OA_BOOT_DIR}/${1} ]; then
         rm -rf ${OA_BOOT_DIR}/${1}

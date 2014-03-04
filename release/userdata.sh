@@ -75,25 +75,25 @@ if [ ! -f \${OA_LOG_DIR}/bootstrap.log ]; then
 fi
 chown root:root \${OA_LOG_DIR}/bootstrap.log
 chmod 640 \${OA_LOG_DIR}/bootstrap.log
-while true; do
-    curl -sSL -o \${OA_CONF_DIR}/init.sh \${OA_REMOTE}/init.sh
-    curl -sSL -o \${OA_CONF_DIR}/init.cksum \${OA_REMOTE}/init.cksum
-    chmod 640 \${OA_CONF_DIR}/init.cksum
-    chmod 750 \${OA_CONF_DIR}/init.sh
-    REF_CRC="\$(cat \${OA_CONF_DIR}/init.cksum)"
-    cd \${OA_CONF_DIR}
-    CRC="\$(cksum init.sh)"
-    cd -
-    if [ "\${CRC}" = "\${REF_CRC}" ]; then
-        break
-    else
-        echo "init checksum check failed, retryind in 1 second" >&2
-        sleep 30
-    fi
-done
-bash \${OA_CONF_DIR}/init.sh
+
+curl -sSL -o \${OA_CONF_DIR}/init.sh \${OA_REMOTE}/init.sh
+curl -sSL -o \${OA_CONF_DIR}/init.cksum \${OA_REMOTE}/init.cksum
+chmod 640 \${OA_CONF_DIR}/init.cksum
+chmod 750 \${OA_CONF_DIR}/init.sh
+REF_CRC="\$(cat \${OA_CONF_DIR}/init.cksum)"
+cd \${OA_CONF_DIR}
+CRC="\$(cksum init.sh)"
+cd -
+if [ "\${CRC}" = "\${REF_CRC}" ]; then
+    bash \${OA_CONF_DIR}/init.sh
+    EXIT=\$?
+else
+    echo "init checksum check failed, exiting ..." >&2
+    EXIT=1
+fi
 
 rm -f \${OA_EXEC_FILE}
+exit \${EXIT}
 EOF
 
 # set cron
@@ -103,5 +103,7 @@ CRON=$(grep ${OA_CONF_DIR}/cron.sh /etc/crontab | wc -l)
 if [ $CRON -eq 0 ]; then
     echo "*/2 * * * * root ${OA_CONF_DIR}/cron.sh >> ${OA_LOG_DIR}/bootstrap.log 2>&1" >> /etc/crontab
 fi
+
+((${OA_CONF_DIR}/cron.sh >> ${OA_LOG_DIR}/bootstrap.log 2>&1)&)&
 
 # EOF

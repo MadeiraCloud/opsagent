@@ -334,13 +334,15 @@ class StateWorker(threading.Thread):
                             return (FAIL,err,None)
                         else:
                             utils.log("DEBUG", "Watched file '%s' found."%(watch),('__exec_salt',self))
-                            curent_hash = hashlib.md5(watch).hexdigest()
-                            cs = os.path.join(self.__config['global']['watch'], "%s-%s"(sid,watch.replace('/','-')))
+                            with open(watch, 'r') as f:
+                                curent_hash = hashlib.sha256(f.read()).hexdigest()
+                            cs = os.path.join(self.__config['global']['watch'], "%s-%s"%(sid,watch.replace('/','-')))
                             if os.path.isfile(cs):
                                 with open(cs, 'r') as f:
                                     old_hash = f.read()
                                 if old_hash != curent_hash:
                                     utils.log("INFO","Watch event triggered, replacing standard action ...",('__exec_salt',self))
+                                    self.__create_hash(cs, curent_hash, watch)
                                     parameter["watch"] = True
                                     utils.log("DEBUG","Standard action replaced.",('__exec_salt',self))
                                 else:
