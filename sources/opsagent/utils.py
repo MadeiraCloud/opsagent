@@ -17,7 +17,7 @@ from opsagent.exception import ManagerInvalidStatesRepoException
 
 
 # Defines
-DEBUG_DELAY=0.1
+DEBUG_DELAY=0
 DEBUG=10
 COLOR=True
 
