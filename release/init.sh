@@ -138,13 +138,6 @@ function update_sources() {
         RETVAL_LAST=$?
         VALID="$(echo ${LAST_VERSION} | grep ${1}.tgz | wc -l)"
         RETVAL_VALID=$?
-        ## TODO: remove
-        echo "RETVAL_CUR=$RETVAL_CUR" 1>&2
-        echo "RETVAL_LAST=$RETVAL_LAST" 1>&2
-        echo "RETVAL_VALID=$RETVAL_VALID" 1>&2
-        echo "VALID=$VALID" 1>&2
-        echo "CUR_VERSION=$CUR_VERSION" 1>&2
-        ## /TODO
         if ([ "$RETVAL_CUR" != "0" ]) \
             || \
             ([ "$RETVAL_LAST" = "0" ] && [ "$RETVAL_VALID" = "0" ] && [ "$VALID" = "1" ] && [ "$CUR_VERSION" != "$LAST_VERSION" ])
@@ -169,7 +162,7 @@ function get_sources() {
         REF_CRC="$(cat ${OA_BOOT_DIR}/${1}.cksum)"
         cd ${OA_BOOT_DIR}
         CRC="$(cksum ${1}.tgz)"
-        cd -
+        cd - 2>&1 > /dev/null
         if [ "$CRC" = "$REF_CRC" ]; then
             break
         else
@@ -189,19 +182,16 @@ function get_sources() {
     mkdir -p ${OA_BOOT_DIR}/${1}
     cd ${OA_BOOT_DIR}/${1}
     tar xfz ../${1}.tgz
-    cd -
+    cd - 2>&1 > /dev/null
     chown -R root:root ${OA_BOOT_DIR}/${1}
 }
 
 
 # check for updates (and fetch)
 UPDATE_AGENT=$(update_sources ${OA_AGENT})
-echo "UPDATEAGENT=$UPDATE_AGENT" # TODO: remove
 if [ ${UPDATE_AGENT} -ne 0 ]; then
     echo "update agent"
     get_sources ${OA_AGENT}
-else
-    echo "don't update agent"
 fi
 
 # shudown agent
@@ -209,28 +199,32 @@ if [ ${UPDATE_AGENT} -ne 0 ] && [ -d ${OA_ENV_DIR} ]; then
     echo "shutdown agent"
     service opsagentd stop-end
     rm -rf ${OA_ENV_DIR}
-else
-    echo "don't shutdown agent"
 fi
 
 # bootstrap agent
 if [ ! -d ${OA_ENV_DIR} ]; then
     if [ ${UPDATE_AGENT} -eq 0 ]; then
-        echo "change update_agent to 3" #TODO remove
         UPDATE_AGENT=3
     fi
     echo "bootstrap agent"
     source ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_SCRIPTS_DIR}/bootstrap.sh
-else
-    echo "don't bootstrap agent"
 fi
 
 # load agent
 if [ ${UPDATE_AGENT} -ne 0 ]; then
-    echo "load agent"
+    echo "load agent after update"
     service opsagentd start
-else
-    echo "don't load agent"
+fi
+
+# run check
+service opsagentd status
+if [ $? -ne 0 ]; then
+    echo "agent not running, attempting to run ..."
+    service opsagentd start
+    if [ $? -ne 0 ]; then
+        echo "FATAL: can't run agent" >&2
+        exit 1
+    fi
 fi
 
 # EOF
