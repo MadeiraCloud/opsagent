@@ -27,7 +27,7 @@ from opsagent import utils
 
 ## DEFINES
 # Time to wait before retrying handshake
-WAIT_CONNECT=5
+WAIT_CONNECT=30
 ##
 
 

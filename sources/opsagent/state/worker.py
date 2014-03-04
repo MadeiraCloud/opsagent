@@ -30,8 +30,10 @@ SUCCESS=True
 # State failed
 FAIL=False
 # Time to resend if failure
-WAIT_RESEND=1
+WAIT_RESEND=30
 # Time before retrying state execution
+WAIT_STATE_RETRY=30
+# Time to wait between each state (don't overload)
 WAIT_STATE_RETRY=1
 # Reset value for recipe version counter (no overflow)
 RECIPE_COUNT_RESET=1000000000
@@ -439,6 +441,7 @@ class StateWorker(threading.Thread):
                         if self.__abort: # don't "else" as abort may happen during the delay
                             self.__run = False
                     else:
+                        time.sleep(WAIT_STATE)
                         utils.log("INFO", "All good, switching to next state.",('__runner',self))
                 else:
                     if self.__abort:
