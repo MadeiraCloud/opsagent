@@ -356,6 +356,8 @@ class StateWorker(threading.Thread):
                                 utils.log("DEBUG","No old record, creating hash and executing normal command ...",('__exec_salt',self))
                                 self.__create_hash(cs, curent_hash, watch)
                                 utils.log("DEBUG","Hash stored.",('__exec_salt',self))
+                                parameter["watch"] = True
+                                utils.log("DEBUG","Standard action replaced.",('__exec_salt',self))
                     except Exception as e:
                         err = "Internal error while watch process on file '%s': %s."%(watch,e)
                         utils.log("ERROR", err,('__exec_salt',self))
