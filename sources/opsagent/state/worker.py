@@ -305,7 +305,7 @@ class StateWorker(threading.Thread):
             self.__wait_event.clear()
             utils.log("INFO", "New state status received, analysing ...",('__exec_wait',self))
         self.__waiting = False
-        if id in self.__done:
+        if sid in self.__done:
             value = SUCCESS
             utils.log("INFO", "Waited state completed.",('__exec_wait',self))
         else:
