@@ -97,8 +97,8 @@ class Manager(WebSocketClient):
             if not module_tag or not isinstance(module_tag, basestring):
                 utils.log("ERROR", "Invalid modules tag.",('__act_recipe',self))
                 raise ManagerInvalidStateFormatException
-        else:
-            utils.log("ERROR", "No modules details.",('__act_recipe',self))
+        else if (not self.__config['global']['mod_repo']) or (not self.__config['global']['mod_tag']):
+            utils.log("ERROR", "No modules details and no repo details present.",('__act_recipe',self))
             raise ManagerInvalidStateFormatException
 
         # check states
