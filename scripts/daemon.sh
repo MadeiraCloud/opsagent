@@ -50,6 +50,7 @@ case "$1" in
     ;;
   status)
     ${OA_ROOT}/env/bin/opsagent status
+    exit $?
     ;;
   *)
     echo "Usage: $0 {start|stop|restart|stop-wait|restart-wait|stop-end|restart-end|status}"
