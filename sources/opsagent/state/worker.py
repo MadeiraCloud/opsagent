@@ -36,7 +36,7 @@ WAIT_STATE_RETRY=30
 # Time to wait between each state (don't overload)
 WAIT_STATE=1
 # Reset value for recipe version counter (no overflow)
-RECIPE_COUNT_RESET=1000000000
+RECIPE_COUNT_RESET=4096
 ##
 
 
@@ -141,11 +141,11 @@ class StateWorker(threading.Thread):
 
     # End program
     def abort(self, kill=False, end=False):
+        self.__abort = True
         if self.__abort:
             utils.log("DEBUG", "Already aborting ...",('abort',self))
             return
 
-        self.__abort = True
         if not end:
             self.__run = False
 
@@ -269,7 +269,7 @@ class StateWorker(threading.Thread):
             if states:
                 utils.log("INFO", "Loading new states.",('load',self))
                 del self.__states
-                self.__states = states
+                self.__states = copy.deepcopy(states)
             else:
                 utils.log("INFO", "No change in states.",('load',self))
             utils.log("DEBUG", "Allow to run.",('load',self))

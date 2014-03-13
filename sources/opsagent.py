@@ -27,6 +27,7 @@ from opsagent.state.worker import StateWorker
 USAGE='usage: %prog [-hqv] [-l logfile] [-c configfile] (start|stop|restart|stop-wait|restart-wait)'
 VERSION_NBR='0.1a'
 VERSION='%prog '+VERSION_NBR
+WAIT_RECONNECT=10
 
 
 # logger settings
@@ -125,6 +126,8 @@ class OpsAgentRunner(Daemon):
                 utils.log("ERROR", "Unexpected error: '%s'"%(e),('run','OpsAgentRunner'))
                 time.sleep(0.1)
                 utils.log("WARNING", "Conenction aborted, retrying ...",('run','OpsAgentRunner'))
+            if self.sw and (not self.sw.aborted()):
+                time.sleep(WAIT_RECONNECT)
 
         # end properly
         if self.sw and self.sw.is_alive():

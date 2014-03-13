@@ -100,6 +100,9 @@ class Manager(WebSocketClient):
         elif (not self.__config['global']['mod_repo']) or (not self.__config['global']['mod_tag']):
             utils.log("ERROR", "No modules details and no repo details present.",('__act_recipe',self))
             raise ManagerInvalidStateFormatException
+        else:
+            module_repo = self.__config['module']['mod_repo']
+            module_tag = self.__config['module']['mod_tag']
 
         # check states
         states = data.get("state")
