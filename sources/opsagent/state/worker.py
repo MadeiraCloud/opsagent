@@ -239,6 +239,11 @@ class StateWorker(threading.Thread):
     ## LOAD PROCESS
     # Load states modules
     def __load_modules(self):
+        # clone states if not exists
+        if not os.path.isdir("%s/%s"%(self.__config['module']['root'],self.__config['module']['name'])):
+            utils.clone_repo(self.__config,self.__config['module']['root'],self.__config['module']['name'],self.__config['module']['mod_repo'])
+            utils.checkout_repo(self.__config,self.__config['module']['root'],self.__config['module']['name'],self.__config['module']['mod_tag'],self.__config['module']['mod_repo'])
+
         # state adaptor
         if self.__state_adaptor:
             utils.log("DEBUG", "Deleting adaptor...",('load_modules',self))
@@ -248,6 +253,7 @@ class StateWorker(threading.Thread):
         reload(opsagent.state.adaptor)
         from opsagent.state.adaptor import StateAdaptor
         self.__state_adaptor = StateAdaptor()
+
         # state runner
         if self.__state_runner:
             utils.log("DEBUG", "Deleting runner...",('load_modules',self))
