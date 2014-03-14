@@ -237,6 +237,27 @@ class StateWorker(threading.Thread):
 
 
     ## LOAD PROCESS
+    # Load states modules
+    def __load_modules(self):
+        # state adaptor
+        if self.__state_adaptor:
+            utils.log("DEBUG", "Deleting adaptor...",('load_modules',self))
+            del self.__state_adaptor
+        utils.log("DEBUG", "Loading adaptor...",('load_modules',self))
+        import opsagent.state.adaptor
+        reload(opsagent.state.adaptor)
+        from opsagent.state.adaptor import StateAdaptor
+        self.__state_adaptor = StateAdaptor()
+        # state runner
+        if self.__state_runner:
+            utils.log("DEBUG", "Deleting runner...",('load_modules',self))
+            del self.__state_runner
+        utils.log("DEBUG", "Loading runner...",('load_modules',self))
+        import opsagent.state.runner
+        reload(opsagent.state.runner)
+        from opsagent.state.runner import StateRunner
+        self.__state_runner = StateRunner(config=self.__config['salt'])
+
     # Load new recipe
     def load(self, version=None, states=None):
         utils.log("DEBUG", "Aquire conditional lock ...",('load',self))
@@ -247,25 +268,7 @@ class StateWorker(threading.Thread):
         self.__recipe_count = (self.__recipe_count+1 if self.__recipe_count < RECIPE_COUNT_RESET else 0)
         exp = None
         try:
-            # state adaptor
-            if self.__state_adaptor:
-                utils.log("DEBUG", "Deleting adaptor...",('load',self))
-                del self.__state_adaptor
-            utils.log("DEBUG", "Loading adaptor...",('load',self))
-            import opsagent.state.adaptor
-            reload(opsagent.state.adaptor)
-            from opsagent.state.adaptor import StateAdaptor
-            self.__state_adaptor = StateAdaptor()
-            # state runner
-            if self.__state_runner:
-                utils.log("DEBUG", "Deleting runner...",('load',self))
-                del self.__state_runner
-            utils.log("DEBUG", "Loading runner...",('load',self))
-            import opsagent.state.runner
-            reload(opsagent.state.runner)
-            from opsagent.state.runner import StateRunner
-            self.__state_runner = StateRunner(config=self.__config['salt'])
-
+#            self.load_modules()
             if states:
                 utils.log("INFO", "Loading new states.",('load',self))
                 del self.__states
@@ -400,6 +403,8 @@ class StateWorker(threading.Thread):
                 utils.log("WARNING", "Empty states list.",('__runner',self))
                 self.__run = False
                 continue
+            if self.__status == 0:
+                self.load_modules()
             state = self.__states[self.__status]
             utils.log("INFO", "Running state '%s', #%s"%(state['id'], self.__status),('__runner',self))
             try:
