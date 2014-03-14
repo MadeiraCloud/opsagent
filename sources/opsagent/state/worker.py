@@ -409,9 +409,24 @@ class StateWorker(threading.Thread):
                 utils.log("WARNING", "Empty states list.",('__runner',self))
                 self.__run = False
                 continue
-            if self.__status == 0:
-                self.__load_modules()
             state = self.__states[self.__status]
+
+            # Load modules on each round
+            if self.__status == 0:
+                try:
+                    self.__load_modules()
+                except Exception:
+                    utils.log("WARNING", "Can't load states modules.",('__runner',self))
+                    self.__send(send.statelog(init=self.__config['init'],
+                                              version=self.__version,
+                                              sid=state['id'],
+                                              result=FAIL,
+                                              comment="Can't load states modules.",
+                                              out_log=None))
+                    self.__run = False
+                    continue
+
+            # OK to run
             utils.log("INFO", "Running state '%s', #%s"%(state['id'], self.__status),('__runner',self))
             try:
                 if state.get('module') in self.__builtins:
@@ -437,25 +452,30 @@ class StateWorker(threading.Thread):
             self.__waiting = False
             if self.__run:
                 utils.log("INFO", "Execution complete, reporting logs to backend.",('__runner',self))
+                # send result to backend
                 self.__send(send.statelog(init=self.__config['init'],
                                           version=self.__version,
                                           sid=state['id'],
                                           result=result,
                                           comment=comment,
                                           out_log=out_log))
+                # state succeed
                 if result == SUCCESS:
                     # global status iteration
                     self.__status += 1
                     if self.__status >= len(self.__states):
                         utils.log("INFO", "All good, last state succeed! Back to first one.",('__runner',self))
+                        # not terminating, wait before next round
                         if not self.__abort:
                             self.__recipe_delay()
                             self.__status = 0
+                        # terminating ...
                         if self.__abort: # don't "else" as abort may happen during the delay
                             self.__run = False
                     else:
                         time.sleep(WAIT_STATE)
                         utils.log("INFO", "All good, switching to next state.",('__runner',self))
+                # state failed
                 else:
                     if self.__abort:
                         self.__run = False
