@@ -404,7 +404,7 @@ class StateWorker(threading.Thread):
                 self.__run = False
                 continue
             if self.__status == 0:
-                self.load_modules()
+                self.__load_modules()
             state = self.__states[self.__status]
             utils.log("INFO", "Running state '%s', #%s"%(state['id'], self.__status),('__runner',self))
             try:
