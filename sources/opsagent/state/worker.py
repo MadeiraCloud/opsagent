@@ -69,6 +69,7 @@ class StateWorker(threading.Thread):
         self.__waiting = False
         self.__run = False
         self.__abort = False
+        self.__executing = False
         self.__recipe_count = 0
 
         # builtins methods map
@@ -193,7 +194,7 @@ class StateWorker(threading.Thread):
         utils.log("DEBUG", "Killing states execution...",('__kill_childs',self))
         if not self.__config['runtime']['proc']:
             utils.log("WARNING", "/!\\ procfs is disabled, and you shouldn't do this. Potential hazardous behaviour can happen ...",('__kill_childs',self))
-            return
+            return False
         proc = self.__config['global']['proc']
         flag = False
         cur_pid = os.getpid()
@@ -204,7 +205,7 @@ class StateWorker(threading.Thread):
                 f = open(filename, "r")
                 for line in f:
                     if re.search(r'PPid.*%s'%(cur_pid), line):
-                        utils.log("INFO", "State execution process found #%s. Killing ..."%(pid),('kill',self))
+                        utils.log("INFO", "State execution process found #%s. Killing ..."%(pid),('__kill_childs',self))
                         os.kill(int(pid),signal.SIGKILL)
                         utils.log("DEBUG", "Process killed.",('kill',self))
                         flag = True
@@ -212,6 +213,7 @@ class StateWorker(threading.Thread):
                 utils.log("DEBUG", "Kill child error on pid #%s: '%s'."%(pid,e),('__kill_childs',self))
         if not flag:
             utils.log("INFO", "No state execution found.",('__kill_childs',self))
+        return True
 
     # Halt wait
     def __kill_wait(self):
@@ -229,7 +231,8 @@ class StateWorker(threading.Thread):
             self.__run = False
             self.__kill_delay()
             self.__kill_wait()
-            self.__kill_childs()
+            while self.__kill_childs() and self.__executing:
+                time.sleep(0.1)
             utils.log("INFO", "Execution killed.",('kill',self))
         else:
             utils.log("DEBUG", "Execution not running, nothing to do.",('kill',self))
@@ -428,6 +431,7 @@ class StateWorker(threading.Thread):
 
             # OK to run
             utils.log("INFO", "Running state '%s', #%s"%(state['id'], self.__status),('__runner',self))
+            self.__executing = True
             try:
                 if state.get('module') in self.__builtins:
                     (result,comment,out_log) = (self.__builtins[state['module']](state['id'],
@@ -449,6 +453,7 @@ class StateWorker(threading.Thread):
                 result = FAIL
                 comment = "Internal error: '%s'."%(e)
                 out_log = None
+            self.__executing = False
             self.__waiting = False
             if self.__run:
                 utils.log("INFO", "Execution complete, reporting logs to backend.",('__runner',self))
