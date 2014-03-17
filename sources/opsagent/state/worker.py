@@ -482,6 +482,7 @@ class StateWorker(threading.Thread):
                         utils.log("INFO", "All good, switching to next state.",('__runner',self))
                 # state failed
                 else:
+                    self.__status = 0
                     if self.__abort:
                         self.__run = False
                     else:
