@@ -39,7 +39,7 @@ ulimit -S -c 0
 
 OA_EXEC_FILE=${OA_EXEC_FILE}
 
-if [ \$(cat \${OA_LOG_DIR} | wc -l) -gt 1000 ]; then
+if [ \$(cat \${OA_LOG_DIR}/bootstrap.log | wc -l) -gt 1000 ]; then
     cp -f \${OA_LOG_DIR}/bootstrap.log \${OA_LOG_DIR}/bootstrap.log.old
     echo -n > \${OA_LOG_DIR}/bootstrap.log
     chown root:root \${OA_LOG_DIR}/bootstrap.log.old
@@ -69,7 +69,7 @@ export APP_ID=${APP_ID}
 export WS_URI=${WS_URI}
 
 # set working file
-ps -eo pid,comm | tr -d ' ' | grep '^\$$' > \${OA_EXEC_FILE}
+ps -eo pid,comm | tr -d ' ' | grep "^\$$" > \${OA_EXEC_FILE}
 
 # Set bootstrap log with restrictive access rights
 if [ ! -f \${OA_LOG_DIR}/bootstrap.log ]; then
