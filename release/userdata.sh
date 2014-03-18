@@ -37,7 +37,8 @@ cat <<EOF > ${OA_CONF_DIR}/cron.sh
 
 ulimit -S -c 0
 
-OA_EXEC_FILE=${OA_EXEC_FILE}
+export OA_EXEC_FILE=${OA_EXEC_FILE}
+export OA_LOG_DIR=${OA_LOG_DIR}
 
 if [ \$(cat \${OA_LOG_DIR}/bootstrap.log | wc -l) -gt 1000 ]; then
     cp -f \${OA_LOG_DIR}/bootstrap.log \${OA_LOG_DIR}/bootstrap.log.old
@@ -58,7 +59,6 @@ fi
 
 export OA_CONF_DIR=${OA_CONF_DIR}
 export OA_WATCH_DIR=${OA_WATCH_DIR}
-export OA_LOG_DIR=${OA_LOG_DIR}
 export OA_REMOTE=${OA_REMOTE}
 
 export OA_ROOT_DIR=${OA_ROOT_DIR}
