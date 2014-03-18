@@ -12,7 +12,7 @@ from opsagent import utils
 #label: state type-name (or uuid?)
 
 class Checksum():
-    # filename:reference file  label:checksum file reference  dirname:checksum location
+    # filepath:reference file  label:checksum file reference  dirname:checksum location
     # checksum filepath -> dirname/label-filename.cksum
     def __init__(self, filepath, label, dirname):
         self.__cksumpath = os.path.join(dirname,
@@ -21,7 +21,7 @@ class Checksum():
                                         '-',
                                         filepath.replace('/','-'),
                                         '.cksum')
-        self.__filepath = filename
+        self.__filepath = filepath
         self.__cksum = None
         try:
             with open(self.__cksumpath,'r') as f:
