@@ -7,7 +7,9 @@ Madeira OpsAgent Checksum library
 import os
 import hashlib
 
-#label: state type-name
+from opsagent import utils
+
+#label: state type-name (or uuid?)
 
 class Checksum():
     # filename:reference file  label:checksum file reference  dirname:checksum location
@@ -24,7 +26,10 @@ class Checksum():
         try:
             with open(self.__cksumpath,'r') as f:
                 self.__cksum = f.read()
-        except Exception: pass
+        except Exception as e:
+            utils.log("DEBUG", "checksum can't be fetched from disk (file %s): %s."%(self.__cksumpath,e),('__init__',self))
+        else:
+            utils.log("DEBUG", "checksum fetched from disk (file %s): %s."%(self.__cksumpath,self.__cksum),('__init__',self))
 
     # update checksum if changed, return change state
     # cksum:new checksum (if external)  persist:write on disk  tfirst:return true if no old cksum
@@ -32,13 +37,18 @@ class Checksum():
         if not cksum:
             with open(self.__filepath, 'r') as f:
                 cksum = hashlib.md5(f.read()).hexdigest()
-        if cksum != self.__cksum or (not cksum):
-            ret=(False if not cksum and tfirst=False else True)
+        utils.log("DEBUG", "Old cksum:%s - New cksum: %s (file: %s)"%(self.__cksum,cksum,self.__filepath),('update',self))
+        if cksum != self.__cksum:
+            ret = (False if tfirst is False and not self.__cksum else True)
             self.__cksum = cksum
             if persist:
                 with open(self.__cksumpath, 'w') as f:
                     f.write(cksum)
+                utils.log("DEBUG", "Checksum saved on disk under file: %s"%(self.__cksumpath),('update',self))
+            utils.log("INFO", "Change found in file: %s"%(self.__filepath),('update',self))
+            utils.log("DEBUG", "Return value: %s"%(ret),('update',self))
             return ret
+        utils.log("DEBUG", "No change found in file: %s"%(self.__filepath),('update',self))
         return False
 
     # check if checksum has changed, return change state
@@ -56,3 +66,4 @@ class Checksum():
         if persist:
             open(self.__cksumpath, 'w').close()
         self.__cksum = None
+        utils.log("INFO", "Checksum reset (file %s). Write on disk=%s"%(self.__filepath,persist),('reset',self))

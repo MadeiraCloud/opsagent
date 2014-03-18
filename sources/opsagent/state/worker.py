@@ -13,10 +13,11 @@ import os
 import signal
 import re
 import sys
-import hashlib
+#import hashlib
 import copy
 # Custom imports
 from opsagent import utils
+from opsagent.checksum import Checksum
 from opsagent.objects import send
 from opsagent.exception import \
     OpsAgentException, \
@@ -325,11 +326,11 @@ class StateWorker(threading.Thread):
             utils.log("WARNING", "Waited state ABORTED.",('__exec_wait',self))
         return (value,None,None)
 
-    # Write hash
-    def __create_hash(self, target, fhash, filename):
-        utils.log("DEBUG", "Writing new hash for file '%s' in '%s': '%s'"%(filename,target,fhash),('__create_hash',self))
-        with open(target, 'w') as f:
-            f.write(fhash)
+#    # Write hash
+#    def __create_hash(self, target, fhash, filename):
+#        utils.log("DEBUG", "Writing new hash for file '%s' in '%s': '%s'"%(filename,target,fhash),('__create_hash',self))
+#        with open(target, 'w') as f:
+#            f.write(fhash)
 
     # Call salt library
     def __exec_salt(self, sid, module, parameter):
@@ -351,25 +352,33 @@ class StateWorker(threading.Thread):
                             return (FAIL,err,None)
                         else:
                             utils.log("DEBUG", "Watched file '%s' found."%(watch),('__exec_salt',self))
-                            with open(watch, 'r') as f:
-                                curent_hash = hashlib.sha256(f.read()).hexdigest()
-                            cs = os.path.join(self.__config['global']['watch'], "%s-%s"%(sid,watch.replace('/','-')))
-                            if os.path.isfile(cs):
-                                with open(cs, 'r') as f:
-                                    old_hash = f.read()
-                                if old_hash != curent_hash:
-                                    utils.log("INFO","Watch event triggered, replacing standard action ...",('__exec_salt',self))
-                                    self.__create_hash(cs, curent_hash, watch)
-                                    parameter["watch"] = True
-                                    utils.log("DEBUG","Standard action replaced.",('__exec_salt',self))
-                                else:
-                                    utils.log("DEBUG","No watched event triggered.",('__exec_salt',self))
-                            else:
-                                utils.log("DEBUG","No old record, creating hash and executing normal command ...",('__exec_salt',self))
-                                self.__create_hash(cs, curent_hash, watch)
-                                utils.log("DEBUG","Hash stored.",('__exec_salt',self))
+                            cs = Checksum(watch,sid,self.__config['global']['watch'])
+                            if cs.update():
                                 parameter["watch"] = True
-                                utils.log("DEBUG","Standard action replaced.",('__exec_salt',self))
+                                utils.log("INFO","Watch event triggered, replacing standard action ...",('__exec_salt',self))
+
+#                            with open(watch, 'r') as f:
+#                                curent_hash = hashlib.sha256(f.read()).hexdigest()
+#                            cs = os.path.join(self.__config['global']['watch'], "%s-%s"%(sid,watch.replace('/','-')))
+#                            if os.path.isfile(cs):
+#                                with open(cs, 'r') as f:
+#                                    old_hash = f.read()
+#                                if old_hash != curent_hash:
+#                                    utils.log("INFO","Watch event triggered, replacing standard action ...",('__exec_salt',self))
+#                                    self.__create_hash(cs, curent_hash, watch)
+#                                    parameter["watch"] = True
+#                                    utils.log("DEBUG","Standard action replaced.",('__exec_salt',self))
+#                                else:
+#                                    utils.log("DEBUG","No watched event triggered.",('__exec_salt',self))
+#                            else:
+#                                utils.log("DEBUG","No old record, creating hash and executing normal command ...",('__exec_salt',self))
+#                                self.__create_hash(cs, curent_hash, watch)
+#                                utils.log("DEBUG","Hash stored.",('__exec_salt',self))
+#                                parameter["watch"] = True
+#                                utils.log("DEBUG","Standard action replaced.",('__exec_salt',self))
+
+
+
                     except Exception as e:
                         err = "Internal error while watch process on file '%s': %s."%(watch,e)
                         utils.log("ERROR", err,('__exec_salt',self))
