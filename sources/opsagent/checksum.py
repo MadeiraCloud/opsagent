@@ -16,7 +16,7 @@ class Checksum():
     # checksum filepath -> dirname/label-filename.cksum
     def __init__(self, filepath, label, dirname):
         self.__cksumpath = os.path.join(dirname,
-                                        "%s-%s.cksum"%(label,filepath)).replace('/','-')
+                                        "%s-%s.cksum"%(label,filepath).replace('/','-'))
         self.__filepath = filepath
         self.__cksum = None
         try:
