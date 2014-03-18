@@ -29,15 +29,16 @@ class Checksum():
 
     # update checksum if changed, return change state
     # cksum:new checksum (if external)  persist:write on disk  tfirst:return true if no old cksum
-    def update(self, cksum=None, persist=True, tfirst=True):
+    def update(self, cksum=None, persist=True, edit=True, tfirst=True):
         if not cksum:
             with open(self.__filepath, 'r') as f:
                 cksum = hashlib.md5(f.read()).hexdigest()
         utils.log("DEBUG", "Old cksum:%s - New cksum: %s (file: %s)"%(self.__cksum,cksum,self.__filepath),('update',self))
         if cksum != self.__cksum:
             ret = (False if tfirst is False and not self.__cksum else True)
-            self.__cksum = cksum
-            if persist:
+            if edit:
+                self.__cksum = cksum
+            if persist and edit:
                 with open(self.__cksumpath, 'w') as f:
                     f.write(cksum)
                 utils.log("DEBUG", "Checksum saved on disk under file: %s"%(self.__cksumpath),('update',self))
@@ -49,8 +50,8 @@ class Checksum():
 
     # check if checksum has changed, return change state
     # cksum:new checksum (if external)  tfirst:return true if no old cksum
-    def check(self, cksum=None, tfirst=True):
-        return self.update(cksum=cksum,persist=False,tfirst=tfirst)
+    def check(self, cksum=None, persist=True, tfirst=True):
+        return self.update(cksum=cksum,persist=persist,edit=False,tfirst=tfirst)
 
     # return checksum
     def get(self):
@@ -63,3 +64,17 @@ class Checksum():
             open(self.__cksumpath, 'w').close()
         self.__cksum = None
         utils.log("INFO", "Checksum reset (file %s). Write on disk=%s"%(self.__filepath,persist),('reset',self))
+
+
+## Example1: watch
+#cs = Checksum(watch,sid,self.__config['global']['watch'])
+#if cs.update():
+#    #file has changed
+#    parameter["watch"] = True
+#
+## Example2: use external cksum (*pseudo code*)
+#cs = Checksum(archive_path,unique_label,archive_cksum_path)
+#if cs.check(cksum=newcksum):
+#    while cs.get() != newcksum:
+#        download(archive_uri)
+#        cs.update()
