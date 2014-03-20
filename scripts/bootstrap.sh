@@ -6,6 +6,9 @@
 
 # create virtualenv
 ${PYTHON} ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_LIBS_DIR}/virtualenv/virtualenv.py ${OA_ENV_DIR}
+if [ $(which apt-get 2>/dev/null) ]; then
+    ${OA_ENV_DIR}/bin/pip python-apt
+fi
 # set cache directory
 mkdir -p ${OA_PKG_CACHE_DIR}
 chown ${OA_USER}:root ${OA_PKG_CACHE_DIR}
