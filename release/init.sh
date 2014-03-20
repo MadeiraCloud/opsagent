@@ -57,6 +57,7 @@ chmod 640 ${OA_LOG_FILE}
 
 # Setup git
 if [ $(which apt-get 2>/dev/null) ]; then
+    apt-get update
     apt-get -y -q install git
 elif [ $(which yum 2>/dev/null) ]; then
     yum -y -q install git
@@ -79,7 +80,7 @@ if [ $(which apt-get 2>/dev/null) ]; then
         apt-get -y -q install python2.6 2>/dev/null
     fi
     # install other dependencies
-    apt-get -y -q install python-apt expect-dev
+    apt-get -y -q install expect-dev python-dev libapt-pkg-dev g++
 elif [ $(which yum 2>/dev/null) ]; then
     # install python
     echo "Platform: YUM"
