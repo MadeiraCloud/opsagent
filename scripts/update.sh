@@ -20,7 +20,7 @@ fi
 ps -eo pid,comm | tr -d ' ' | grep "^$$" > ${OA_UPDATE_FILE}
 
 OA_CONF_DIR=/var/lib/madeira/opsagent
-OA_GPG_KEY="${OA_CONF_DIR}/madeira.pub"
+OA_GPG_KEY="${OA_CONF_DIR}/madeira.gpg.public.key"
 
 export WS_URI=$1
 export APP_ID=$2
@@ -30,11 +30,14 @@ export GPG_KEY_URI=$5
 
 OA_REMOTE="${BASE_REMOTE}/${VERSION}"
 
-curl -sSL -o ${OA_CONF_DIR}/userdata.sh ${OA_REMOTE}/userdata.sh
-chmod 750 ${OA_CONF_DIR}/userdata.sh
-gpg --verify ${OA_GPG_KEY} ${OA_CONF_DIR}/userdata.sh
+curl -sSL -o ${OA_CONF_DIR}/userdata.sh.gpg ${OA_REMOTE}/userdata.sh.gpg
+chmod 640 ${OA_CONF_DIR}/userdata.sh.gpg
+
+gpg --import ${OA_GPG_KEY}
+gpg --output ${OA_CONF_DIR}/userdata.sh --decrypt ${OA_CONF_DIR}/userdata.sh.gpg
 
 if [ $? -eq 0 ]; then
+    chmod 750 ${OA_CONF_DIR}/userdata.sh
     bash ${OA_CONF_DIR}/userdata.sh "update"
     EXIT=$?
 else

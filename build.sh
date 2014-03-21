@@ -87,15 +87,16 @@ function publish() {
     rm -rf ${RELEASE_DIR}
     mkdir -p ${RELEASE_DIR}
 
-    cp ${BUILD_DIR}/{clean.cksum,clean.sh,init.cksum,opsagent.cksum,userdata.cksum,userdata.sh} ${RELEASE_DIR}/
+    cp ${BUILD_DIR}/{clean.cksum,clean.sh,init.cksum,init.sh,opsagent.cksum,opsagent.tgz,userdata.cksum,userdata.sh} ${RELEASE_DIR}/
 
     # GPG
     gpg --allow-secret-key-import --import ${GPG_PRIVATE_PATH}
     cd ${BUILD_DIR}
     gpg --sign init.sh
     gpg --sign opsagent.tgz
+    gpg --sign userdata.sh
     cd -
-    cp -f ${BUILD_DIR}/{init.sh.gpg,opsagent.tgz.gpg} ${RELEASE_DIR}/
+    cp -f ${BUILD_DIR}/{init.sh.gpg,opsagent.tgz.gpg,userdata.sh.gpg} ${RELEASE_DIR}/
 
 #    cp ${BUILD_DIR}/{init.cksum,init.sh,opsagent.cksum,opsagent.tgz,userdata.cksum,userdata.sh} ${RELEASE_DIR}/
     git add . -A
