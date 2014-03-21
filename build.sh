@@ -92,7 +92,8 @@ function publish() {
     # GPG
     gpg --allow-secret-key-import --import ${GPG_PRIVATE_PATH}
     cd ${BUILD_DIR}
-    gpg --sign {init.sh,opsagent.tgz}
+    gpg --sign init.sh
+    gpg --sign opsagent.tgz
     cd -
     cp -f ${BUILD_DIR}/{init.sh.gpg,opsagent.tgz.gpg} ${RELEASE_DIR}/
 
