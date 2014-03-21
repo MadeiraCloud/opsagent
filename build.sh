@@ -32,9 +32,14 @@ function tree() {
     cp ../${SCRIPTS_DIR}/bootstrap.sh ${OPSAGENT_DIR}/${SCRIPTS_DIR}/
     # Copy standalone scripts
     cp ../${SCRIPTS_DIR}/{init.sh,userdata.sh,clean.sh} ./
-    cksum init.sh > init.cksum
+    if [ "${1}" != "" ]; then
+        sed "s/VERSION=.*/VERSION='${1}'/" < ../${SCRIPTS_DIR}/init.sh > ./init.sh
+    else
+        cp ../${SCRIPTS_DIR}/init.sh ./
+    fi
     cksum userdata.sh > userdata.cksum
     cksum clean.sh > clean.cksum
+    cksum init.sh > init.cksum
     # Copy service launcher
     cp ../${SCRIPTS_DIR}/daemon.sh ${OPSAGENT_DIR}/${SCRIPTS_DIR}/
     # Copy EPEL installer
@@ -58,10 +63,11 @@ function tree() {
     # Copy launcher script
     if [ "${1}" != "" ]; then
         sed "s/VERSION_NBR=.*/VERSION_NBR='${1}'/" < ../${SOURCES_DIR}/opsagent.py > ${OPSAGENT_DIR}/${SCRIPTS_DIR}/opsagent
-        sed "s/VERSION=.*/VERSION=\"${1}\"/" < ../${SCRIPTS_DIR}/init.sh > ${OPSAGENT_DIR}/${SCRIPTS_DIR}/init.sh
+        sed "s/VERSION=.*/VERSION='${1}'/" < ../${SCRIPTS_DIR}/init.sh > ${OPSAGENT_DIR}/${SCRIPTS_DIR}/init.sh
     else
         cp ../${SOURCES_DIR}/opsagent.py ${OPSAGENT_DIR}/${SCRIPTS_DIR}/opsagent
     fi
+
 
     # Copy config files
     cp ../${CONF_DIR}/opsagent.conf ${OPSAGENT_DIR}/${CONF_DIR}/
