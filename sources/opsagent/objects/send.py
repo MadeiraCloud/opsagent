@@ -10,16 +10,19 @@ from opsagent.objects import codes
 
 
 # Handshake request
-def handshake(init, errors):
+def handshake(config, errors):
+    init = config.get('init')
+    version = (config['userdata'].get('version') if config.get('userdata') else None)
     if type(init) is not dict: init={}
     return ({
-            "code"             :   codes.HANDSHAKE,
-            "instance_id"      :   init.get('instance_id'),
-            "app_id"           :   init.get('app_id'),
-            "protocol_version" :   codes.PROTOCOL_VERSION,
-            "instance_token"   :   init.get('instance_token'),
-            "init_errors"      :   ("; ".join(errors) if errors else None),
-            })
+        "code"             :   codes.HANDSHAKE,
+        "instance_id"      :   init.get('instance_id'),
+        "app_id"           :   init.get('app_id'),
+        "agent_version"    :   version,
+        "protocol_version" :   codes.PROTOCOL_VERSION,
+        "instance_token"   :   init.get('instance_token'),
+        "init_errors"      :   ("; ".join(errors) if errors else None),
+    })
 
 
 # Statelog request

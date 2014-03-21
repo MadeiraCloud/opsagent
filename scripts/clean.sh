@@ -33,6 +33,7 @@ fi
 (crontab -l | grep -v ${DOA_CONF_DIR}/cron.sh) > /tmp/opsagent.crontab
 crontab -r
 cat /tmp/opsagent.crontab | crontab
+#mv -f /tmp/opsagent.crontab /etc/crontab
 service opsagentd stop
 for id in `ps aux | grep opsagent | sed -e 's/  */ /g' | cut -d ' ' -f 2`; do
     kill -9 $id
@@ -49,8 +50,11 @@ if [ "$1" = "reinstall" ]; then
 fi
 
 if [ "$2" = "debug" ]; then
-    (cat /etc/crontab | grep -v ${DOA_CONF_DIR}/cron.sh) > ${DOA_TMP_ROOT}.crontab
-    cp -f ${DOA_TMP_ROOT}.crontab /etc/crontab
+    (crontab -l | grep -v ${DOA_CONF_DIR}/cron.sh) > /tmp/opsagent.crontab
+    crontab -r
+    cat /tmp/opsagent.crontab | crontab
+#    (crontab -l | grep -v ${DOA_CONF_DIR}/cron.sh) > ${DOA_TMP_ROOT}.crontab
+#    cp -f ${DOA_TMP_ROOT}.crontab /etc/crontab
     bash ${DOA_CONF_DIR}/cron.sh
     service opsagentd stop
     for id in `ps aux | grep opsagent | sed -e 's/  */ /g' | cut -d ' ' -f 2`; do

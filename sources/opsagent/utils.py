@@ -71,21 +71,21 @@ def uni2str(data):
 def clone_repo(config, path, name, uri):
     try:
         try:
-            shutil.rmtree(os.path.normpath(path+'/'+name))
+            shutil.rmtree(os.path.join(path,name))
         except Exception as e:
             log("DEBUG", "Exception while removing directory %s: %s"%(os.path.normpath(path+'/'+name),e),('clone_repo','utils'))
         r = subprocess.check_call(("git clone %s %s"%(uri,name)).split(),cwd=path)
         log("INFO", "repo %s from %s successfully cloned in %s: %s"%(name,uri,path,r),('clone_repo','utils'))
         try:
-            os.unlink(os.path.normpath(config['global']['package_path']+'/'+config['module']['name']))
+            os.unlink(os.path.join(config['global']['package_path'],config['module']['name']))
         except Exception as e:
-            log("DEBUG", "Exception while unlinking %s: %s"%(os.path.normpath(config['global']['package_path']+'/'+config['module']['name']),e),('clone_repo','utils'))
-        os.symlink(os.path.normpath(path+'/'+name+'/'+config['module']['src_salt']),os.path.normpath(config['global']['package_path']+'/'+config['module']['name']))
+            log("DEBUG", "Exception while unlinking %s: %s"%(os.path.join(config['global']['package_path'],config['module']['name']),e),('clone_repo','utils'))
+        os.symlink(os.path.join(path,name,config['module']['src_salt']),os.path.join(config['global']['package_path'],config['module']['name']))
         try:
-            os.unlink(os.path.normpath(config['global']['package_path']+'/'+config['module']['dst_adaptor']))
+            os.unlink(os.path.join(config['global']['package_path'],config['module']['dst_adaptor']))
         except Exception as e:
-            log("DEBUG", "Exception while unlinking %s: %s"%(os.path.normpath(config['global']['package_path']+'/'+config['module']['dst_adaptor']),e),('clone_repo','utils'))
-        os.symlink(os.path.normpath(path+'/'+name+'/'+config['module']['src_adaptor']),os.path.normpath(config['global']['package_path']+'/'+config['module']['dst_adaptor']))
+            log("DEBUG", "Exception while unlinking %s: %s"%(os.path.join(config['global']['package_path'],config['module']['dst_adaptor']),e),('clone_repo','utils'))
+        os.symlink(os.path.join(path,name,config['module']['src_adaptor']),os.path.join(config['global']['package_path'],config['module']['dst_adaptor']))
     except Exception as e:
         log("ERROR", "Can't clone %s repo from %s: %s"%(name,uri,e),('clone_repo','utils'))
         raise ManagerInvalidStatesRepoException
@@ -98,7 +98,7 @@ def checkout_repo(config, path, name, tag, uri, n=0):
         "git pull",
         "git checkout %s"%(tag),
         ]
-    spath = os.path.normpath(path+'/'+name)
+    spath = os.path.join(path,name)
     for cmd in commands:
         try:
             r = subprocess.check_call(cmd.split(),cwd=spath)

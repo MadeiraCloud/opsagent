@@ -33,6 +33,9 @@ OA_TOKEN=${OA_CONF_DIR}/token
 # Log file
 OA_LOG_FILE=${OA_LOG_DIR}/agent.log
 
+# var
+OA_TMP_ROOT=/tmp/opsagent
+
 
 # Create main directories
 mkdir -p ${OA_CONF_DIR}
@@ -105,17 +108,22 @@ fi
 
 
 # Generates config file
-if [ ! -f ${OA_CONFIG_FILE} ]; then
-    cat <<EOF > ${OA_CONFIG_FILE}
+#if [ ! -f ${OA_CONFIG_FILE} ]; then
+cat <<EOF > ${OA_CONFIG_FILE}
 [global]
 envroot=${OA_ENV_DIR}
+conf_path=${OA_CONF_DIR}
+log_path=${OA_LOG_DIR}
 package_path=${OA_ENV_DIR}/lib/${PYTHON}/site-packages
 token=${OA_TOKEN}
 watch=${OA_WATCH_DIR}
 logfile=${OA_LOG_FILE}
-[network]
+[userdata]
 ws_uri=${WS_URI}
 app_id=${APP_ID}
+version=${VERSION}
+base_remote=${BASE_REMOTE}
+gpg_key_uri=${GPG_KEY_URI}
 [module]
 root=${OA_BOOT_DIR}
 name=${OA_SALT}
@@ -156,18 +164,16 @@ function update_sources() {
 function get_sources() {
     i=0
     while true; do
-        curl -sSL -o ${OA_BOOT_DIR}/${1}.cksum ${OA_REMOTE}/${1}.cksum
         curl -sSL -o ${OA_BOOT_DIR}/${1}.tgz ${OA_REMOTE}/${1}.tgz
-        chmod 640 ${OA_BOOT_DIR}/${1}.{cksum,tgz}
-        REF_CRC="$(cat ${OA_BOOT_DIR}/${1}.cksum)"
-        cd ${OA_BOOT_DIR}
-        CRC="$(cksum ${1}.tgz)"
-        cd - 2>&1 > /dev/null
-        if [ "$CRC" = "$REF_CRC" ]; then
+        chmod 640 ${OA_BOOT_DIR}/${1}.tgz
+
+        gpg --verify ${OA_GPG_KEY} ${OA_BOOT_DIR}/${1}.tgz
+
+        if [ $? -eq 0 ]; then
             break
         else
             if [ $i -lt 10 ]; then
-                echo "${1} checksum check failed, retryind in 30 seconds" >&2
+                echo "${1} GPG check failed, retryind in 30 seconds" >&2
                 sleep 30
             else
                 echo "FATAL: couldn't get sources after 10 try" >&2
@@ -226,5 +232,12 @@ if [ $? -ne 0 ]; then
         exit 1
     fi
 fi
+
+# remove cron
+(crontab -l | grep -v -e ${OA_CONF_DIR}/cron.sh -e ${OA_CONF_DIR}/update.sh) > ${OA_TMP_ROOT}.crontab
+crontab -r
+cat ${OA_TMP_ROOT}.crontab | crontab
+#(cat /etc/crontab | grep -v ${OA_CONF_DIR}/cron.sh) > ${OA_TMP_ROOT}.crontab
+#mv -f ${OA_TMP_ROOT}.crontab /etc/crontab
 
 # EOF

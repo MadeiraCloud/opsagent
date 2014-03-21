@@ -14,6 +14,8 @@ PROTOCOL_VERSION=1
 HANDSHAKE="Handshake"
 # Init Answers
 APP_NOT_EXIST="AppNotReady"
+# Agent Update
+AGENT_UPDATE="AgentUpdate"
 # States Server Push
 RECIPE_DATA="RecipeMetadata"
 # Wait Server Push

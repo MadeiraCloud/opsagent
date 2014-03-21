@@ -21,14 +21,19 @@ class Config():
     requiredKeys = {
         'global': {
             'envroot': "Virtual environment root",
+            'conf_path': "Configuration directory",
+            'log_path': "Logs directory",
             'package_path': "Relative to envroot runtime package location",
             'token': "Unique identification file path",
             'watch': "Watched files checksum location",
             'logfile': "Log file location",
             },
-        'network': {
+        'userdata': {
             'ws_uri': "Backend connection URI",
             'app_id': "Application ID",
+            'version': "Curent release version",
+            'base_remote': "Base URL to fetch the sources",
+#            'agent_uri': "URL to fetch the sources",
             },
         'module': {
             'root': "Salt modules repo root",

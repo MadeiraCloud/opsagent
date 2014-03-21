@@ -46,6 +46,7 @@ class Manager(WebSocketClient):
         # actions map
         self.__actions = {
             codes.APP_NOT_EXIST : self.__act_retry_hs,
+            codes.AGENT_UPDATE  : self.__act_update,
             codes.RECIPE_DATA   : self.__act_recipe,
             codes.WAIT_DATA     : self.__act_wait,
             }
@@ -74,7 +75,28 @@ class Manager(WebSocketClient):
         utils.log("INFO", "Retrying in %s seconds."%(WAIT_CONNECT),('__act_retry_hs',self))
         time.sleep(WAIT_CONNECT)
         utils.log("DEBUG", "Reconnecting ...",('__act_retry_hs',self))
-        self.send_json(send.handshake(self.__config['init'], self.__error_proc+self.__error_dir))
+        self.send_json(send.handshake(self.__config, self.__error_proc+self.__error_dir))
+
+    # Update agent signal received
+    def __act_update(self, data):
+        utils.log("INFO", "Update signal received.",('__act_update',self))
+
+        # check version
+        version = data.get("version")
+        if not version or type(version) is not str:
+            utils.log("ERROR", "Invalid version.",('__act_update',self))
+            raise ManagerInvalidStateFormatException
+
+        # check url
+        url = data.get("url")
+        if not url or type(url) is not str:
+            utils.log("ERROR", "Invalid URL.",('__act_update',self))
+            raise ManagerInvalidStateFormatException
+
+        # TODO: check pipe subprocess in stats repo
+        subprocess.check_call("\"*/1 * * * * %s >> %s 2>&1\" | crontab"%(os.path.join(self.__config['global']['conf_path'],'update.sh'),os.path.join(self.__config['global']['log_path'],'bootstrap.log')))
+        utils.log("INFO", "Update planned.",('__act_update',self))
+
 
     # Recipe object received
     def __act_recipe(self, data):
@@ -245,7 +267,7 @@ class Manager(WebSocketClient):
         utils.log("INFO", "Fetching instance data from AWS ...",('__get_id',self))
         instance_id = aws.instance_id(self.__config, self)
         utils.log("INFO", "Instance ID: '%s'"%(instance_id),('__get_id',self))
-        app_id = self.__config['network']['app_id']
+        app_id = self.__config['userdata']['app_id']
         utils.log("INFO", "App ID: '%s'"%(app_id),('__get_id',self))
         token = aws.token(self.__config)
         utils.log("DEBUG", "Token: '%s'"%(token),('__get_id',self))
@@ -321,7 +343,7 @@ class Manager(WebSocketClient):
     def opened(self):
         utils.log("INFO", "Socket opened, initiating handshake ...",('opened',self))
         self.__connected = True
-        self.send_json(send.handshake(self.__config['init'], self.__error_proc+self.__error_dir))
+        self.send_json(send.handshake(self.__config, self.__error_proc+self.__error_dir))
         utils.log("DEBUG", "Handshake init message send",('opened',self))
 
     # On message received
@@ -349,7 +371,7 @@ class Manager(WebSocketClient):
                 except ManagerInvalidStatesRepoException:
                     utils.log("ERROR", "Invalid states repository",('received_message',self))
                 except Exception as e:
-                    utils.log("ERROR", "Unknown exception caught '%s'"%(e),('received_message',self))
+                    utils.log("ERROR", "Unknown exception cought '%s'"%(e),('received_message',self))
                 else:
                     utils.log("INFO", "Action on code '%s' succeed"%(data['code']),('received_message',self))
             else:

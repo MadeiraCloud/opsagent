@@ -24,8 +24,8 @@ from opsagent.state.worker import StateWorker
 
 
 # general defines
-USAGE='usage: %prog [-hqv] [-l logfile] [-c configfile] (start|stop|restart|stop-wait|restart-wait)'
-VERSION_NBR='0.1a'
+USAGE='usage: %prog [-hqv] [-l logfile] [-c configfile] (start|stop|restart|stop-wait|restart-wait|stop-end|restart-end)'
+VERSION_NBR='None'
 VERSION='%prog '+VERSION_NBR
 WAIT_RECONNECT=10
 
@@ -47,7 +47,7 @@ def __log(lvl, f=None):
 class OpsAgentRunner(Daemon):
     def run_manager(self):
         utils.log("DEBUG", "Creating Network Manager ...",('run_manager','OpsAgentRunner'))
-        manager = Manager(url=self.config['network']['ws_uri'], config=self.config, statesworker=self.sw)
+        manager = Manager(url=self.config['userdata']['ws_uri'], config=self.config, statesworker=self.sw)
         utils.log("DEBUG", "Network Manager created.",('run_manager','OpsAgentRunner'))
         try:
             utils.log("DEBUG", "Connecting manager to backend.",('run_manager','OpsAgentRunner'))
