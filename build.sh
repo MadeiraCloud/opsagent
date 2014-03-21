@@ -69,8 +69,8 @@ function tree() {
     fi
 
 
-    # Copy config files
-    cp ../${CONF_DIR}/opsagent.conf ${OPSAGENT_DIR}/${CONF_DIR}/
+#    # Copy config files
+#    cp ../${CONF_DIR}/opsagent.conf ${OPSAGENT_DIR}/${CONF_DIR}/
 
     # create tarball
     cd ${OPSAGENT_DIR}
