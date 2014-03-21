@@ -33,7 +33,7 @@ function tree() {
     # Copy standalone scripts
     cp ../${SCRIPTS_DIR}/{init.sh,userdata.sh,clean.sh} ./
     if [ "${1}" != "" ]; then
-        sed "s/VERSION=.*/VERSION='${1}'/" < ../${SCRIPTS_DIR}/init.sh > ./init.sh
+        sed "s/OA_VERSION=.*/OA_VERSION='${1}'/" < ../${SCRIPTS_DIR}/init.sh > ./init.sh
     else
         cp ../${SCRIPTS_DIR}/init.sh ./
     fi

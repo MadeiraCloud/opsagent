@@ -4,7 +4,7 @@
 ## (c) 2014 MadeiraCloud LTD.
 ##
 
-VERSION=""
+OA_VERSION=""
 
 # Set path
 PATH=${PATH}:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
