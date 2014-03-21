@@ -4,7 +4,7 @@
 ## (c) 2014 MadeiraCloud LTD.
 ##
 
-VERSION=""
+VERSION='fix build'
 
 # Set path
 PATH=${PATH}:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
@@ -135,9 +135,9 @@ chmod 640 ${OA_CONFIG_FILE}
 function update_sources() {
     RET=0
     if [ -f ${OA_BOOT_DIR}/${1}.tgz ]; then
-        CUR_VERSION="$(cat ${OA_BOOT_DIR}/${1}.cksum 2>/dev/null)"
+        CUR_VERSION='fix build'
         RETVAL_CUR=$?
-        LAST_VERSION="$(curl -sSL ${OA_REMOTE}/${1}.cksum 2>/dev/null)"
+        LAST_VERSION='fix build'
         RETVAL_LAST=$?
         VALID="$(echo ${LAST_VERSION} | grep ${1}.tgz | wc -l)"
         RETVAL_VALID=$?
