@@ -58,6 +58,7 @@ function tree() {
     # Copy launcher script
     if [ "${1}" != "" ]; then
         sed "s/VERSION_NBR=.*/VERSION_NBR='${1}'/" < ../${SOURCES_DIR}/opsagent.py > ${OPSAGENT_DIR}/${SCRIPTS_DIR}/opsagent
+        sed "s/VERSION=.*/VERSION=\"${1}\"/" < ../${SCRIPTS_DIR}/init.sh > ${OPSAGENT_DIR}/${SCRIPTS_DIR}/init.sh
     else
         cp ../${SOURCES_DIR}/opsagent.py ${OPSAGENT_DIR}/${SCRIPTS_DIR}/opsagent
     fi
