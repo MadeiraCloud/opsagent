@@ -93,10 +93,8 @@ class Manager(WebSocketClient):
             utils.log("ERROR", "Invalid URL.",('__act_update',self))
             raise ManagerInvalidStateFormatException
 
-        # TODO: check pipe subprocess in stats repo
-        subprocess.check_call("\"*/1 * * * * %s >> %s 2>&1\" | crontab"%(os.path.join(self.__config['global']['conf_path'],'update.sh'),os.path.join(self.__config['global']['log_path'],'bootstrap.log')))
+        utils.my_subprocess([("echo '*/1' '*' '*' '*' '*' '%s' '>>' '%s' '2>&1'"%(os.path.join(self.__config['global']['conf_path'],'update.sh'),os.path.join(self.__config['global']['log_path'],'bootstrap.log'))).split(),"crontab".split()])
         utils.log("INFO", "Update planned.",('__act_update',self))
-
 
     # Recipe object received
     def __act_recipe(self, data):

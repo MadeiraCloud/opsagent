@@ -9,6 +9,8 @@
 
 USAGE="$0 tree|release"
 
+GPG_PRIVATE_PATH=${HOME}/.ssh/keys/madeira.gpg.private.key
+
 SCRIPTS_DIR=scripts
 CONF_DIR=conf
 LIBS_DIR=libs
@@ -25,11 +27,11 @@ function tree() {
     # Create agent build/release directory
     mkdir -p ${BUILD_DIR}/${OPSAGENT_DIR}/{$SCRIPTS_DIR,$CONF_DIR,$LIBS_DIR,$SOURCES_DIR}
 
-    # move to build directory
+    # Move to build directory
     cd ${BUILD_DIR}
 
     # Copy bootstrap scripts
-    cp ../${SCRIPTS_DIR}/bootstrap.sh ${OPSAGENT_DIR}/${SCRIPTS_DIR}/
+    cp ../${SCRIPTS_DIR}/{bootstrap.sh,update.sh} ${OPSAGENT_DIR}/${SCRIPTS_DIR}/
     # Copy standalone scripts
     cp ../${SCRIPTS_DIR}/{init.sh,userdata.sh,clean.sh} ./
     if [ "${1}" != "" ]; then
@@ -84,7 +86,17 @@ function publish() {
     echo "${1}" > curent
     rm -rf ${RELEASE_DIR}
     mkdir -p ${RELEASE_DIR}
-    cp ${BUILD_DIR}/{init.cksum,init.sh,opsagent.cksum,opsagent.tgz,userdata.cksum,userdata.sh} ${RELEASE_DIR}/
+
+    cp ${BUILD_DIR}/{clean.cksum,clean.sh,init.cksum,opsagent.cksum,userdata.cksum,userdata.sh} ${RELEASE_DIR}/
+
+    # GPG
+    gpg --allow-secret-key-import --import ${GPG_PRIVATE_PATH}
+    cd ${BUILD_DIR}
+    gpg --sign {init.sh,opsagent.tgz}
+    cd -
+    cp -f ${BUILD_DIR}/{init.sh.gpg,opsagent.tgz.gpg} ${RELEASE_DIR}/
+
+#    cp ${BUILD_DIR}/{init.cksum,init.sh,opsagent.cksum,opsagent.tgz,userdata.cksum,userdata.sh} ${RELEASE_DIR}/
     git add . -A
     git commit -m "v${1}"
     git push

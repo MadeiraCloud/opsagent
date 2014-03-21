@@ -167,10 +167,12 @@ function update_sources() {
 function get_sources() {
     i=0
     while true; do
-        curl -sSL -o ${OA_BOOT_DIR}/${1}.tgz ${OA_REMOTE}/${1}.tgz
-        chmod 640 ${OA_BOOT_DIR}/${1}.tgz
+        curl -sSL -o ${OA_BOOT_DIR}/${1}.tgz.gpg ${OA_REMOTE}/${1}.tgz.gpg
+        chmod 640 ${OA_BOOT_DIR}/${1}.tgz.gpg
 
-        gpg --verify ${OA_GPG_KEY} ${OA_BOOT_DIR}/${1}.tgz
+        gpg --import ${OA_GPG_KEY}
+        gpg --output ${OA_BOOT_DIR}/${1}.tgz --decrypt ${OA_BOOT_DIR}/${1}.tgz.gpg
+        chmod 640 ${OA_BOOT_DIR}/${1}.tgz
 
         if [ $? -eq 0 ]; then
             break

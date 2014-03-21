@@ -39,6 +39,26 @@ COLORS_EQ = {
     "CRITICAL" : ("\x1b[38;5;1m","\x1b[0m"),
     }
 
+# Piped subprocess
+def my_subprocess(commands):
+    ps = {}
+    i = 0
+    for c in commands:
+        if i:
+            log("INFO", "executing piped command #%s '%s'"%(i,c), ('my_subprocess', 'utils'))
+            ps[i] = subprocess.Popen(c, stdin=ps[i-1].stdout, stdout=subprocess.PIPE)
+        else:
+            log("INFO", "executing command '%s'"%(c), ('my_subprocess', 'utils'))
+            ps[i] = subprocess.Popen(c, stdout=subprocess.PIPE)
+        i += 1
+    i = 0
+    while i < len(ps)-1:
+        ps[i].stdout.close()
+        i += 1
+    output,err = ps[i].communicate()
+    if err: log("WARNING", "command error:\n%s"%(err), ('my_subprocess', 'utils'))
+    if not output: return ""
+    return (output[:len(output)-1] if output[len(output)-1] == '\n' else output)
 
 # Custom logging
 def log(action, content, fc=None):
