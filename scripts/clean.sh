@@ -22,17 +22,6 @@ DOA_ENV_DIR=$DOA_ROOT_DIR/env
 DOA_BOOT_DIR=$DOA_ROOT_DIR/bootstrap
 DOA_SALT=salt
 
-if [ $(which python2.7 2>/dev/null) ]; then
-    echo "python 2.7 found"
-    D_PYTHON="python2.7"
-elif [ $(which python2.6 2>/dev/null) ]; then
-    echo "python 2.6 found"
-    D_PYTHON="python2.6"
-else
-    echo "Fatal: Python2 non installed"
-    exit 1
-fi
-
 (crontab -l | grep -v ${DOA_CONF_DIR}) > /tmp/opsagent.crontab
 crontab -r
 cat /tmp/opsagent.crontab | crontab
@@ -57,6 +46,17 @@ if [ "$1" = "reinstall" ]; then
     bash /tmp/userdata.sh
     EXIT=$?
     if [ $EXIT -eq 0 ] && [ "$2" = "debug" ]; then
+        if [ $(which python2.7 2>/dev/null) ]; then
+            echo "python 2.7 found"
+            D_PYTHON="python2.7"
+        elif [ $(which python2.6 2>/dev/null) ]; then
+            echo "python 2.6 found"
+            D_PYTHON="python2.6"
+        else
+            echo "Fatal: Python2 non installed"
+            exit 1
+        fi
+
         (crontab -l | grep -v ${DOA_CONF_DIR}) > /tmp/opsagent.crontab
         crontab -r
         cat /tmp/opsagent.crontab | crontab
