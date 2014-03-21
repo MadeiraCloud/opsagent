@@ -4,9 +4,14 @@
 ## (c) 2014 MadeiraCloud LTD.
 ##
 
-# RW set variables
-APP_ID=@{app_id}
-WS_URI=@{ws_uri}
+if [ "$1" != "update" ]; then
+    # RW set variables
+    APP_ID=@{app_id}
+    WS_URI=@{ws_uri}
+    VERSION=@{version}
+    BASE_REMOTE=@{remote}
+    GPG_KEY_URI=@{gpg_key_uri}
+fi
 
 # opsagent config directory
 OA_CONF_DIR=/var/lib/madeira/opsagent
@@ -15,7 +20,9 @@ OA_WATCH_DIR=${OA_CONF_DIR}/watch
 # opsagent logs directory
 OA_LOG_DIR=/var/log/madeira
 # opsagent URI
-OA_REMOTE=https://s3.amazonaws.com/visualops
+#BASE_REMOTE=https://s3.amazonaws.com/visualops
+OA_REMOTE="${BASE_REMOTE}/${VERSION}"
+OA_GPG_KEY="${OA_CONF_DIR}/madeira.gpg.public.key"
 
 # OpsAgent directories
 OA_ROOT_DIR=/opt/madeira
@@ -35,7 +42,7 @@ cat <<EOF > ${OA_CONF_DIR}/cron.sh
 ## (c) 2014 MadeiraCloud LTD.
 ##
 
-ulimit -S -c 0
+#ulimit -S -c 0
 
 export OA_EXEC_FILE=${OA_EXEC_FILE}
 export OA_LOG_DIR=${OA_LOG_DIR}
@@ -65,8 +72,13 @@ export OA_ROOT_DIR=${OA_ROOT_DIR}
 export OA_BOOT_DIR=${OA_BOOT_DIR}
 export OA_ENV_DIR=${OA_ENV_DIR}
 
+export OA_GPG_KEY=${OA_GPG_KEY}
+
 export APP_ID=${APP_ID}
 export WS_URI=${WS_URI}
+export VERSION=${VERSION}
+export BASE_REMOTE=${BASE_REMOTE}
+export GPG_KEY_URI=${GPG_KEY_URI}
 
 # set working file
 ps -eo pid,comm | tr -d ' ' | grep "^\$$" > \${OA_EXEC_FILE}
@@ -78,15 +90,16 @@ fi
 chown root:root \${OA_LOG_DIR}/bootstrap.log
 chmod 640 \${OA_LOG_DIR}/bootstrap.log
 
-curl -sSL -o \${OA_CONF_DIR}/init.sh \${OA_REMOTE}/init.sh
-curl -sSL -o \${OA_CONF_DIR}/init.cksum \${OA_REMOTE}/init.cksum
-chmod 640 \${OA_CONF_DIR}/init.cksum
+curl -sSL -o \${OA_GPG_KEY} \${GPG_KEY_URI}
+chmod 440 \${OA_GPG_KEY}
+
+curl -sSL -o \${OA_CONF_DIR}/init.sh \${OA_REMOTE}/init.sh.gpg
+chmod 640 \${OA_CONF_DIR}/init.sh.gpg
+gpg --import \${OA_GPG_KEY}
+gpg --output \${OA_CONF_DIR}/init.sh --decrypt \${OA_CONF_DIR}/init.sh.gpg
 chmod 750 \${OA_CONF_DIR}/init.sh
-REF_CRC="\$(cat \${OA_CONF_DIR}/init.cksum)"
-cd \${OA_CONF_DIR}
-CRC="\$(cksum init.sh)"
-cd -
-if [ "\${CRC}" = "\${REF_CRC}" ]; then
+
+if [ $? -eq 0 ]; then
     bash \${OA_CONF_DIR}/init.sh
     EXIT=\$?
 else
@@ -103,9 +116,9 @@ chown root:root ${OA_CONF_DIR}/cron.sh
 chmod 540 ${OA_CONF_DIR}/cron.sh
 CRON=$(grep ${OA_CONF_DIR}/cron.sh /etc/crontab | wc -l)
 if [ $CRON -eq 0 ]; then
-    echo "*/2 * * * * root ${OA_CONF_DIR}/cron.sh >> ${OA_LOG_DIR}/bootstrap.log 2>&1" >> /etc/crontab
+    echo "*/1 * * * * ${OA_CONF_DIR}/cron.sh >> ${OA_LOG_DIR}/bootstrap.log 2>&1" | crontab
 fi
 
-((${OA_CONF_DIR}/cron.sh >> ${OA_LOG_DIR}/bootstrap.log 2>&1)&)&
+#((${OA_CONF_DIR}/cron.sh >> ${OA_LOG_DIR}/bootstrap.log 2>&1)&)&
 
 # EOF
