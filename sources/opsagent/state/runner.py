@@ -219,7 +219,7 @@ class StateRunner(object):
 		"""
 			Install and enbale epel in yum package manager system.
 		"""
-		if self.os_type not in ['centos', 'redhat', 'amazon']:	return
+		if self.os_type not in ['centos', 'redhat']:	return
 
 		try:
 			if not self._pkg_cache.endswith('/'):	self._pkg_cache += '/'

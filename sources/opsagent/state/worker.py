@@ -143,10 +143,11 @@ class StateWorker(threading.Thread):
 
     # End program
     def abort(self, kill=False, end=False):
-        self.__abort = True
         if self.__abort:
             utils.log("DEBUG", "Already aborting ...",('abort',self))
             return
+
+        self.__abort = True
 
         if not end:
             self.__run = False

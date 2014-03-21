@@ -82,15 +82,15 @@ class OpsAgentRunner(Daemon):
         # terminating process
         def handler(signum=None, frame=None):
             utils.log("WARNING", "Signal handler called with signal %s"%signum,('handler','OpsAgentRunner'))
-            father = False
+#            father = False
             try:
                 fd = file(haltfile,'r')
                 halt = fd.read().strip()
                 fd.close()
-                fd = file(pidfile,'r')
-                if int(fd.read().strip()):
-                    father = True
-                fd.close()
+#                fd = file(pidfile,'r')
+#                if int(fd.read().strip()):
+#                    father = True
+#                fd.close()
             except IOError:
                 halt = None
             except Exception as e:
@@ -102,12 +102,13 @@ class OpsAgentRunner(Daemon):
             elif halt == "end" and father:
                 utils.log("WARNING", "Waiting current recipe end before end...",('handler','OpsAgentRunner'))
                 sw.abort(end=True)
-            elif father:
+#            elif father:
+            else:
                 utils.log("WARNING", "Exiting now...",('handler','OpsAgentRunner'))
                 sw.abort(kill=True)
-            else:
-                utils.log("WARNING", "No soft , exiting now...",('handler','OpsAgentRunner'))
-                sys.exit(0)
+#            else:
+#                utils.log("WARNING", "No soft, exiting now...",('handler','OpsAgentRunner'))
+#                sys.exit(0)
 
         # handle termination
         for sig in [signal.SIGTERM, signal.SIGINT, signal.SIGHUP, signal.SIGQUIT]:
