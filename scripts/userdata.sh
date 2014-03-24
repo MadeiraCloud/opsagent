@@ -108,7 +108,7 @@ if [ $? -eq 0 ]; then
         chmod 640 \${OA_CONF_DIR}/init.sh.gpg
         gpg --no-tty --import \${OA_GPG_KEY}
         rm -f \${OA_CONF_DIR}/init.sh
-        gpg --no-tty --verify \${OA_GPG_KEY} \${OA_CONF_DIR}/init.sh.gpg
+        gpg --no-tty --verify \${OA_CONF_DIR}/init.sh.gpg
         if [ $? -eq 0 ]; then
             gpg --no-tty --output \${OA_CONF_DIR}/init.sh --decrypt \${OA_CONF_DIR}/init.sh.gpg
             echo "Check succeed, running init script ..."
