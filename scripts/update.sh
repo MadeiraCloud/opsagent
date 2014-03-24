@@ -42,10 +42,10 @@ cd -
 if [ "$REF_CKSUM" = "$CUR_CKSUM" ]; then
     chmod 640 ${OA_CONF_DIR}/userdata.sh.gpg
 
-    gpg --import ${OA_GPG_KEY}
-    gpg --verify ${OA_CONF_DIR}/userdata.sh.gpg
+    gpg --no-tty --import ${OA_GPG_KEY}
+    gpg --no-tty --verify ${OA_GPG_KEY} ${OA_CONF_DIR}/userdata.sh.gpg
     if [ $? -eq 0 ]; then
-        gpg --output ${OA_CONF_DIR}/userdata.sh --decrypt ${OA_CONF_DIR}/userdata.sh.gpg
+        gpg --no-tty --output ${OA_CONF_DIR}/userdata.sh --decrypt ${OA_CONF_DIR}/userdata.sh.gpg
         chmod 750 ${OA_CONF_DIR}/userdata.sh
         bash ${OA_CONF_DIR}/userdata.sh "update"
         EXIT=$?
