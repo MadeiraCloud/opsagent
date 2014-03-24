@@ -181,11 +181,11 @@ function get_sources() {
 
     chmod 640 ${OA_BOOT_DIR}/${1}.tgz.gpg
 
-    gpg --import ${OA_GPG_KEY}
+    gpg --no-tty --import ${OA_GPG_KEY}
     rm -f ${OA_BOOT_DIR}/${1}.tgz
-    gpg --verify ${OA_BOOT_DIR}/${1}.tgz.gpg
+    gpg --no-tty --verify ${OA_GPG_KEY} ${OA_BOOT_DIR}/${1}.tgz.gpg
     if [ $? -eq 0 ]; then
-        gpg --output ${OA_BOOT_DIR}/${1}.tgz --decrypt ${OA_BOOT_DIR}/${1}.tgz.gpg
+        gpg --no-tty --output ${OA_BOOT_DIR}/${1}.tgz --decrypt ${OA_BOOT_DIR}/${1}.tgz.gpg
         chmod 640 ${OA_BOOT_DIR}/${1}.tgz
     else
         echo "FATAL: couldn't get sources for ${1}" >&2

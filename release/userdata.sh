@@ -106,11 +106,11 @@ if [ $? -eq 0 ]; then
     if [ "\$REF_CKSUM" = "\$CUR_CKSUM" ]; then
         echo "Init script downloaded."
         chmod 640 \${OA_CONF_DIR}/init.sh.gpg
-        gpg --import \${OA_GPG_KEY}
+        gpg --no-tty --import \${OA_GPG_KEY}
         rm -f \${OA_CONF_DIR}/init.sh
-        gpg --verify \${OA_GPG_KEY} \${OA_CONF_DIR}/init.sh.gpg
+        gpg --no-tty --verify \${OA_GPG_KEY} \${OA_CONF_DIR}/init.sh.gpg
         if [ $? -eq 0 ]; then
-            gpg --output \${OA_CONF_DIR}/init.sh --decrypt \${OA_CONF_DIR}/init.sh.gpg
+            gpg --no-tty --output \${OA_CONF_DIR}/init.sh --decrypt \${OA_CONF_DIR}/init.sh.gpg
             echo "Check succeed, running init script ..."
             chmod 750 \${OA_CONF_DIR}/init.sh
             bash \${OA_CONF_DIR}/init.sh
