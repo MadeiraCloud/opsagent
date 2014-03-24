@@ -183,9 +183,9 @@ function get_sources() {
 
         gpg --import ${OA_GPG_KEY}
         rm -f ${OA_BOOT_DIR}/${1}.tgz
-        gpg --output ${OA_BOOT_DIR}/${1}.tgz --decrypt ${OA_BOOT_DIR}/${1}.tgz.gpg
-
+        gpg --verify ${OA_BOOT_DIR}/${1}.tgz.gpg
         if [ $? -eq 0 ]; then
+            gpg --output ${OA_BOOT_DIR}/${1}.tgz --decrypt ${OA_BOOT_DIR}/${1}.tgz.gpg
             chmod 640 ${OA_BOOT_DIR}/${1}.tgz
             break
         else
