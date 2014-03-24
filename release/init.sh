@@ -4,7 +4,7 @@
 ## (c) 2014 MadeiraCloud LTD.
 ##
 
-OA_VERSION='0.2b2'
+OA_VERSION='0.2b3'
 
 # Set path
 PATH=${PATH}:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
@@ -167,21 +167,27 @@ function update_sources() {
 function get_sources() {
     i=0
     while true; do
+        rm -f ${OA_BOOT_DIR}/${1}.tgz.gpg
         curl -sSL -o ${OA_BOOT_DIR}/${1}.tgz.gpg ${OA_REMOTE}/${1}.tgz.gpg
+        RET=$?
+        if [ $RET -ne 0 ]; then
+            exit $RET
+        fi
         chmod 640 ${OA_BOOT_DIR}/${1}.tgz.gpg
 
         gpg --import ${OA_GPG_KEY}
+        rm -f ${OA_BOOT_DIR}/${1}.tgz
         gpg --output ${OA_BOOT_DIR}/${1}.tgz --decrypt ${OA_BOOT_DIR}/${1}.tgz.gpg
-        chmod 640 ${OA_BOOT_DIR}/${1}.tgz
 
         if [ $? -eq 0 ]; then
+            chmod 640 ${OA_BOOT_DIR}/${1}.tgz
             break
         else
-            if [ $i -lt 10 ]; then
+            if [ $i -lt 5 ]; then
                 echo "${1} GPG check failed, retryind in 30 seconds" >&2
                 sleep 30
             else
-                echo "FATAL: couldn't get sources after 10 try" >&2
+                echo "FATAL: couldn't get sources after 5 try" >&2
                 exit 1
             fi
         fi

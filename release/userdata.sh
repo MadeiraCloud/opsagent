@@ -90,16 +90,21 @@ fi
 chown root:root \${OA_LOG_DIR}/bootstrap.log
 chmod 640 \${OA_LOG_DIR}/bootstrap.log
 
+echo "Getting public key ..."
 curl -sSL -o \${OA_GPG_KEY} \${GPG_KEY_URI}
 chmod 440 \${OA_GPG_KEY}
 
+echo "Getting init script ..."
+rm -f \${OA_CONF_DIR}/init.sh.gpg
 curl -sSL -o \${OA_CONF_DIR}/init.sh.gpg \${OA_REMOTE}/init.sh.gpg
 chmod 640 \${OA_CONF_DIR}/init.sh.gpg
 gpg --import \${OA_GPG_KEY}
+rm -f \${OA_CONF_DIR}/init.sh
 gpg --output \${OA_CONF_DIR}/init.sh --decrypt \${OA_CONF_DIR}/init.sh.gpg
-chmod 750 \${OA_CONF_DIR}/init.sh
 
 if [ $? -eq 0 ]; then
+    echo "Check succeed, runnign init script ..."
+    chmod 750 \${OA_CONF_DIR}/init.sh
     bash \${OA_CONF_DIR}/init.sh
     EXIT=\$?
 else
