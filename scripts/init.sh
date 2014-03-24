@@ -134,7 +134,7 @@ bootstrap=${SRC_SCRIPTS_DIR}/bootstrap.sh
 mod_repo=
 mod_tag=
 EOF
-fi
+#fi
 chown ${OA_USER}:root ${OA_CONFIG_FILE}
 chmod 640 ${OA_CONFIG_FILE}
 
