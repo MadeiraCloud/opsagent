@@ -25,6 +25,7 @@ class Config():
             'conf_path': "Configuration directory",
             'log_path': "Logs directory",
             'package_path': "Relative to envroot runtime package location",
+            'scripts_path': "Scripts location",
             'token': "Unique identification file path",
             'watch': "Watched files checksum location",
             'logfile': "Log file location",

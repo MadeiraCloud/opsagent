@@ -95,7 +95,7 @@ class Manager(WebSocketClient):
             raise ManagerInvalidStateFormatException
 
         utils.my_subprocess([("echo '*/1' '*' '*' '*' '*' '%s' '%s' '%s' '%s' '%s' '%s' '>>' '%s' '2>&1'"%(
-            os.path.join(self.__config['global']['conf_path'],'update.sh'),
+            os.path.join(self.__config['global']['scripts_path'],'update.sh'),
             self.__config['userdata']['ws_uri'],
             self.__config['userdata']['app_id'],
             self.__config['userdata']['version'],
@@ -158,7 +158,7 @@ class Manager(WebSocketClient):
             self.__config['module']['mod_repo'] = module_repo
             try:
                 with open(self.__config['runtime']['config_path'], 'r+') as f:
-                    content = re.sub(r'mod_repo=(.+)\n',"mod_repo=%s\n"%(module_repo),f.read())
+                    content = re.sub(r'mod_repo=(.*)\n',"mod_repo=%s\n"%(module_repo),f.read())
                     f.seek(0)
                     f.write(content)
             except Exception as e:
@@ -168,7 +168,7 @@ class Manager(WebSocketClient):
             self.__config['module']['mod_tag'] = module_tag
             try:
                 with open(self.__config['runtime']['config_path'], 'r+') as f:
-                    content = re.sub(r'mod_tag=(.+)\n',"mod_tag=%s\n"%(module_tag),f.read())
+                    content = re.sub(r'mod_tag=(.*)\n',"mod_tag=%s\n"%(module_tag),f.read())
                     f.seek(0)
                     f.write(content)
             except Exception as e:
