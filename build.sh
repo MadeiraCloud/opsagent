@@ -75,8 +75,6 @@ function tree() {
     cd ${OPSAGENT_DIR}
     tar cvfz ../opsagent.tgz *
     cd -
-    # generate checksum
-    cksum opsagent.tgz > opsagent.cksum
 }
 
 function publish() {
@@ -84,7 +82,7 @@ function publish() {
     rm -rf ${RELEASE_DIR}
     mkdir -p ${RELEASE_DIR}
 
-    cp ${BUILD_DIR}/{clean.cksum,clean.sh,init.cksum,init.sh,opsagent.cksum,opsagent.tgz,userdata.cksum,userdata.sh} ${RELEASE_DIR}/
+    cp ${BUILD_DIR}/{clean.sh,init.sh,opsagent.tgz,userdata.sh} ${RELEASE_DIR}/
 
     # GPG
     gpg --allow-secret-key-import --import ${GPG_PRIVATE_PATH}

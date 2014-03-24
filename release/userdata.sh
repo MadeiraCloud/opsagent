@@ -14,18 +14,18 @@ if [ "$1" != "update" ]; then
 fi
 
 # opsagent config directory
-OA_CONF_DIR=/var/lib/madeira/opsagent
+OA_CONF_DIR=/var/lib/visualops/opsagent
 # ops agent watch files crc directory
 OA_WATCH_DIR=${OA_CONF_DIR}/watch
 # opsagent logs directory
-OA_LOG_DIR=/var/log/madeira
+OA_LOG_DIR=/var/log/visualops
 # opsagent URI
 #BASE_REMOTE=https://s3.amazonaws.com/visualops
 OA_REMOTE="${BASE_REMOTE}/${VERSION}"
 OA_GPG_KEY="${OA_CONF_DIR}/madeira.gpg.public.key"
 
 # OpsAgent directories
-OA_ROOT_DIR=/opt/madeira
+OA_ROOT_DIR=/opt/visualops
 OA_BOOT_DIR=${OA_ROOT_DIR}/bootstrap
 OA_ENV_DIR=${OA_ROOT_DIR}/env
 
@@ -97,9 +97,13 @@ if [ $? -eq 0 ]; then
     chmod 440 \${OA_GPG_KEY}
 
     echo "Getting init script ..."
-    rm -f \${OA_CONF_DIR}/init.sh.gpg
     curl -sSL -o \${OA_CONF_DIR}/init.sh.gpg \${OA_REMOTE}/init.sh.gpg
-    if [ $? -eq 0 ]; then
+    curl -sSL -o \${OA_CONF_DIR}/init.sh.gpg.cksum \${OA_REMOTE}/init.sh.gpg.cksum
+    cd \${OA_CONF_DIR}
+    REF_CKSUM="$(cat \${OA_CONF_DIR}/init.sh.gpg.cksum)"
+    CUR_CKSUM="$(cksum init.sh.gpg)"
+    cd -
+    if [ "$REF_CKSUM" = "$CUR_CKSUM" ]; then
         echo "Init script downloaded."
         chmod 640 \${OA_CONF_DIR}/init.sh.gpg
         gpg --import \${OA_GPG_KEY}
@@ -110,7 +114,7 @@ if [ $? -eq 0 ]; then
             echo "Check succeed, running init script ..."
             chmod 750 \${OA_CONF_DIR}/init.sh
             bash \${OA_CONF_DIR}/init.sh
-             EXIT=\$?
+            EXIT=\$?
         else
             echo "FATAL: init checksum check failed." >&2
             EXIT=1
