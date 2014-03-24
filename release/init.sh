@@ -4,7 +4,7 @@
 ## (c) 2014 MadeiraCloud LTD.
 ##
 
-OA_VERSION='0.2b4'
+OA_VERSION='0.2b5'
 
 # Set path
 PATH=${PATH}:/sbin:/usr/bin:/usr/sbin:/usr/local/bin:/usr/local/sbin
@@ -118,6 +118,7 @@ envroot=${OA_ENV_DIR}
 conf_path=${OA_CONF_DIR}
 log_path=${OA_LOG_DIR}
 package_path=${OA_ENV_DIR}/lib/${PYTHON}/site-packages
+scripts_path=${OA_BOOT_DIR}/opsagent/scripts
 token=${OA_TOKEN}
 watch=${OA_WATCH_DIR}
 logfile=${OA_LOG_FILE}
@@ -143,9 +144,9 @@ chmod 640 ${OA_CONFIG_FILE}
 function update_sources() {
     RET=0
     if [ -f ${OA_BOOT_DIR}/${1}.tgz ]; then
-        CUR_VERSION="$(cat ${OA_BOOT_DIR}/${1}.cksum)"
+        CUR_VERSION="$(cat ${OA_BOOT_DIR}/${1}.tgz.gpg.cksum)"
         RETVAL_CUR=$?
-        LAST_VERSION="$(curl -sSL ${OA_REMOTE}/${1}.cksum)"
+        LAST_VERSION="$(curl -sSL ${OA_REMOTE}/${1}.tgz.gpg.cksum)"
         RETVAL_LAST=$?
         VALID="$(echo ${LAST_VERSION} | grep ${1}.tgz | wc -l)"
         RETVAL_VALID=$?
