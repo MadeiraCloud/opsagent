@@ -70,7 +70,7 @@ fi
 
 # Exit if no git
 if [ ! $(which git 2>/dev/null) ]; then
-    echo "FATAL: No git found! (can't install?)" 1>&2
+    echo "FATAL: No git found! (can't install?)" >&2
     exit 1
 fi
 
@@ -81,7 +81,7 @@ if [ $(which apt-get 2>/dev/null) ]; then
     echo "Platform: APT"
     apt-get -y -q install python2.7 2>/dev/null
     if [ $? -ne 0 ]; then
-        echo "Failed to install python 2.7, trying with python 2.6 ..."
+        echo "Failed to install python 2.7, trying with python 2.6 ..." >&2
         apt-get -y -q install python2.6 2>/dev/null
     fi
     # install other dependencies
@@ -91,7 +91,7 @@ elif [ $(which yum 2>/dev/null) ]; then
     echo "Platform: YUM"
     yum -y -q install python27 2>/dev/null
     if [ $? -ne 0 ]; then
-        echo "Failed to install python 2.7, trying with python 2.6 ..."
+        echo "Failed to install python 2.7, trying with python 2.6 ..." >&2
         yum -y -q install python26 2>/dev/null
     fi
     # install other dependencies
@@ -105,7 +105,7 @@ elif [ $(which python2.6 2>/dev/null) ]; then
     echo "python 2.6 found"
     PYTHON="python2.6"
 else
-    echo "FATAL: Python2 non installed! (can't install!)"
+    echo "FATAL: Python2 non installed! (can't install!)" >&2
     exit 1
 fi
 
@@ -165,40 +165,32 @@ function update_sources() {
 
 # sources update fetch
 function get_sources() {
-    i=0
-    while true; do
-        rm -f ${OA_BOOT_DIR}/${1}.tgz.gpg
-        curl -sSL -o ${OA_BOOT_DIR}/${1}.tgz.gpg ${OA_REMOTE}/${1}.tgz.gpg
-        curl -sSL -o ${OA_BOOT_DIR}/${1}.tgz.gpg.cksum ${OA_REMOTE}/${1}.tgz.gpg.cksum
+    rm -f ${OA_BOOT_DIR}/${1}.tgz.gpg
+    curl -sSL -o ${OA_BOOT_DIR}/${1}.tgz.gpg ${OA_REMOTE}/${1}.tgz.gpg
+    curl -sSL -o ${OA_BOOT_DIR}/${1}.tgz.gpg.cksum ${OA_REMOTE}/${1}.tgz.gpg.cksum
 
-        cd ${OA_BOOT_DIR}
-        REF_CKSUM="$(cat ${OA_BOOT_DIR}/${1}.tgz.gpg.cksum)"
-        CUR_CKSUM="$(cksum ${1}.tgz.gpg)"
-        cd -
-        if [ "$REF_CKSUM" = "$CUR_CKSUM" ]; then
-            exit 2
-        fi
+    cd ${OA_BOOT_DIR}
+    REF_CKSUM="$(cat ${OA_BOOT_DIR}/${1}.tgz.gpg.cksum)"
+    CUR_CKSUM="$(cksum ${1}.tgz.gpg)"
+    cd -
+    if [ "$REF_CKSUM" != "$CUR_CKSUM" ]; then
+        echo "FATAL: Checksum failed on ${1}" >&2
+        exit 2
+    fi
 
-        chmod 640 ${OA_BOOT_DIR}/${1}.tgz.gpg
+    chmod 640 ${OA_BOOT_DIR}/${1}.tgz.gpg
 
-        gpg --import ${OA_GPG_KEY}
-        rm -f ${OA_BOOT_DIR}/${1}.tgz
-        gpg --verify ${OA_BOOT_DIR}/${1}.tgz.gpg
-        if [ $? -eq 0 ]; then
-            gpg --output ${OA_BOOT_DIR}/${1}.tgz --decrypt ${OA_BOOT_DIR}/${1}.tgz.gpg
-            chmod 640 ${OA_BOOT_DIR}/${1}.tgz
-            break
-        else
-            if [ $i -lt 5 ]; then
-                echo "${1} GPG check failed, retryind in 30 seconds" >&2
-                sleep 30
-            else
-                echo "FATAL: couldn't get sources after 5 try" >&2
-                exit 1
-            fi
-        fi
-        i=$((i+1))
-    done
+    gpg --import ${OA_GPG_KEY}
+    rm -f ${OA_BOOT_DIR}/${1}.tgz
+    gpg --verify ${OA_BOOT_DIR}/${1}.tgz.gpg
+    if [ $? -eq 0 ]; then
+        gpg --output ${OA_BOOT_DIR}/${1}.tgz --decrypt ${OA_BOOT_DIR}/${1}.tgz.gpg
+        chmod 640 ${OA_BOOT_DIR}/${1}.tgz
+    else
+        echo "FATAL: couldn't get sources for ${1}" >&2
+        exit 1
+    fi
+
     if [ -d ${OA_BOOT_DIR}/${1} ]; then
         rm -rf ${OA_BOOT_DIR}/${1}
     fi
