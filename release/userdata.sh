@@ -56,7 +56,7 @@ fi
 
 if [ -f \${OA_EXEC_FILE} ]; then
     OLD_PID="\$(cat \${OA_EXEC_FILE})"
-    if [ \$(ps -eo pid,comm | tr -d ' ' | grep \${OLD_PID} | wc -l) -ne 0 ]; then
+    if [ \$(ps -eo pid,comm | tr -d " " | grep \${OLD_PID} | wc -l) -ne 0 ]; then
         echo "Bootstrap already running ..."
         exit 0
     else
@@ -81,7 +81,7 @@ export BASE_REMOTE=${BASE_REMOTE}
 export GPG_KEY_URI=${GPG_KEY_URI}
 
 # set working file
-ps -eo pid,comm | tr -d ' ' | grep "^\$$" > \${OA_EXEC_FILE}
+ps -eo "pid,comm" | tr -d " " | grep "^\$$" > \${OA_EXEC_FILE}
 
 # Set bootstrap log with restrictive access rights
 if [ ! -f \${OA_LOG_DIR}/bootstrap.log ]; then
@@ -93,7 +93,7 @@ chmod 640 \${OA_LOG_DIR}/bootstrap.log
 curl -sSL -o \${OA_GPG_KEY} \${GPG_KEY_URI}
 chmod 440 \${OA_GPG_KEY}
 
-curl -sSL -o \${OA_CONF_DIR}/init.sh \${OA_REMOTE}/init.sh.gpg
+curl -sSL -o \${OA_CONF_DIR}/init.sh.gpg \${OA_REMOTE}/init.sh.gpg
 chmod 640 \${OA_CONF_DIR}/init.sh.gpg
 gpg --import \${OA_GPG_KEY}
 gpg --output \${OA_CONF_DIR}/init.sh --decrypt \${OA_CONF_DIR}/init.sh.gpg
