@@ -92,24 +92,36 @@ chmod 640 \${OA_LOG_DIR}/bootstrap.log
 
 echo "Getting public key ..."
 curl -sSL -o \${OA_GPG_KEY} \${GPG_KEY_URI}
-chmod 440 \${OA_GPG_KEY}
-
-echo "Getting init script ..."
-rm -f \${OA_CONF_DIR}/init.sh.gpg
-curl -sSL -o \${OA_CONF_DIR}/init.sh.gpg \${OA_REMOTE}/init.sh.gpg
-chmod 640 \${OA_CONF_DIR}/init.sh.gpg
-gpg --import \${OA_GPG_KEY}
-rm -f \${OA_CONF_DIR}/init.sh
-gpg --output \${OA_CONF_DIR}/init.sh --decrypt \${OA_CONF_DIR}/init.sh.gpg
-
 if [ $? -eq 0 ]; then
-    echo "Check succeed, runnign init script ..."
-    chmod 750 \${OA_CONF_DIR}/init.sh
-    bash \${OA_CONF_DIR}/init.sh
-    EXIT=\$?
+    echo "Public key downloaded."
+    chmod 440 \${OA_GPG_KEY}
+
+    echo "Getting init script ..."
+    rm -f \${OA_CONF_DIR}/init.sh.gpg
+    curl -sSL -o \${OA_CONF_DIR}/init.sh.gpg \${OA_REMOTE}/init.sh.gpg
+    if [ $? -eq 0 ]; then
+        echo "Init script downloaded."
+        chmod 640 \${OA_CONF_DIR}/init.sh.gpg
+        gpg --import \${OA_GPG_KEY}
+        rm -f \${OA_CONF_DIR}/init.sh
+        gpg --output \${OA_CONF_DIR}/init.sh --decrypt \${OA_CONF_DIR}/init.sh.gpg
+
+        if [ $? -eq 0 ]; then
+            echo "Check succeed, running init script ..."
+            chmod 750 \${OA_CONF_DIR}/init.sh
+            bash \${OA_CONF_DIR}/init.sh
+             EXIT=\$?
+        else
+            echo "FATAL: init checksum check failed." >&2
+            EXIT=1
+        fi
+    else
+        echo "FATAL: Can't download init script."
+        EXIT=2
+    fi
 else
-    echo "init checksum check failed, exiting ..." >&2
-    EXIT=1
+    echo "FATAL: Can't get public key."
+    EXIT=3
 fi
 
 rm -f \${OA_EXEC_FILE}
