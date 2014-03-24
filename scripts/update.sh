@@ -16,6 +16,8 @@ if [ -f ${OA_UPDATE_FILE} ]; then
     fi
 fi
 
+echo "update starting ..."
+
 # set working file
 ps -eo pid,comm | tr -d ' ' | grep "^$$" > ${OA_UPDATE_FILE}
 
@@ -57,5 +59,12 @@ else
 fi
 
 rm -f ${OA_UPDATE_FILE}
+
+if [ $EXIT -eq 0 ]; then
+    echo "Update succeed."
+else
+    echo "Update failed."
+fi
+
 exit $EXIT
 #EOF

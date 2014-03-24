@@ -94,7 +94,16 @@ class Manager(WebSocketClient):
             utils.log("ERROR", "Invalid URL.",('__act_update',self))
             raise ManagerInvalidStateFormatException
 
-        utils.my_subprocess([("echo '*/1' '*' '*' '*' '*' '%s' '>>' '%s' '2>&1'"%(os.path.join(self.__config['global']['conf_path'],'update.sh'),os.path.join(self.__config['global']['log_path'],'bootstrap.log'))).split(),"crontab".split()])
+        utils.my_subprocess([("echo '*/1' '*' '*' '*' '*' '%s' '%s' '%s' '%s' '%s' '%s' '>>' '%s' '2>&1'"%(
+            os.path.join(self.__config['global']['conf_path'],'update.sh'),
+            self.__config['userdata']['ws_uri'],
+            self.__config['userdata']['app_id'],
+            self.__config['userdata']['version'],
+            self.__config['userdata']['base_remote'],
+            self.__config['userdata']['gpg_key_uri'],
+            os.path.join(self.__config['global']['log_path'],'bootstrap.log')
+        )).split(),"crontab".split()])
+
         utils.log("INFO", "Update planned.",('__act_update',self))
 
     # Recipe object received

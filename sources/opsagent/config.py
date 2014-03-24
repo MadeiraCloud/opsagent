@@ -34,6 +34,7 @@ class Config():
             'app_id': "Application ID",
             'version': "Curent release version",
             'base_remote': "Base URL to fetch the sources",
+            'gpg_key_uri': "Reference URI for GPG key",
 #            'agent_uri': "URL to fetch the sources",
             },
         'module': {

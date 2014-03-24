@@ -97,10 +97,10 @@ class OpsAgentRunner(Daemon):
             except Exception as e:
                 utils.log("WARNING", "Unexpected error, forcing quit: '%s'."%(e),('handler','OpsAgentRunner'))
                 halt = None
-            if halt == "wait" and father:
+            if halt == "wait":
                 utils.log("WARNING", "Waiting current state end before end...",('handler','OpsAgentRunner'))
                 sw.abort()
-            elif halt == "end" and father:
+            elif halt == "end":
                 utils.log("WARNING", "Waiting current recipe end before end...",('handler','OpsAgentRunner'))
                 sw.abort(end=True)
 #            elif father:
