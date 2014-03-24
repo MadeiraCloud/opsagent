@@ -17,7 +17,7 @@
 
 #ulimit -S -c 0
 
-OA_ROOT="/opt/madeira"
+OA_ROOT="/opt/visualops"
 
 case "$1" in
   start)

@@ -1,5 +1,6 @@
 '''
-Madeira OpsAgent States worker object
+VisualOps agent States worker object
+(c) 2014 - MadeiraCloud LTD.
 
 @author: Thibault BRONCHAIN
 '''

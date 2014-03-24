@@ -1,5 +1,6 @@
 '''
-Madeira OpsAgent utilities
+VisualOps agent utilities
+(c) 2014 - MadeiraCloud LTD.
 
 @author: Thibault BRONCHAIN
 '''

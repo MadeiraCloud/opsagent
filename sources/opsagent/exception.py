@@ -1,5 +1,6 @@
 '''
-Madeira OpsAgent exceptions
+VisualOps agent exceptions
+(c) 2014 - MadeiraCloud LTD.
 
 @author: Thibault BRONCHAIN
 '''

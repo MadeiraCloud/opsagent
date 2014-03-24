@@ -1,5 +1,6 @@
 '''
-Madeira OpsAgent protocol defines
+VisualOps agent protocol defines
+(c) 2014 - MadeiraCloud LTD.
 
 @author: Thibault BRONCHAIN
 '''

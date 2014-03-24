@@ -1,6 +1,7 @@
 #!/usr/bin/python
 '''
-Madeira OpsAgent launcher script
+VisualOps agent launcher script
+(c) 2014 - MadeiraCloud LTD.
 
 @author: Thibault BRONCHAIN
 '''

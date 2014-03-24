@@ -1,5 +1,6 @@
 '''
-Madeira OpsAgent state runner
+VisualOps agent state runner
+(c) 2014 - MadeiraCloud LTD.
 
 @author: Michael (michael@mc2.io)
 '''
@@ -298,7 +299,7 @@ def main():
                 'extension_modules': '/var/cache/salt/minion/extmods',
                 'id':                '',
                 'pillar_roots':      '',
-                'cachedir':          '/var/cache/madeira/',
+                'cachedir':          '/var/cache/visualops/',
                 'test':              False,
                 }
 
@@ -309,7 +310,7 @@ def main():
                                 {
                                         "name": "git://github.com/facebook/scribe.gits",
                                         "rev": "master",
-                                        "target": "/madeira/deps/scribe",
+                                        "target": "/visualops/deps/scribe",
                                         "user": "root"
                                 }
                         ]

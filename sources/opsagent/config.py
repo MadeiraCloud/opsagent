@@ -1,5 +1,6 @@
 '''
-Madeira OpsAgent configuration manager class
+VisualOps agent configuration manager class
+(c) 2014 - MadeiraCloud LTD.
 
 @author: Thibault BRONCHAIN
 '''
@@ -63,21 +64,21 @@ class Config():
             'pkg_cache': '/var/cache/pkg',
             'srv_root': '/srv/salt',
             'extension_modules': '/var/cache/salt/minion/extmods',
-            'cachedir': '/var/cache/madeira',
+            'cachedir': '/var/cache/visualops',
             'delay': '1',
             'timeout': '30',
             },
         'module': {
-            # Locations relatives to modules directory (default /opt/madeira/env/lib/python-*/sites-package)
+            # Locations relatives to modules directory (default /opt/visualops/env/lib/python-*/sites-package)
             'dst_adaptor': 'opsagent/state/adaptor.py',
-            # Locations relatives to salt repository (default /opt/madeira/boostrap/salt)
+            # Locations relatives to salt repository (default /opt/visualops/boostrap/salt)
             'src_salt': 'sources/salt',
             'src_adaptor': 'sources/adaptor.py',
             },
         }
 
     chrootKeys = {
-        # 'Chrooted' to curent environment (default /opt/madeira/env)
+        # 'Chrooted' to curent environment (default /opt/visualops/env)
         'salt': ['pkg_cache','srv_root','extension_modules','cachedir'],
         }
 

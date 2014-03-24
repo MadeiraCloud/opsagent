@@ -1,5 +1,6 @@
 '''
-Madeira OpsAgent Checksum library
+VisualOps agent Checksum library
+(c) 2014 - MadeiraCloud LTD.
 
 @author: Thibault BRONCHAIN
 '''

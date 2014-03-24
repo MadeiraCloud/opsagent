@@ -5,17 +5,17 @@
 ##
 
 DOA_CONF_FILE=/etc/opsagent.conf
-DOA_CONF_DIR=/var/lib/madeira/opsagent
-DOA_LOG_DIR=/var/log/madeira
+DOA_CONF_DIR=/var/lib/visualops/opsagent
+DOA_LOG_DIR=/var/log/visualops
 DOA_TMP_ROOT=/tmp/opsagent
-DOA_ROOT_DIR=/opt/madeira
+DOA_ROOT_DIR=/opt/visualops
 DOA_BASE_REMOTE=https://s3.amazonaws.com/visualops
 #DOA_VERSION=""
 #DOA_REMOTE="${DOA_BASE_REMOTE}/${DOA_VERSION}"
 EXIT=0
 
 # DEBUG
-DOA_SALT_DIR=/opt/madeira/bootstrap
+DOA_SALT_DIR=/opt/visualops/bootstrap
 DOA_SALT_REPO=https://github.com/MadeiraCloud/salt.git
 DOA_SALT_BRANCH=develop
 DOA_ENV_DIR=$DOA_ROOT_DIR/env

@@ -1,5 +1,6 @@
 '''
-Madeira OpsAgent Daemoniser class
+VisualOps agent Daemoniser class
+(c) 2014 - MadeiraCloud LTD.
 
 @author: Thibault BRONCHAIN
 '''

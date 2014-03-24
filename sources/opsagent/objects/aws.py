@@ -1,5 +1,6 @@
 '''
-Madeira OpsAgent AWS requests
+VisualOps agent AWS requests
+(c) 2014 - MadeiraCloud LTD.
 
 @author: Thibault BRONCHAIN
 '''

@@ -1,5 +1,6 @@
 '''
-Madeira OpsAgent requests objects
+VisualOps agent requests objects
+(c) 2014 - MadeiraCloud LTD.
 
 @author: Thibault BRONCHAIN
 '''

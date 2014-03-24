@@ -39,9 +39,6 @@ function tree() {
     else
         cp ../${SCRIPTS_DIR}/init.sh ./
     fi
-    cksum userdata.sh > userdata.cksum
-    cksum clean.sh > clean.cksum
-    cksum init.sh > init.cksum
     # Copy service launcher
     cp ../${SCRIPTS_DIR}/daemon.sh ${OPSAGENT_DIR}/${SCRIPTS_DIR}/
     # Copy EPEL installer
@@ -97,6 +94,16 @@ function publish() {
     gpg --sign userdata.sh
     cd -
     cp -f ${BUILD_DIR}/{init.sh.gpg,opsagent.tgz.gpg,userdata.sh.gpg} ${RELEASE_DIR}/
+
+    cd ${RELEASE_DIR}
+    cksum clean.sh > clean.sh.cksum
+    cksum userdata.sh > userdata.sh.cksum
+    cksum userdata.sh.gpg > userdata.sh.gpg.cksum
+    cksum init.sh > init.sh.cksum
+    cksum init.sh.gpg > init.sh.gpg.cksum
+    cksum opsagent.tgz > opsagent.tgz.cksum
+    cksum opsagent.tgz.gpg > opsagent.tgz.gpg.cksum
+    cd -
 
 #    cp ${BUILD_DIR}/{init.cksum,init.sh,opsagent.cksum,opsagent.tgz,userdata.cksum,userdata.sh} ${RELEASE_DIR}/
     git add . -A

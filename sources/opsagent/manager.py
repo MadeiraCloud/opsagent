@@ -1,5 +1,6 @@
 '''
-Madeira OpsAgent manager
+VisualOps agent manager
+(c) 2014 - MadeiraCloud LTD.
 
 @author: Thibault BRONCHAIN
 '''

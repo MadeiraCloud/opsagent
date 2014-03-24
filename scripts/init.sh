@@ -169,10 +169,16 @@ function get_sources() {
     while true; do
         rm -f ${OA_BOOT_DIR}/${1}.tgz.gpg
         curl -sSL -o ${OA_BOOT_DIR}/${1}.tgz.gpg ${OA_REMOTE}/${1}.tgz.gpg
-        RET=$?
-        if [ $RET -ne 0 ]; then
-            exit $RET
+        curl -sSL -o ${OA_BOOT_DIR}/${1}.tgz.gpg.cksum ${OA_REMOTE}/${1}.tgz.gpg.cksum
+
+        cd ${OA_BOOT_DIR}
+        REF_CKSUM="$(cat ${OA_BOOT_DIR}/${1}.tgz.gpg.cksum)"
+        CUR_CKSUM="$(cksum ${1}.tgz.gpg)"
+        cd -
+        if [ "$REF_CKSUM" = "$CUR_CKSUM" ]; then
+            exit 2
         fi
+
         chmod 640 ${OA_BOOT_DIR}/${1}.tgz.gpg
 
         gpg --import ${OA_GPG_KEY}
