@@ -57,7 +57,7 @@ fi
 if [ -f \${OA_EXEC_FILE} ]; then
     OLD_PID="\$(cat \${OA_EXEC_FILE})"
     if [ \$(ps -eo pid,comm | tr -d " " | grep \${OLD_PID} | wc -l) -ne 0 ]; then
-        echo "Bootstrap already running ..."
+        echo "Bootstrap already running ..." >&2
         exit 0
     else
         rm -f \${OA_EXEC_FILE}
@@ -100,15 +100,15 @@ if [ $? -eq 0 ]; then
     curl -sSL -o \${OA_CONF_DIR}/init.sh.gpg \${OA_REMOTE}/init.sh.gpg
     curl -sSL -o \${OA_CONF_DIR}/init.sh.gpg.cksum \${OA_REMOTE}/init.sh.gpg.cksum
     cd \${OA_CONF_DIR}
-    REF_CKSUM="$(cat \${OA_CONF_DIR}/init.sh.gpg.cksum)"
-    CUR_CKSUM="$(cksum init.sh.gpg)"
+    REF_CKSUM="\$(cat \${OA_CONF_DIR}/init.sh.gpg.cksum)"
+    CUR_CKSUM="\$(cksum init.sh.gpg)"
     cd -
-    if [ "$REF_CKSUM" = "$CUR_CKSUM" ]; then
+    if [ "\$REF_CKSUM" = "\$CUR_CKSUM" ]; then
         echo "Init script downloaded."
         chmod 640 \${OA_CONF_DIR}/init.sh.gpg
         gpg --import \${OA_GPG_KEY}
         rm -f \${OA_CONF_DIR}/init.sh
-        gpg --verify \${OA_CONF_DIR}/init.sh.gpg
+        gpg --verify \${OA_GPG_KEY} \${OA_CONF_DIR}/init.sh.gpg
         if [ $? -eq 0 ]; then
             gpg --output \${OA_CONF_DIR}/init.sh --decrypt \${OA_CONF_DIR}/init.sh.gpg
             echo "Check succeed, running init script ..."
@@ -120,11 +120,11 @@ if [ $? -eq 0 ]; then
             EXIT=1
         fi
     else
-        echo "FATAL: Can't download init script."
+        echo "FATAL: Can't download init script." >&2
         EXIT=2
     fi
 else
-    echo "FATAL: Can't get public key."
+    echo "FATAL: Can't get public key." >&2
     EXIT=3
 fi
 

@@ -42,7 +42,7 @@ elif [ $(which update-rc.d) ]; then
     update-rc.d opsagentd defaults
     update-rc.d opsagentd enable
 else
-    echo "Fatal: no service manager"
+    echo "Fatal: no service manager" >&2
     exit 1
 fi
 

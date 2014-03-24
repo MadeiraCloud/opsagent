@@ -9,7 +9,7 @@ OA_UPDATE_FILE=/tmp/opsagent.update
 if [ -f ${OA_UPDATE_FILE} ]; then
     UP_PID="$(cat ${OA_UPDATE_FILE})"
     if [ $(ps -eo pid,comm | tr -d ' ' | grep ${UP_PID} | wc -l) -ne 0 ]; then
-        echo "update.sh: Update already running ..."
+        echo "update.sh: Update already running ..." >&2
         exit 0
     else
         rm -f ${OA_UPDATE_FILE}

@@ -53,7 +53,7 @@ if [ "$1" = "reinstall" ]; then
             echo "python 2.6 found"
             D_PYTHON="python2.6"
         else
-            echo "Fatal: Python2 non installed"
+            echo "Fatal: Python2 non installed" >&2
             exit 1
         fi
 
@@ -75,7 +75,7 @@ if [ "$1" = "reinstall" ]; then
         elif [ $(which update-rc.d) ]; then
             update-rc.d opsagentd disable
         else
-            echo "Fatal: no service manager"
+            echo "Fatal: no service manager" >&2
             exit 1
         fi
 
