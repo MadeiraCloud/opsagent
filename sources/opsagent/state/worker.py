@@ -70,7 +70,7 @@ class StateWorker(threading.Thread):
         self.__cv_wait = False
         self.__waiting = False
         self.__run = False
-        self.__abort = False
+        self.__abort = 0
         self.__executing = False
         self.__recipe_count = 0
 
@@ -144,11 +144,11 @@ class StateWorker(threading.Thread):
 
     # End program
     def abort(self, kill=False, end=False):
-        if self.__abort:
+        if self.__abort == 1 or (self.__abort == 2 and not kill):
             utils.log("DEBUG", "Already aborting ...",('abort',self))
             return
 
-        self.__abort = True
+        self.__abort = (1 if kill else 2)
 
         if not end:
             self.__run = False
@@ -173,7 +173,7 @@ class StateWorker(threading.Thread):
         return self.__run
 
     def aborted(self):
-        return self.__abort
+        return (True if self.__abort else False)
     ##
 
 
