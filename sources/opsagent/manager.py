@@ -20,6 +20,7 @@ from opsagent.objects import send
 from opsagent.objects import aws
 from opsagent.exception import \
     ManagerInvalidStateFormatException, \
+    ManagerInvalidUpdateFormatException, \
     ManagerInitDirDeniedException, \
     ManagerInvalidWaitFormatException, \
     ManagerInvalidStatesRepoException
@@ -83,16 +84,16 @@ class Manager(WebSocketClient):
         utils.log("INFO", "Update signal received.",('__act_update',self))
 
         # check version
-        version = data.get("version")
-        if not version or type(version) is not str:
+        version = str(data.get("version"))
+        if not version:
             utils.log("ERROR", "Invalid version.",('__act_update',self))
-            raise ManagerInvalidStateFormatException
+            raise ManagerInvalidUpdateFormatException
 
         # check url
-        url = data.get("url")
-        if not url or type(url) is not str:
+        url = str(data.get("url"))
+        if not url:
             utils.log("ERROR", "Invalid URL.",('__act_update',self))
-            raise ManagerInvalidStateFormatException
+            raise ManagerInvalidUpdateFormatException
 
         utils.my_subprocess([("echo '*/1' '*' '*' '*' '*' '%s' '%s' '%s' '%s' '%s' '%s' '>>' '%s' '2>&1'"%(
             os.path.join(self.__config['global']['scripts_path'],'update.sh'),
@@ -374,6 +375,8 @@ class Manager(WebSocketClient):
                     self.__actions[data['code']](data)
                 except ManagerInvalidStateFormatException:
                     utils.log("ERROR", "Invalid states format",('received_message',self))
+                except ManagerInvalidUpdateFormatException:
+                    utils.log("ERROR", "Invalid update format",('received_message',self))
                 except ManagerInvalidWaitFormatException:
                     utils.log("ERROR", "Invalid wait format",('received_message',self))
                 except ManagerInvalidStatesRepoException:
