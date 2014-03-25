@@ -95,7 +95,7 @@ def clone_repo(config, path, name, uri):
             shutil.rmtree(os.path.join(path,name))
         except Exception as e:
             log("DEBUG", "Exception while removing directory %s: %s"%(os.path.normpath(path+'/'+name),e),('clone_repo','utils'))
-        r = subprocess.check_call(("git clone %s %s"%(uri,name)).split(),cwd=path)
+        r = subprocess.check_call(["git","clone",uri,name],cwd=path)
         log("INFO", "repo %s from %s successfully cloned in %s: %s"%(name,uri,path,r),('clone_repo','utils'))
         try:
             os.unlink(os.path.join(config['global']['package_path'],config['module']['name']))
@@ -115,15 +115,15 @@ def clone_repo(config, path, name, uri):
 # clone a git branch/tag
 def checkout_repo(config, path, name, tag, uri, n=0):
     commands = [
-        "git checkout master",
-        "git pull",
-        "git checkout %s"%(tag),
+        ["git","checkout","master"],
+        ["git","pull"],
+        ["git","checkout",tag],
         ]
     spath = os.path.join(path,name)
     for cmd in commands:
         try:
-            r = subprocess.check_call(cmd.split(),cwd=spath)
-            log("INFO", "Command succeed %s: %s"%(cmd,r),('checkout_repo','utils'))
+            r = subprocess.check_call(cmd,cwd=spath)
+            log("INFO", "Command succeed %s: %s"%(" ".join(cmd),r),('checkout_repo','utils'))
         except Exception as e:
             log("WARNING", "Can't update %s repo on %s tag: %s"%(name,tag,e),('checkout_repo','utils'))
             clone_repo(config, path, name, uri)
