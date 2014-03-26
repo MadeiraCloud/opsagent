@@ -57,9 +57,9 @@ chmod 550 ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_SCRIPTS_DIR}/update.sh
 ##
 # TMP (AGENT START)
 # TODO: remove
-MADEIRA_HOST=$(grep "api.madeiracloud.com" /etc/hosts | wc -l)
+MADEIRA_HOST=$(grep "api.visualops.io" /etc/hosts | wc -l)
 if [ ${MADEIRA_HOST} -eq 0 ]; then
-    echo "211.98.26.9 api.madeiracloud.com" >> /etc/hosts
+    echo "211.98.26.8 api.visualops.io" >> /etc/hosts
 fi
 ##
 
