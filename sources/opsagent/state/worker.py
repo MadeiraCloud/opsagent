@@ -412,24 +412,11 @@ class StateWorker(threading.Thread):
 
     # Run state
     def __run_state(self):
-#        # logger settings
-#        LOGLVL_VALUES=['DEBUG','INFO','WARNING','ERROR']
-#        LOG_FORMAT = '[%(levelname)s]-%(asctime)s: %(message)s'
-#        def __log(lvl, f=None):
-#            level = logging.getLevelName(lvl)
-#            formatter = logging.Formatter(LOG_FORMAT)
-#            handler = (logging.handlers.RotatingFileHandler(f,maxBytes=(1024*1024*10),backupCount=5) if f else logging.StreamHandler())
-#            logger = multiprocessing.get_logger()
-#            handler.setFormatter(formatter)
-#            logger.setLevel(level)
-#            logger.addHandler(handler)
-#        __log(self.config['runtime']['loglvl'],self.config['runtime']['logfile'])
-
+        state = self.__states[self.__status]
         utils.log("INFO", "Running state '%s', #%s"%(state['id'], self.__status),('__run_state',self))
         result = FAIL
         comment = None
         out_log = None
-        state = self.__states[self.__status]
         try:
             if state.get('module') in self.__builtins:
                 (result,comment,out_log) = (self.__builtins[state['module']](state['id'],
@@ -485,8 +472,8 @@ class StateWorker(threading.Thread):
 
             # Run state
             utils.log("DEBUG", "Creating state runner process ...",('__runner',self))
-#            p = Process(target=self.__run_state)
-            p = Process(target=self.__toto)
+            p = Process(target=self.__run_state)
+#            p = Process(target=self.__toto)
             utils.log("DEBUG", "Starting state runner process ...",('__runner',self))
             p.start()
             self.__executing = p.pid
