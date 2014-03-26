@@ -11,6 +11,7 @@ VisualOps agent States worker object
 import multiprocessing
 from multiprocessing import Process,Manager
 import logging
+import logging.handlers
 import threading
 import time
 import os
@@ -479,10 +480,14 @@ class StateWorker(threading.Thread):
                     continue
 
             # Run state
+            utils.log("DEBUG", "Creating state runner process ...",('__runner',self))
             p = Process(target=self.__run_state, args=(state))
+            utils.log("DEBUG", "Starting state runner process ...",('__runner',self))
             p.start()
             self.__executing = p.pid
+            utils.log("DEBUG", "State runner process running under pid #%s..."%(self.__executing),('__runner',self))
             p.join()
+            utils.log("DEBUG", "State runner process terminated.",('__runner',self))
 
             # Reset running values
             self.__waiting = False
