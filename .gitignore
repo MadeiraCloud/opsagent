@@ -54,3 +54,4 @@ test*.sh
 build/
 build_old/
 build_stable/
+release/
