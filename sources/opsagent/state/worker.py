@@ -408,8 +408,11 @@ class StateWorker(threading.Thread):
         utils.log("INFO", "Delay passed, execution restarting...",('__recipe_delay',self))
 
     # Run state
-    def __run_state(self):
+    def __run_state(self, state):
         utils.log("INFO", "Running state '%s', #%s"%(state['id'], self.__status),('__runner',self))
+        result = FAIL
+        comment = None
+        out_log = None
         try:
             if state.get('module') in self.__builtins:
                 (result,comment,out_log) = (self.__builtins[state['module']](state['id'],
@@ -461,7 +464,7 @@ class StateWorker(threading.Thread):
                     continue
 
             # Run state
-            p = Process(target=self.__run_state())
+            p = Process(target=self.__run_state(), args=(state))
             p.start()
             self.__executing = p.pid
             p.join()
