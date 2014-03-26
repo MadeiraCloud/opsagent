@@ -240,7 +240,7 @@ class StateWorker(threading.Thread):
                     else:
                         utils.log("WARNING", "Error trying to kill process: %s"%(e),('__kill_exec',self))
         else:
-            utils.log("DEBUG", "Execution not running."%(self.__executing),('__kill_exec',self))
+            utils.log("DEBUG", "Execution not running.",('__kill_exec',self))
 
     # Halt wait
     def __kill_wait(self):
@@ -442,10 +442,6 @@ class StateWorker(threading.Thread):
         self.__results['comment'] = comment
         self.__results['out_log'] = out_log
 
-    def __toto(self):
-        logging.info("toto std")
-        utils.log("INFO", "toto utils")
-
     # Render recipes
     def __runner(self):
         utils.log("INFO", "Running StatesWorker ...",('__runner',self))
@@ -473,7 +469,6 @@ class StateWorker(threading.Thread):
             # Run state
             utils.log("DEBUG", "Creating state runner process ...",('__runner',self))
             p = Process(target=self.__run_state)
-#            p = Process(target=self.__toto)
             utils.log("DEBUG", "Starting state runner process ...",('__runner',self))
             p.start()
             self.__executing = p.pid
