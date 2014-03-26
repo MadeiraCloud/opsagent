@@ -411,24 +411,25 @@ class StateWorker(threading.Thread):
         utils.log("INFO", "Delay passed, execution restarting...",('__recipe_delay',self))
 
     # Run state
-    def __run_state(self, state):
-        # logger settings
-        LOGLVL_VALUES=['DEBUG','INFO','WARNING','ERROR']
-        LOG_FORMAT = '[%(levelname)s]-%(asctime)s: %(message)s'
-        def __log(lvl, f=None):
-            level = logging.getLevelName(lvl)
-            formatter = logging.Formatter(LOG_FORMAT)
-            handler = (logging.handlers.RotatingFileHandler(f,maxBytes=(1024*1024*10),backupCount=5) if f else logging.StreamHandler())
-            logger = multiprocessing.get_logger()
-            handler.setFormatter(formatter)
-            logger.setLevel(level)
-            logger.addHandler(handler)
-        __log(self.config['runtime']['loglvl'],self.config['runtime']['logfile'])
+    def __run_state(self):
+#        # logger settings
+#        LOGLVL_VALUES=['DEBUG','INFO','WARNING','ERROR']
+#        LOG_FORMAT = '[%(levelname)s]-%(asctime)s: %(message)s'
+#        def __log(lvl, f=None):
+#            level = logging.getLevelName(lvl)
+#            formatter = logging.Formatter(LOG_FORMAT)
+#            handler = (logging.handlers.RotatingFileHandler(f,maxBytes=(1024*1024*10),backupCount=5) if f else logging.StreamHandler())
+#            logger = multiprocessing.get_logger()
+#            handler.setFormatter(formatter)
+#            logger.setLevel(level)
+#            logger.addHandler(handler)
+#        __log(self.config['runtime']['loglvl'],self.config['runtime']['logfile'])
 
-        utils.log("INFO", "Running state '%s', #%s"%(state['id'], self.__status),('__runner',self))
+        utils.log("INFO", "Running state '%s', #%s"%(state['id'], self.__status),('__run_state',self))
         result = FAIL
         comment = None
         out_log = None
+        state = self.__states[self.__status]
         try:
             if state.get('module') in self.__builtins:
                 (result,comment,out_log) = (self.__builtins[state['module']](state['id'],
@@ -441,18 +442,22 @@ class StateWorker(threading.Thread):
                                                             state['module'],
                                                             state['parameter'])
         except SWWaitFormatException:
-            utils.log("ERROR", "Wrong wait request",('__runner',self))
+            utils.log("ERROR", "Wrong wait request",('__run_state',self))
             result = FAIL
             comment = "Wrong wait request"
             out_log = None
         except Exception as e:
-            utils.log("ERROR", "Unknown exception: '%s'."%(e),('__runner',self))
+            utils.log("ERROR", "Unknown exception: '%s'."%(e),('__run_state',self))
             result = FAIL
             comment = "Internal error: '%s'."%(e)
             out_log = None
         self.__results['result'] = result
         self.__results['comment'] = comment
         self.__results['out_log'] = out_log
+
+    def __toto(self):
+        logging.info("toto std")
+        utils.log("INFO", "toto utils")
 
     # Render recipes
     def __runner(self):
@@ -462,7 +467,6 @@ class StateWorker(threading.Thread):
                 utils.log("WARNING", "Empty states list.",('__runner',self))
                 self.__run = False
                 continue
-            state = self.__states[self.__status]
 
             # Load modules on each round
             if self.__status == 0:
@@ -472,7 +476,7 @@ class StateWorker(threading.Thread):
                     utils.log("WARNING", "Can't load states modules.",('__runner',self))
                     self.__send(send.statelog(init=self.__config['init'],
                                               version=self.__version,
-                                              sid=state['id'],
+                                              sid=self.__states[self.__status]['id'],
                                               result=FAIL,
                                               comment="Can't load states modules.",
                                               out_log=None))
@@ -481,7 +485,8 @@ class StateWorker(threading.Thread):
 
             # Run state
             utils.log("DEBUG", "Creating state runner process ...",('__runner',self))
-            p = Process(target=self.__run_state, args=(state))
+#            p = Process(target=self.__run_state)
+            p = Process(target=self.__toto)
             utils.log("DEBUG", "Starting state runner process ...",('__runner',self))
             p.start()
             self.__executing = p.pid
@@ -500,7 +505,7 @@ class StateWorker(threading.Thread):
                 # send result to backend
                 self.__send(send.statelog(init=self.__config['init'],
                                           version=self.__version,
-                                          sid=state['id'],
+                                          sid=self.__states[self.__status]['id'],
                                           result=self.__results['result'],
                                           comment=self.__results['comment'],
                                           out_log=self.__results['out_log']))
