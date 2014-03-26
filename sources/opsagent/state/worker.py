@@ -472,6 +472,7 @@ class StateWorker(threading.Thread):
             # Reset running values
             self.__waiting = False
             self.__executing = None
+            del p
 
             # Transmit results
             if self.__run:
@@ -484,7 +485,7 @@ class StateWorker(threading.Thread):
                                           comment=self.__results['comment'],
                                           out_log=self.__results['out_log']))
                 # state succeed
-                if result == SUCCESS:
+                if self.__results['result'] == SUCCESS:
                     # global status iteration
                     self.__status += 1
                     if self.__status >= len(self.__states):
