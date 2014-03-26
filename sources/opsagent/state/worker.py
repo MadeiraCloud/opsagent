@@ -464,7 +464,7 @@ class StateWorker(threading.Thread):
                     continue
 
             # Run state
-            p = Process(target=self.__run_state(), args=(state))
+            p = Process(target=self.__run_state, args=(state))
             p.start()
             self.__executing = p.pid
             p.join()
