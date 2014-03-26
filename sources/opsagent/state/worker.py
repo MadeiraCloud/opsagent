@@ -8,6 +8,7 @@ VisualOps agent States worker object
 
 ## IMPORTS
 # System imports
+from multiprocessing import Process,Manager
 import threading
 import time
 import os
@@ -71,8 +72,15 @@ class StateWorker(threading.Thread):
         self.__waiting = False
         self.__run = False
         self.__abort = 0
-        self.__executing = False
+        self.__executing = None
         self.__recipe_count = 0
+
+        # shared memory
+        self.__manager = Manager()
+        self.__results = self.__manager.dict()
+        self.__results['result'] = FAIL
+        self.__results['comment'] = None
+        self.__results['out_log'] = None
 
         # builtins methods map
         self.__builtins = {
@@ -88,14 +96,6 @@ class StateWorker(threading.Thread):
     # retry sending after disconnection
     def __send(self, data):
         utils.log("DEBUG", "Attempting to send data to backend ...",('__send',self))
-#        try:
-#            cdata = copy.deepcopy(data)
-#        except copy.error:
-#            utils.log("ERROR", "Can't copy to-send data, giving up sending ...",('__send',self))
-#            utils.log("INFO", "Stopping manager...",('__send',self))
-#            self.__manager.stop()
-#            utils.log("INFO", "Manager stopped.",('__send',self))
-#            return
         success = False
         sent = False
         cur_count = self.__recipe_count
@@ -182,17 +182,21 @@ class StateWorker(threading.Thread):
     def __kill_delay(self):
         if self.__delaypid:
             utils.log("DEBUG", "Recipe ended and in delay process, aborting ...",('__kill_delay',self))
-            try:
-                while True:
+            while True:
+                try:
                     os.kill(self.__delaypid, signal.SIGKILL)
                     time.sleep(0.1)
-            except Exception:
-                self.__delaypid = None
-            utils.log("DEBUG", "Delay process killed.",('__kill_delay',self))
+                except OSError as e:
+                    if e.find("No such process"):
+                        self.__delaypid = None
+                        utils.log("DEBUG", "Delay process killed.",('__kill_delay',self))
+                        break
+                    else:
+                        utils.log("WARNING", "Error killing delay: %s"%(e),('__kill_delay',self))
         else:
             utils.log("DEBUG", "Recipe not in delay process.",('__kill_delay',self))
 
-    # Kill child process
+    # Kill child process (obsolete?)
     def __kill_childs(self):
         utils.log("DEBUG", "Killing states execution...",('__kill_childs',self))
         if not self.__config['runtime']['proc']:
@@ -218,6 +222,23 @@ class StateWorker(threading.Thread):
             utils.log("INFO", "No state execution found.",('__kill_childs',self))
         return True
 
+    # Kill execution
+    def __kill_exec(self):
+        if self.__executing:
+            utils.log("DEBUG", "Killing execution, pgid#%s"%(self.__executing),('__kill_exec',self))
+            while True:
+                try:
+                    os.killpg(self.__executing,signal.SIGKILL)
+                    time.sleep(0.1)
+                except OSError as e:
+                    if e.find("No such process"):
+                        utils.log("INFO", "Execution killed, pgid#%s"%(self.__executing),('__kill_exec',self))
+                        self.__executing = None
+                    else:
+                        utils.log("WARNING", "Error trying to kill process: %s"%(e),('__kill_exec',self))
+        else:
+            utils.log("DEBUG", "Execution not running."%(self.__executing),('__kill_exec',self))
+
     # Halt wait
     def __kill_wait(self):
         if self.__waiting:
@@ -234,8 +255,9 @@ class StateWorker(threading.Thread):
             self.__run = False
             self.__kill_delay()
             self.__kill_wait()
-            while self.__kill_childs() and self.__executing:
-                time.sleep(0.1)
+            self.__kill_exec()
+#            while self.__kill_childs() and self.__executing:
+#                time.sleep(0.1)
             utils.log("INFO", "Execution killed.",('kill',self))
         else:
             utils.log("DEBUG", "Execution not running, nothing to do.",('kill',self))
@@ -280,7 +302,6 @@ class StateWorker(threading.Thread):
         self.__recipe_count = (self.__recipe_count+1 if self.__recipe_count < RECIPE_COUNT_RESET else 0)
         exp = None
         try:
-#            self.load_modules()
             if states:
                 utils.log("INFO", "Loading new states.",('load',self))
                 del self.__states
@@ -328,12 +349,6 @@ class StateWorker(threading.Thread):
             utils.log("WARNING", "Waited state ABORTED.",('__exec_wait',self))
         return (value,None,None)
 
-#    # Write hash
-#    def __create_hash(self, target, fhash, filename):
-#        utils.log("DEBUG", "Writing new hash for file '%s' in '%s': '%s'"%(filename,target,fhash),('__create_hash',self))
-#        with open(target, 'w') as f:
-#            f.write(fhash)
-
     # Call salt library
     def __exec_salt(self, sid, module, parameter):
         utils.log("INFO", "Loading state ID '%s' from module '%s' ..."%(sid,module),('__exec_salt',self))
@@ -358,29 +373,6 @@ class StateWorker(threading.Thread):
                             if cs.update():
                                 parameter["watch"] = True
                                 utils.log("INFO","Watch event triggered, replacing standard action ...",('__exec_salt',self))
-
-#                            with open(watch, 'r') as f:
-#                                curent_hash = hashlib.sha256(f.read()).hexdigest()
-#                            cs = os.path.join(self.__config['global']['watch'], "%s-%s"%(sid,watch.replace('/','-')))
-#                            if os.path.isfile(cs):
-#                                with open(cs, 'r') as f:
-#                                    old_hash = f.read()
-#                                if old_hash != curent_hash:
-#                                    utils.log("INFO","Watch event triggered, replacing standard action ...",('__exec_salt',self))
-#                                    self.__create_hash(cs, curent_hash, watch)
-#                                    parameter["watch"] = True
-#                                    utils.log("DEBUG","Standard action replaced.",('__exec_salt',self))
-#                                else:
-#                                    utils.log("DEBUG","No watched event triggered.",('__exec_salt',self))
-#                            else:
-#                                utils.log("DEBUG","No old record, creating hash and executing normal command ...",('__exec_salt',self))
-#                                self.__create_hash(cs, curent_hash, watch)
-#                                utils.log("DEBUG","Hash stored.",('__exec_salt',self))
-#                                parameter["watch"] = True
-#                                utils.log("DEBUG","Standard action replaced.",('__exec_salt',self))
-
-
-
                     except Exception as e:
                         err = "Internal error while watch process on file '%s': %s."%(watch,e)
                         utils.log("ERROR", err,('__exec_salt',self))
@@ -415,6 +407,34 @@ class StateWorker(threading.Thread):
         self.__delaypid = None
         utils.log("INFO", "Delay passed, execution restarting...",('__recipe_delay',self))
 
+    # Run state
+    def __run_state(self):
+        utils.log("INFO", "Running state '%s', #%s"%(state['id'], self.__status),('__runner',self))
+        try:
+            if state.get('module') in self.__builtins:
+                (result,comment,out_log) = (self.__builtins[state['module']](state['id'],
+                                                                             state['module'],
+                                                                             state['parameter'])
+                                            if self.__builtins[state['module']]
+                                            else (SUCCESS,None,None))
+            else:
+                (result,comment,out_log) = self.__exec_salt(state['id'],
+                                                            state['module'],
+                                                            state['parameter'])
+        except SWWaitFormatException:
+            utils.log("ERROR", "Wrong wait request",('__runner',self))
+            result = FAIL
+            comment = "Wrong wait request"
+            out_log = None
+        except Exception as e:
+            utils.log("ERROR", "Unknown exception: '%s'."%(e),('__runner',self))
+            result = FAIL
+            comment = "Internal error: '%s'."%(e)
+            out_log = None
+        self.__results['result'] = result
+        self.__results['comment'] = comment
+        self.__results['out_log'] = out_log
+
     # Render recipes
     def __runner(self):
         utils.log("INFO", "Running StatesWorker ...",('__runner',self))
@@ -440,41 +460,26 @@ class StateWorker(threading.Thread):
                     self.__run = False
                     continue
 
-            # OK to run
-            utils.log("INFO", "Running state '%s', #%s"%(state['id'], self.__status),('__runner',self))
-            self.__executing = True
-            try:
-                if state.get('module') in self.__builtins:
-                    (result,comment,out_log) = (self.__builtins[state['module']](state['id'],
-                                                                                 state['module'],
-                                                                                 state['parameter'])
-                                                if self.__builtins[state['module']]
-                                                else (SUCCESS,None,None))
-                else:
-                    (result,comment,out_log) = self.__exec_salt(state['id'],
-                                                                state['module'],
-                                                                state['parameter'])
-            except SWWaitFormatException:
-                utils.log("ERROR", "Wrong wait request",('__runner',self))
-                result = FAIL
-                comment = "Wrong wait request"
-                out_log = None
-            except Exception as e:
-                utils.log("ERROR", "Unknown exception: '%s'."%(e),('__runner',self))
-                result = FAIL
-                comment = "Internal error: '%s'."%(e)
-                out_log = None
-            self.__executing = False
+            # Run state
+            p = Process(target=self.__run_state())
+            p.start()
+            self.__executing = p.pid
+            p.join()
+
+            # Reset running values
             self.__waiting = False
+            self.__executing = None
+
+            # Transmit results
             if self.__run:
                 utils.log("INFO", "Execution complete, reporting logs to backend.",('__runner',self))
                 # send result to backend
                 self.__send(send.statelog(init=self.__config['init'],
                                           version=self.__version,
                                           sid=state['id'],
-                                          result=result,
-                                          comment=comment,
-                                          out_log=out_log))
+                                          result=self.__results['result'],
+                                          comment=self.__results['comment'],
+                                          out_log=self.__results['out_log']))
                 # state succeed
                 if result == SUCCESS:
                     # global status iteration
