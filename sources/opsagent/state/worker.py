@@ -8,7 +8,9 @@ VisualOps agent States worker object
 
 ## IMPORTS
 # System imports
+import multiprocessing
 from multiprocessing import Process,Manager
+import logging
 import threading
 import time
 import os
@@ -409,6 +411,19 @@ class StateWorker(threading.Thread):
 
     # Run state
     def __run_state(self, state):
+        # logger settings
+        LOGLVL_VALUES=['DEBUG','INFO','WARNING','ERROR']
+        LOG_FORMAT = '[%(levelname)s]-%(asctime)s: %(message)s'
+        def __log(lvl, f=None):
+            level = logging.getLevelName(lvl)
+            formatter = logging.Formatter(LOG_FORMAT)
+            handler = (logging.handlers.RotatingFileHandler(f,maxBytes=(1024*1024*10),backupCount=5) if f else logging.StreamHandler())
+            logger = multiprocessing.get_logger()
+            handler.setFormatter(formatter)
+            logger.setLevel(level)
+            logger.addHandler(handler)
+        __log(self.config['runtime']['loglvl'],self.config['runtime']['logfile'])
+
         utils.log("INFO", "Running state '%s', #%s"%(state['id'], self.__status),('__runner',self))
         result = FAIL
         comment = None

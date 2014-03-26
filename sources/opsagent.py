@@ -180,7 +180,9 @@ def main():
     if options.verbose: loglvl = 'DEBUG'
     elif options.quiet: loglvl = 'ERROR'
     logfile = (options.log_file if options.log_file else config['global'].get('logfile'))
-    __log(loglvl, (logfile if not options.debug else None))
+    config['runtime']['loglvl'] = loglvl
+    config['runtime']['logfile'] = (logfile if not options.debug else None)
+    __log(config['runtime']['loglvl'],config['runtime']['logfile'])
 
     # run
     runner = OpsAgentRunner(config)
