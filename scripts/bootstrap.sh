@@ -50,9 +50,8 @@ fi
 chown root:root /etc/init.d/opsagentd
 chmod 550 /etc/init.d/opsagentd
 
-# set update script rights
-chown root:root ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_SCRIPTS_DIR}/update.sh
-chmod 550 ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_SCRIPTS_DIR}/update.sh
+# set rights to scripts
+chmod 554 ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_SCRIPTS_DIR}/*
 
 ##
 # TMP (AGENT START)
