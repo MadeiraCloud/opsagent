@@ -305,6 +305,7 @@ class StateWorker(threading.Thread):
         reload(opsagent.state.runner)
         from opsagent.state.runner import StateRunner
         self.__state_runner = StateRunner(config=self.__config['salt'])
+        utils.log("DEBUG", "Modules loaded.",('load_modules',self))
 
     # Load new recipe
     def load(self, version=None, states=None):

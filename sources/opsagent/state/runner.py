@@ -92,11 +92,12 @@ class StateRunner(object):
 					stdout=subprocess.PIPE,
 					stderr=subprocess.PIPE)
 
+				out, err = process.communicate()
+
 				if process.returncode != 0:
 					utils.log("ERROR", "Excute cmd %s failed..."%cmd, ("_init_ostype", self))
 					raise ExecutionException("Excute cmd %s failed"%cmd)
 
-				out, err = process.communicate()
 				self.os_type = out
 		except Exception, e:
 			utils.log("ERROR", "Fetch agent's os type failed...", ("_init_ostype", self))
@@ -242,7 +243,7 @@ class StateRunner(object):
 				shell=True,
 				stdout=devnull,
 				stderr=devnull,
-				)
+				).wait()
 		except Exception, e:
 			utils.log("ERROR", str(e), ("_enable_epel", self))
 			return
