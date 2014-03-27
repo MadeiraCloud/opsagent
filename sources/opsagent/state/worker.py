@@ -199,6 +199,8 @@ class StateWorker(threading.Thread):
                         utils.log("WARNING", "Error killing delay: %s"%(e),('__kill_delay',self))
                 except Exception as e:
                     utils.log("WARNING", "Error killing delay (probably not a problem): %s"%(e),('__kill_delay',self))
+                    self.__delaypid = None
+                    break
         else:
             utils.log("DEBUG", "Recipe not in delay process.",('__kill_delay',self))
 
@@ -241,10 +243,13 @@ class StateWorker(threading.Thread):
                     if e.find("No such process"):
                         utils.log("INFO", "Execution killed, pgid#%s"%(self.__executing),('__kill_exec',self))
                         self.__executing = None
+                        break
                     else:
                         utils.log("WARNING", "Error trying to kill process: %s"%(e),('__kill_exec',self))
                 except Exception as e:
                     utils.log("WARNING", "Error killing execution (probably not a problem): %s"%(e),('__kill_exec',self))
+                    self.__executing = None
+                    break
         else:
             utils.log("DEBUG", "Execution not running.",('__kill_exec',self))
 
