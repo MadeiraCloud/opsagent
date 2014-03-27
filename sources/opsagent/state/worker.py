@@ -190,6 +190,7 @@ class StateWorker(threading.Thread):
                     os.kill(self.__delaypid, signal.SIGKILL)
                     time.sleep(0.1)
                 except OSError as e:
+                    e = str(e)
                     if e.find("No such process"):
                         self.__delaypid = None
                         utils.log("DEBUG", "Delay process killed.",('__kill_delay',self))
@@ -236,6 +237,7 @@ class StateWorker(threading.Thread):
                     os.killpg(self.__executing,signal.SIGKILL)
                     time.sleep(0.1)
                 except OSError as e:
+                    e = str(e)
                     if e.find("No such process"):
                         utils.log("INFO", "Execution killed, pgid#%s"%(self.__executing),('__kill_exec',self))
                         self.__executing = None
