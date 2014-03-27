@@ -36,9 +36,9 @@ SUCCESS=True
 # State failed
 FAIL=False
 # Time to resend if failure
-WAIT_RESEND=30
+WAIT_RESEND=2
 # Time before retrying state execution
-WAIT_STATE_RETRY=30
+WAIT_STATE_RETRY=2
 # Time to wait between each state (don't overload)
 WAIT_STATE=1
 # Reset value for recipe version counter (no overflow)
@@ -196,6 +196,8 @@ class StateWorker(threading.Thread):
                         break
                     else:
                         utils.log("WARNING", "Error killing delay: %s"%(e),('__kill_delay',self))
+                except Exception as e:
+                    utils.log("WARNING", "Error killing delay (probably not a problem): %s"%(e),('__kill_delay',self))
         else:
             utils.log("DEBUG", "Recipe not in delay process.",('__kill_delay',self))
 
@@ -239,6 +241,8 @@ class StateWorker(threading.Thread):
                         self.__executing = None
                     else:
                         utils.log("WARNING", "Error trying to kill process: %s"%(e),('__kill_exec',self))
+                except Exception as e:
+                    utils.log("WARNING", "Error killing execution (probably not a problem): %s"%(e),('__kill_exec',self))
         else:
             utils.log("DEBUG", "Execution not running.",('__kill_exec',self))
 
@@ -356,7 +360,8 @@ class StateWorker(threading.Thread):
     def __exec_salt(self, sid, module, parameter):
         utils.log("INFO", "Loading state ID '%s' from module '%s' ..."%(sid,module),('__exec_salt',self))
 
-        parameter = copy.deepcopy(parameter)
+        #copy not needed since forking
+#        parameter = copy.deepcopy(parameter)
 
         # Watch process
         if parameter and type(parameter) is dict and parameter.get("watch"):
@@ -471,7 +476,10 @@ class StateWorker(threading.Thread):
             p = Process(target=self.__run_state)
             utils.log("DEBUG", "Starting state runner process ...",('__runner',self))
             p.start()
-            self.__executing = p.pid
+            try:
+                self.__executing = int(p.pid)
+            except Exception:
+                self.__executing = None
             utils.log("DEBUG", "State runner process running under pid #%s..."%(self.__executing),('__runner',self))
             p.join()
             utils.log("DEBUG", "State runner process terminated.",('__runner',self))
