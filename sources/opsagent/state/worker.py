@@ -151,12 +151,11 @@ class StateWorker(threading.Thread):
 
         self.__abort = (1 if kill else 2)
 
-        if not end:
-            self.__run = False
-
         if kill:
             self.kill()
         else:
+            if not end:
+                self.__run = False
             self.__kill_delay()
 
         if self.__cv_wait:
