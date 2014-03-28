@@ -445,7 +445,7 @@ class StateWorker(threading.Thread):
             else:
                 # Run state
                 utils.log("DEBUG", "Creating state exec process ...",('__runner',self))
-                self.__executing = Process(target=self.__run_state, args=(state['id'],
+                self.__executing = Process(target=self.__exec_salt, args=(state['id'],
                                                                           state['module'],
                                                                           state['parameter']))
                 utils.log("DEBUG", "Starting state exec process ...",('__runner',self))
