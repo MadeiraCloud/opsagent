@@ -129,8 +129,8 @@ class StateWorker(threading.Thread):
 
     # Return waiting state
     def is_waiting(self):
-        utils.log("DEBUG", "Wait status: %s"%(self.__wait_event),('is_waiting',self))
-        return self.__wait_event
+        utils.log("DEBUG", "Wait status: %s"%(self.__wait_event.is_set()),('is_waiting',self))
+        return (True if not self.__wait_event.is_set() else False)
 
     # Return version ID
     def get_version(self):
@@ -231,23 +231,25 @@ class StateWorker(threading.Thread):
     # Kill execution
     def __kill_exec(self):
         if self.__executing:
-            utils.log("DEBUG", "Killing execution, pgid#%s"%(self.__executing),('__kill_exec',self))
-            while self.__executing:
+            utils.log("DEBUG", "Killing execution, pgid#%s"%(self.__executing.pid),('__kill_exec',self))
+            brk = False
+            while self.__executing and not brk:
                 try:
-                    os.killpg(self.__executing.pid,signal.SIGKILL)
-                    self.__executing.terminate()
                     os.killpg(self.__executing.pid,signal.SIGKILL)
                     time.sleep(0.1)
                 except OSError as e:
                     e = str(e)
                     if e.find("No such process"):
                         utils.log("INFO", "Execution killed, pgid#%s"%(self.__executing.pid),('__kill_exec',self))
-                        break
+                        brk = True
                     else:
                         utils.log("WARNING", "Error trying to kill process: %s"%(e),('__kill_exec',self))
                 except Exception as e:
                     utils.log("WARNING", "Error killing execution (probably not a problem): %s"%(e),('__kill_exec',self))
-                    break
+                    brk = True
+                try:
+                    self.__executing.terminate()
+                except Exception: pass
         else:
             utils.log("DEBUG", "Execution not running.",('__kill_exec',self))
 
@@ -346,8 +348,9 @@ class StateWorker(threading.Thread):
     ## MAIN EXECUTION
     # Action on wait
     def __exec_wait(self, sid, module, parameter):
-        utils.log("INFO", "Waiting for external states ...",('__exec_wait',self))
+        utils.log("INFO", "Entering wait process ...",('__exec_wait',self))
         while (sid not in self.__done) and (self.__run):
+            utils.log("INFO", "Waiting for external states ...",('__exec_wait',self))
             self.__wait_event.clear()
             self.__wait_event.wait()
             utils.log("INFO", "New state status received, analysing ...",('__exec_wait',self))
