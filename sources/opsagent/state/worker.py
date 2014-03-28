@@ -66,12 +66,12 @@ class StateWorker(threading.Thread):
         # states variables
         self.__version = None
         self.__states = None
-        self.__done = []
         self.__status = 0
+#        self.__done = []
 
         # flags
         self.__cv_wait = False
-        self.__run = False
+#        self.__run = False
         self.__abort = 0
         self.__executing = None
         self.__recipe_count = 0
@@ -82,6 +82,8 @@ class StateWorker(threading.Thread):
         self.__results['result'] = FAIL
         self.__results['comment'] = None
         self.__results['out_log'] = None
+        self.__results['done'] = []
+        self.__results['run'] = False
         self.__wait_event = self.__manager.Event()
         self.__wait_event.set()
 
@@ -102,7 +104,7 @@ class StateWorker(threading.Thread):
         success = False
         sent = False
         cur_count = self.__recipe_count
-        while (not success) and (data) and (self.__run) and (cur_count == self.__recipe_count):
+        while (not success) and (data) and (self.__results['run']) and (cur_count == self.__recipe_count):
             try:
                 if not self.__manager:
                     raise SWNoManagerException("Can't reach backend ...")
@@ -140,7 +142,7 @@ class StateWorker(threading.Thread):
     # Reset states status
     def __reset(self):
         self.__status = 0
-        self.__run = False
+        self.__results['run'] = False
 #        self.__done[:] = []
 
     # End program
@@ -152,7 +154,7 @@ class StateWorker(threading.Thread):
         self.__abort = (1 if kill else 2)
 
         if not end:
-            self.__run = False
+            self.__results['run'] = False
 
         if kill:
             self.kill()
@@ -171,7 +173,7 @@ class StateWorker(threading.Thread):
 
     # Program status
     def is_running(self):
-        return self.__run
+        return (True if self.__results['run'] else False)
 
     def aborted(self):
         return (True if self.__abort else False)
@@ -263,9 +265,9 @@ class StateWorker(threading.Thread):
 
     # Kill the current execution
     def kill(self):
-        if self.__run:
+        if self.__results['run']:
             utils.log("DEBUG", "Sending stop execution signal.",('kill',self))
-            self.__run = False
+            self.__results['run'] = False
             self.__kill_delay()
             self.__kill_wait()
             self.__kill_exec()
@@ -323,7 +325,7 @@ class StateWorker(threading.Thread):
             else:
                 utils.log("INFO", "No change in states.",('load',self))
             utils.log("DEBUG", "Allow to run.",('load',self))
-            self.__run = True
+            self.__results['run'] = True
         except Exception as e:
             exp = e
 
@@ -340,7 +342,7 @@ class StateWorker(threading.Thread):
     # Add state to done list
     def state_done(self, sid):
         utils.log("DEBUG", "Adding id '%s' to done states list."%(sid),('state_done',self))
-        self.__done.append(sid)
+        self.__results['done'].append(sid)
         self.__wait_event.set()
     ##
 
@@ -349,12 +351,12 @@ class StateWorker(threading.Thread):
     # Action on wait
     def __exec_wait(self, sid, module, parameter):
         utils.log("INFO", "Entering wait process ...",('__exec_wait',self))
-        while (sid not in self.__done) and (self.__run):
+        while (sid not in self.__results['done']) and (self.__results['run']):
             utils.log("INFO", "Waiting for external states ...",('__exec_wait',self))
             self.__wait_event.clear()
             self.__wait_event.wait()
             utils.log("INFO", "New state status received, analysing ...",('__exec_wait',self))
-        if sid in self.__done:
+        if sid in self.__results['done']:
             value = SUCCESS
             utils.log("INFO", "Waited state completed.",('__exec_wait',self))
         else:
@@ -451,10 +453,10 @@ class StateWorker(threading.Thread):
     # Render recipes
     def __runner(self):
         utils.log("INFO", "Running StatesWorker ...",('__runner',self))
-        while self.__run:
+        while self.__results['run']:
             if not self.__states:
                 utils.log("WARNING", "Empty states list.",('__runner',self))
-                self.__run = False
+                self.__results['run'] = False
                 continue
 
             # Load modules on each round
@@ -469,7 +471,7 @@ class StateWorker(threading.Thread):
                                               result=FAIL,
                                               comment="Can't load states modules.",
                                               out_log=None))
-                    self.__run = False
+                    self.__results['run'] = False
                     continue
 
             # Run state
@@ -486,7 +488,7 @@ class StateWorker(threading.Thread):
             utils.log("DEBUG", "State runner process terminated.",('__runner',self))
 
             # Transmit results
-            if self.__run:
+            if self.__results['run']:
                 utils.log("INFO", "Execution complete, reporting logs to backend.",('__runner',self))
                 # send result to backend
                 self.__send(send.statelog(init=self.__config['init'],
@@ -507,7 +509,7 @@ class StateWorker(threading.Thread):
                             self.__status = 0
                         # terminating ...
                         if self.__abort: # don't "else" as abort may happen during the delay
-                            self.__run = False
+                            self.__results['run'] = False
                     else:
                         time.sleep(WAIT_STATE)
                         utils.log("INFO", "All good, switching to next state.",('__runner',self))
@@ -528,7 +530,7 @@ class StateWorker(threading.Thread):
         while not self.__abort:
             self.__cv.acquire()
             try:
-                if not self.__run and not self.__abort:
+                if not self.__results['run'] and not self.__abort:
                     utils.log("INFO", "Waiting for recipes ...",('run',self))
                     self.__cv_wait = True
                     self.__cv.wait()
