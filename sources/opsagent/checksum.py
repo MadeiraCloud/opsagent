@@ -32,8 +32,12 @@ class Checksum():
     # cksum:new checksum (if external)  persist:write on disk  tfirst:return true if no old cksum
     def update(self, cksum=None, persist=True, edit=True, tfirst=True):
         if not cksum:
-            with open(self.__filepath, 'r') as f:
-                cksum = hashlib.md5(f.read()).hexdigest()
+            try:
+                with open(self.__filepath, 'r') as f:
+                    cksum = hashlib.md5(f.read()).hexdigest()
+            except Exception as e:
+                utils.log("DEBUG", "Can't hask file %s: %s"%(self.__filepath,e),('__init__',self))
+                cksum = None
         utils.log("DEBUG", "Old cksum:%s - New cksum: %s (file: %s)"%(self.__cksum,cksum,self.__filepath),('update',self))
         if cksum != self.__cksum:
             ret = (False if tfirst is False and not self.__cksum else True)
@@ -41,7 +45,7 @@ class Checksum():
                 self.__cksum = cksum
             if persist and edit:
                 with open(self.__cksumpath, 'w') as f:
-                    f.write(cksum)
+                    f.write((cksum if cksum else ""))
                 utils.log("DEBUG", "Checksum saved on disk under file: %s"%(self.__cksumpath),('update',self))
             utils.log("INFO", "Change found in file: %s"%(self.__filepath),('update',self))
             utils.log("DEBUG", "Return value: %s"%(ret),('update',self))
@@ -51,8 +55,8 @@ class Checksum():
 
     # check if checksum has changed, return change state
     # cksum:new checksum (if external)  tfirst:return true if no old cksum
-    def check(self, cksum=None, persist=True, tfirst=True):
-        return self.update(cksum=cksum,persist=persist,edit=False,tfirst=tfirst)
+    def check(self, cksum=None, tfirst=True):
+        return self.update(cksum=cksum,persist=False,edit=False,tfirst=tfirst)
 
     # return checksum
     def get(self):

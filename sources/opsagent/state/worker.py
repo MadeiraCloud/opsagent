@@ -379,16 +379,11 @@ class StateWorker(threading.Thread):
                 del parameter["watch"]
                 for watch in watchs:
                     try:
-                        if not os.path.isfile(watch):
-                            err = "Can't access watched file '%s'."%(watch)
-                            utils.log("ERROR", err,('__exec_salt',self))
-                            return (FAIL,err,None)
-                        else:
-                            utils.log("DEBUG", "Watched file '%s' found."%(watch),('__exec_salt',self))
-                            cs = Checksum(watch,sid,self.__config['global']['watch'])
-                            if cs.update():
-                                parameter["watch"] = True
-                                utils.log("INFO","Watch event triggered, replacing standard action ...",('__exec_salt',self))
+                        utils.log("DEBUG", "Watched file '%s' found."%(watch),('__exec_salt',self))
+                        cs = Checksum(watch,sid,self.__config['global']['watch'])
+                        if cs.update():
+                            parameter["watch"] = True
+                            utils.log("INFO","Watch event triggered, replacing standard action ...",('__exec_salt',self))
                     except Exception as e:
                         err = "Internal error while watch process on file '%s': %s."%(watch,e)
                         utils.log("ERROR", err,('__exec_salt',self))
