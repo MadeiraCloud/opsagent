@@ -62,7 +62,6 @@ class StateWorker(threading.Thread):
 
         # events
         self.__cv = threading.Condition()
-        self.__wait_event = threading.Event()
 
         # states variables
         self.__version = None
@@ -72,7 +71,6 @@ class StateWorker(threading.Thread):
 
         # flags
         self.__cv_wait = False
-        self.__waiting = False
         self.__run = False
         self.__abort = 0
         self.__executing = None
@@ -84,6 +82,8 @@ class StateWorker(threading.Thread):
         self.__results['result'] = FAIL
         self.__results['comment'] = None
         self.__results['out_log'] = None
+        self.__wait_event = self.__manager.Event()
+        self.__wait_event.set()
 
         # builtins methods map
         self.__builtins = {
@@ -129,8 +129,8 @@ class StateWorker(threading.Thread):
 
     # Return waiting state
     def is_waiting(self):
-        utils.log("DEBUG", "Wait status: %s"%(self.__waiting),('is_waiting',self))
-        return self.__waiting
+        utils.log("DEBUG", "Wait status: %s"%(self.__wait_event),('is_waiting',self))
+        return self.__wait_event
 
     # Return version ID
     def get_version(self):
@@ -138,12 +138,10 @@ class StateWorker(threading.Thread):
         return self.__version
 
     # Reset states status
-    def reset(self):
+    def __reset(self):
         self.__status = 0
-        self.__done[:] = []
         self.__run = False
-        self.__waiting = False
-        self.__wait_event.clear()
+#        self.__done[:] = []
 
     # End program
     def abort(self, kill=False, end=False):
@@ -255,10 +253,9 @@ class StateWorker(threading.Thread):
 
     # Halt wait
     def __kill_wait(self):
-        if self.__waiting:
+        if self.is_waiting():
             utils.log("DEBUG", "killing wait status",('kill_wait',self))
             self.__wait_event.set()
-            self.__waiting = False
         else:
             utils.log("DEBUG", "worker not waiting",('kill_wait',self))
 
@@ -268,7 +265,7 @@ class StateWorker(threading.Thread):
             utils.log("DEBUG", "Sending stop execution signal.",('kill',self))
             self.__run = False
             self.__kill_delay()
-            self.__kill_wait()
+#            self.__kill_wait()
             self.__kill_exec()
 #            while self.__kill_childs() and self.__executing:
 #                time.sleep(0.1)
@@ -350,12 +347,10 @@ class StateWorker(threading.Thread):
     # Action on wait
     def __exec_wait(self, sid, module, parameter):
         utils.log("INFO", "Waiting for external states ...",('__exec_wait',self))
-        self.__waiting = True
         while (sid not in self.__done) and (self.__run):
-            self.__wait_event.wait()
             self.__wait_event.clear()
+            self.__wait_event.wait()
             utils.log("INFO", "New state status received, analysing ...",('__exec_wait',self))
-        self.__waiting = False
         if sid in self.__done:
             value = SUCCESS
             utils.log("INFO", "Waited state completed.",('__exec_wait',self))
@@ -488,7 +483,7 @@ class StateWorker(threading.Thread):
             utils.log("DEBUG", "State runner process terminated.",('__runner',self))
 
             # Reset running values
-            self.__waiting = False
+            self.__wait_event.set()
             self.__executing = None
             del p
 
@@ -544,7 +539,7 @@ class StateWorker(threading.Thread):
                 self.__runner()
             except Exception as e:
                 utils.log("ERROR", "Unexpected error: %s."%(e),('run',self))
-            self.reset()
+            self.__reset()
             self.__cv.release()
         utils.log("WARNING", "Exiting...",('run',self))
         if self.__manager:
