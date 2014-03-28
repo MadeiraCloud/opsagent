@@ -31,7 +31,7 @@ function tree() {
     cd ${BUILD_DIR}
 
     # Copy bootstrap scripts
-    cp ../${SCRIPTS_DIR}/{bootstrap.sh,update.sh} ${OPSAGENT_DIR}/${SCRIPTS_DIR}/
+    cp ../${SCRIPTS_DIR}/{bootstrap.sh,daemon.sh,kill.sh,update.sh} ${OPSAGENT_DIR}/${SCRIPTS_DIR}/
     # Copy standalone scripts
     cp ../${SCRIPTS_DIR}/{init.sh,userdata.sh,clean.sh} ./
     if [ "${1}" != "" ]; then
