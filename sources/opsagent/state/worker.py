@@ -235,6 +235,8 @@ class StateWorker(threading.Thread):
             while self.__executing:
                 try:
                     os.killpg(self.__executing.pid,signal.SIGKILL)
+                    self.__executing.terminate()
+                    os.killpg(self.__executing.pid,signal.SIGKILL)
                     time.sleep(0.1)
                 except OSError as e:
                     e = str(e)
@@ -263,10 +265,10 @@ class StateWorker(threading.Thread):
             utils.log("DEBUG", "Sending stop execution signal.",('kill',self))
             self.__run = False
             self.__kill_delay()
-#            self.__kill_wait()
-#            self.__kill_exec()
-            while self.__kill_childs() and self.__executing:
-                time.sleep(0.1)
+            self.__kill_wait()
+            self.__kill_exec()
+#            while self.__kill_childs() and self.__executing:
+#                time.sleep(0.1)
             utils.log("INFO", "Execution killed.",('kill',self))
         else:
             utils.log("DEBUG", "Execution not running, nothing to do.",('kill',self))
