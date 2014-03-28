@@ -62,16 +62,18 @@ class StateWorker(threading.Thread):
 
         # events
         self.__cv = threading.Condition()
+        self.__wait_event = threading.Event()
+        self.__wait_event.set()
 
         # states variables
         self.__version = None
         self.__states = None
         self.__status = 0
-#        self.__done = []
+        self.__done = []
 
         # flags
         self.__cv_wait = False
-#        self.__run = False
+        self.__run = False
         self.__abort = 0
         self.__executing = None
         self.__recipe_count = 0
@@ -82,10 +84,6 @@ class StateWorker(threading.Thread):
         self.__results['result'] = FAIL
         self.__results['comment'] = None
         self.__results['out_log'] = None
-        self.__results['done'] = []
-        self.__results['run'] = False
-        self.__wait_event = self.__manager.Event()
-        self.__wait_event.set()
 
         # builtins methods map
         self.__builtins = {
@@ -104,7 +102,7 @@ class StateWorker(threading.Thread):
         success = False
         sent = False
         cur_count = self.__recipe_count
-        while (not success) and (data) and (self.__results['run']) and (cur_count == self.__recipe_count):
+        while (not success) and (data) and (self.__run) and (cur_count == self.__recipe_count):
             try:
                 if not self.__manager:
                     raise SWNoManagerException("Can't reach backend ...")
@@ -142,8 +140,8 @@ class StateWorker(threading.Thread):
     # Reset states status
     def __reset(self):
         self.__status = 0
-        self.__results['run'] = False
-#        self.__done[:] = []
+        self.__run = False
+        self.__done[:] = []
 
     # End program
     def abort(self, kill=False, end=False):
@@ -154,7 +152,7 @@ class StateWorker(threading.Thread):
         self.__abort = (1 if kill else 2)
 
         if not end:
-            self.__results['run'] = False
+            self.__run = False
 
         if kill:
             self.kill()
@@ -173,7 +171,7 @@ class StateWorker(threading.Thread):
 
     # Program status
     def is_running(self):
-        return (True if self.__results['run'] else False)
+        return (True if self.__run else False)
 
     def aborted(self):
         return (True if self.__abort else False)
@@ -265,9 +263,9 @@ class StateWorker(threading.Thread):
 
     # Kill the current execution
     def kill(self):
-        if self.__results['run']:
+        if self.__run:
             utils.log("DEBUG", "Sending stop execution signal.",('kill',self))
-            self.__results['run'] = False
+            self.__run = False
             self.__kill_delay()
             self.__kill_wait()
             self.__kill_exec()
@@ -325,7 +323,7 @@ class StateWorker(threading.Thread):
             else:
                 utils.log("INFO", "No change in states.",('load',self))
             utils.log("DEBUG", "Allow to run.",('load',self))
-            self.__results['run'] = True
+            self.__run = True
         except Exception as e:
             exp = e
 
@@ -342,7 +340,7 @@ class StateWorker(threading.Thread):
     # Add state to done list
     def state_done(self, sid):
         utils.log("DEBUG", "Adding id '%s' to done states list."%(sid),('state_done',self))
-        self.__results['done'].append(sid)
+        self.__done.append(sid)
         self.__wait_event.set()
     ##
 
@@ -351,12 +349,13 @@ class StateWorker(threading.Thread):
     # Action on wait
     def __exec_wait(self, sid, module, parameter):
         utils.log("INFO", "Entering wait process ...",('__exec_wait',self))
-        while (sid not in self.__results['done']) and (self.__results['run']):
+        while (sid not in self.__done) and (self.__run):
             utils.log("INFO", "Waiting for external states ...",('__exec_wait',self))
+            utils.log("DEBUG", "Curent state:%s - Done states:%s"%(sid,self.__done),('__exec_wait',self))
             self.__wait_event.clear()
             self.__wait_event.wait()
             utils.log("INFO", "New state status received, analysing ...",('__exec_wait',self))
-        if sid in self.__results['done']:
+        if sid in self.__done:
             value = SUCCESS
             utils.log("INFO", "Waited state completed.",('__exec_wait',self))
         else:
@@ -387,7 +386,10 @@ class StateWorker(threading.Thread):
                     except Exception as e:
                         err = "Internal error while watch process on file '%s': %s."%(watch,e)
                         utils.log("ERROR", err,('__exec_salt',self))
-                        return (FAIL,err,None)
+                        self.__results['result'] = FAIL
+                        self.__results['comment'] = err
+                        self.__results['out_log'] = None
+                        return
 
         try:
             # state convert
@@ -399,12 +401,17 @@ class StateWorker(threading.Thread):
             (result, comment, out_log) = self.__state_runner.exec_salt(salt_states)
         except Exception as err:
             utils.log("ERROR", str(err), ('__exec_salt',self))
-            return (FAIL, "Internal error: %s"%(err), None)
+            self.__results['result'] = FAIL
+            self.__results['comment'] = "Internal error: %s"%(err)
+            self.__results['out_log'] = None
+            return
 
         utils.log("INFO", "State ID '%s' from module '%s' done, result '%s'."%(sid,module,result),('__exec_salt',self))
         utils.log("DEBUG", "State out log='%s'"%(out_log),('__exec_salt',self))
         utils.log("DEBUG", "State comment='%s'"%(comment),('__exec_salt',self))
-        return (result,comment,out_log)
+        self.__results['result'] = result
+        self.__results['comment'] = comment
+        self.__results['out_log'] = out_log
 
     # Delay at the end of the states
     def __recipe_delay(self):
@@ -422,9 +429,9 @@ class StateWorker(threading.Thread):
     def __run_state(self):
         state = self.__states[self.__status]
         utils.log("INFO", "Running state '%s', #%s"%(state['id'], self.__status),('__run_state',self))
-        result = FAIL
-        comment = None
-        out_log = None
+        self.__results['result'] = FAIL
+        self.__results['comment'] = None
+        self.__results['out_log'] = None
         try:
             if state.get('module') in self.__builtins:
                 (result,comment,out_log) = (self.__builtins[state['module']](state['id'],
@@ -432,31 +439,42 @@ class StateWorker(threading.Thread):
                                                                              state['parameter'])
                                             if self.__builtins[state['module']]
                                             else (SUCCESS,None,None))
+                self.__results['result'] = result
+                self.__results['comment'] = comment
+                self.__results['out_log'] = out_log
             else:
-                (result,comment,out_log) = self.__exec_salt(state['id'],
-                                                            state['module'],
-                                                            state['parameter'])
+                # Run state
+                utils.log("DEBUG", "Creating state exec process ...",('__runner',self))
+                self.__executing = Process(target=self.__run_state, args=(state['id'],
+                                                                          state['module'],
+                                                                          state['parameter']))
+                utils.log("DEBUG", "Starting state exec process ...",('__runner',self))
+                self.__executing.start()
+                utils.log("DEBUG", "State exec process running under pid #%s..."%(self.__executing.pid),('__runner',self))
+                self.__executing.join()
+                # Reset running values
+                del self.__executing
+                self.__executing = None
+                utils.log("DEBUG", "State runner process terminated.",('__runner',self))
         except SWWaitFormatException:
             utils.log("ERROR", "Wrong wait request",('__run_state',self))
-            result = FAIL
-            comment = "Wrong wait request"
-            out_log = None
+            self.__results['result'] = FAIL
+            self.__results['comment'] = "Wrong wait request"
+            self.__results['out_log'] = None
         except Exception as e:
             utils.log("ERROR", "Unknown exception: '%s'."%(e),('__run_state',self))
-            result = FAIL
-            comment = "Internal error: '%s'."%(e)
-            out_log = None
-        self.__results['result'] = result
-        self.__results['comment'] = comment
-        self.__results['out_log'] = out_log
+            self.__results['result'] = FAIL
+            self.__results['comment'] = "Internal error: '%s'."%(e)
+            self.__results['out_log'] = None
+
 
     # Render recipes
     def __runner(self):
         utils.log("INFO", "Running StatesWorker ...",('__runner',self))
-        while self.__results['run']:
+        while self.__run:
             if not self.__states:
                 utils.log("WARNING", "Empty states list.",('__runner',self))
-                self.__results['run'] = False
+                self.__run = False
                 continue
 
             # Load modules on each round
@@ -471,24 +489,15 @@ class StateWorker(threading.Thread):
                                               result=FAIL,
                                               comment="Can't load states modules.",
                                               out_log=None))
-                    self.__results['run'] = False
+                    self.__run = False
                     continue
 
-            # Run state
-            utils.log("DEBUG", "Creating state runner process ...",('__runner',self))
-            self.__executing = Process(target=self.__run_state)
-            utils.log("DEBUG", "Starting state runner process ...",('__runner',self))
-            self.__executing.start()
-            utils.log("DEBUG", "State runner process running under pid #%s..."%(self.__executing.pid),('__runner',self))
-            self.__executing.join()
-            # Reset running values
-            del self.__executing
-            self.__executing = None
+            # Execute state
+            self.__run_state()
             self.__wait_event.set()
-            utils.log("DEBUG", "State runner process terminated.",('__runner',self))
 
             # Transmit results
-            if self.__results['run']:
+            if self.__run:
                 utils.log("INFO", "Execution complete, reporting logs to backend.",('__runner',self))
                 # send result to backend
                 self.__send(send.statelog(init=self.__config['init'],
@@ -509,7 +518,7 @@ class StateWorker(threading.Thread):
                             self.__status = 0
                         # terminating ...
                         if self.__abort: # don't "else" as abort may happen during the delay
-                            self.__results['run'] = False
+                            self.__run = False
                     else:
                         time.sleep(WAIT_STATE)
                         utils.log("INFO", "All good, switching to next state.",('__runner',self))
@@ -530,7 +539,7 @@ class StateWorker(threading.Thread):
         while not self.__abort:
             self.__cv.acquire()
             try:
-                if not self.__results['run'] and not self.__abort:
+                if not self.__run and not self.__abort:
                     utils.log("INFO", "Waiting for recipes ...",('run',self))
                     self.__cv_wait = True
                     self.__cv.wait()
