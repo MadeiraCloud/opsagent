@@ -30,7 +30,7 @@ OA_AGENT=opsagent
 OA_SALT=salt
 
 # Token
-OA_TOKEN=${OA_CONF_DIR}/token
+OA_TOKEN=/etc/opsagent.token
 
 # Log file
 OA_LOG_FILE=${OA_LOG_DIR}/agent.log

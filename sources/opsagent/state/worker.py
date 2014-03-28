@@ -232,21 +232,19 @@ class StateWorker(threading.Thread):
     def __kill_exec(self):
         if self.__executing:
             utils.log("DEBUG", "Killing execution, pgid#%s"%(self.__executing),('__kill_exec',self))
-            while True:
+            while self.__executing:
                 try:
-                    os.killpg(self.__executing,signal.SIGKILL)
+                    os.killpg(self.__executing.pid,signal.SIGKILL)
                     time.sleep(0.1)
                 except OSError as e:
                     e = str(e)
                     if e.find("No such process"):
-                        utils.log("INFO", "Execution killed, pgid#%s"%(self.__executing),('__kill_exec',self))
-                        self.__executing = None
+                        utils.log("INFO", "Execution killed, pgid#%s"%(self.__executing.pid),('__kill_exec',self))
                         break
                     else:
                         utils.log("WARNING", "Error trying to kill process: %s"%(e),('__kill_exec',self))
                 except Exception as e:
                     utils.log("WARNING", "Error killing execution (probably not a problem): %s"%(e),('__kill_exec',self))
-                    self.__executing = None
                     break
         else:
             utils.log("DEBUG", "Execution not running.",('__kill_exec',self))
@@ -473,13 +471,13 @@ class StateWorker(threading.Thread):
             utils.log("DEBUG", "Creating state runner process ...",('__runner',self))
             self.__executing = Process(target=self.__run_state)
             utils.log("DEBUG", "Starting state runner process ...",('__runner',self))
-            p.start()
-            utils.log("DEBUG", "State runner process running under pid #%s..."%(self.__executing),('__runner',self))
-            p.join()
+            self.__executing.start()
+            utils.log("DEBUG", "State runner process running under pid #%s..."%(self.__executing.pid),('__runner',self))
+            self.__executing.join()
             # Reset running values
+            del self.__executing
             self.__executing = None
             self.__wait_event.set()
-            del p
             utils.log("DEBUG", "State runner process terminated.",('__runner',self))
 
             # Transmit results
