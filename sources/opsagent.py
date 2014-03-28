@@ -14,6 +14,7 @@ import logging.handlers
 import time
 import sys
 import signal
+import os
 
 # Custom imports
 from opsagent.daemon import Daemon
