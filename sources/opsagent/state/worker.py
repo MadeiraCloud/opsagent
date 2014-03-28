@@ -219,7 +219,7 @@ class StateWorker(threading.Thread):
                 for line in f:
                     if re.search(r'PPid.*%s'%(cur_pid), line):
                         utils.log("INFO", "State execution process found #%s. Killing ..."%(pid),('__kill_childs',self))
-                        os.kill(int(pid),signal.SIGKILL)
+                        os.killpg(int(pid),signal.SIGKILL)
                         utils.log("DEBUG", "Process killed.",('kill',self))
                         flag = True
             except Exception as e:
@@ -266,9 +266,9 @@ class StateWorker(threading.Thread):
             self.__run = False
             self.__kill_delay()
 #            self.__kill_wait()
-            self.__kill_exec()
-#            while self.__kill_childs() and self.__executing:
-#                time.sleep(0.1)
+#            self.__kill_exec()
+            while self.__kill_childs() and self.__executing:
+                time.sleep(0.1)
             utils.log("INFO", "Execution killed.",('kill',self))
         else:
             utils.log("DEBUG", "Execution not running, nothing to do.",('kill',self))
@@ -471,21 +471,16 @@ class StateWorker(threading.Thread):
 
             # Run state
             utils.log("DEBUG", "Creating state runner process ...",('__runner',self))
-            p = Process(target=self.__run_state)
+            self.__executing = Process(target=self.__run_state)
             utils.log("DEBUG", "Starting state runner process ...",('__runner',self))
             p.start()
-            try:
-                self.__executing = int(p.pid)
-            except Exception:
-                self.__executing = None
             utils.log("DEBUG", "State runner process running under pid #%s..."%(self.__executing),('__runner',self))
             p.join()
-            utils.log("DEBUG", "State runner process terminated.",('__runner',self))
-
             # Reset running values
-            self.__wait_event.set()
             self.__executing = None
+            self.__wait_event.set()
             del p
+            utils.log("DEBUG", "State runner process terminated.",('__runner',self))
 
             # Transmit results
             if self.__run:
