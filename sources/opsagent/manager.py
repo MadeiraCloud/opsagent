@@ -317,7 +317,7 @@ class Manager(WebSocketClient):
             json_data = json.dumps(raw_data)
             utils.log("DEBUG", "Sending data successfully converted to json",('send_json',self))
         except Exception as e:
-            utils.log("CRITICAL", "Can't convert received data to json. FATAL",('send_json',self))
+            utils.log("ERROR", "Can't convert received data to json. FATAL",('send_json',self))
             self.__close(reset=True,
                          code=codes.C_INVALID_JSON_SEND,
                          reason=codes.M_INVALID_JSON_SEND)

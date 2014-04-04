@@ -67,7 +67,7 @@ class Config():
             'srv_root': '/srv/salt',
             'extension_modules': '/var/cache/salt/minion/extmods',
             'cachedir': '/var/cache/visualops',
-            'delay': '1',
+            'delay': '30',
             'timeout': '30',
             },
         'module': {

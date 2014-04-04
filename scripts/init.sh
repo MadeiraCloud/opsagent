@@ -38,6 +38,19 @@ OA_LOG_FILE=${OA_LOG_DIR}/agent.log
 # var
 OA_TMP_ROOT=/tmp/opsagent
 
+# update and get platform
+if [ $(which apt-get 2>/dev/null) ]; then
+    PLATFORM="APT"
+    apt-get -y update
+    if [ "$1" != "update" ]; then
+        apt-get -y upgrade
+    fi
+elif [ $(which yum 2>/dev/null) ]; then
+    PLATFORM="YUM"
+    if [ "$1" != "update" ]; then
+        yum -y update
+    fi
+fi
 
 # Create main directories
 mkdir -p ${OA_CONF_DIR}
@@ -61,11 +74,10 @@ chown ${OA_USER}:root ${OA_LOG_FILE}
 chmod 640 ${OA_LOG_FILE}
 
 # Setup git
-if [ $(which apt-get 2>/dev/null) ]; then
-    apt-get update
-    apt-get -y -q install git
-elif [ $(which yum 2>/dev/null) ]; then
-    yum -y -q install git
+if [ $PLATFORM = "APT" ]; then
+    apt-get -y install git
+elif [ $PLATFORM = "YUM" ]; then
+    yum -y install git
 fi
 
 # Exit if no git
@@ -76,26 +88,26 @@ fi
 
 
 # setup dependencies
-if [ $(which apt-get 2>/dev/null) ]; then
+if [ $PLATFORM = "APT" ]; then
     # install python
     echo "Platform: APT"
-    apt-get -y -q install python2.7 2>/dev/null
+    apt-get -y install python2.7 2>/dev/null
     if [ $? -ne 0 ]; then
         echo "Failed to install python 2.7, trying with python 2.6 ..." >&2
-        apt-get -y -q install python2.6 2>/dev/null
+        apt-get -y install python2.6
     fi
     # install other dependencies
-    apt-get -y -q install expect-dev python-dev libapt-pkg-dev g++
-elif [ $(which yum 2>/dev/null) ]; then
+    apt-get -y install expect-dev python-dev libapt-pkg-dev g++
+elif [ $PLATFORM = "YUM" ]; then
     # install python
     echo "Platform: YUM"
-    yum -y -q install python27 2>/dev/null
+    yum -y install python27 2>/dev/null
     if [ $? -ne 0 ]; then
         echo "Failed to install python 2.7, trying with python 2.6 ..." >&2
-        yum -y -q install python26 2>/dev/null
+        yum -y install python26
     fi
     # install other dependencies
-    yum -y -q install expect yum-utils
+    yum -y install expect yum-utils
 fi
 # define python version
 if [ $(which python2.7 2>/dev/null) ]; then
@@ -105,7 +117,7 @@ elif [ $(which python2.6 2>/dev/null) ]; then
     echo "python 2.6 found"
     PYTHON="python2.6"
 else
-    echo "FATAL: Python2 non installed! (can't install!)" >&2
+    echo "FATAL: Python2 not installed! (can't install!)" >&2
     exit 1
 fi
 

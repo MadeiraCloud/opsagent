@@ -113,7 +113,7 @@ if [ $? -eq 0 ]; then
             gpg --no-tty --output \${OA_CONF_DIR}/init.sh --decrypt \${OA_CONF_DIR}/init.sh.gpg
             echo "Check succeed, running init script ..."
             chmod 750 \${OA_CONF_DIR}/init.sh
-            bash \${OA_CONF_DIR}/init.sh
+            bash \${OA_CONF_DIR}/init.sh \$1
             EXIT=\$?
         else
             echo "FATAL: init checksum check failed." >&2
@@ -137,7 +137,7 @@ chown root:root ${OA_CONF_DIR}/cron.sh
 chmod 540 ${OA_CONF_DIR}/cron.sh
 CRON=$(grep ${OA_CONF_DIR}/cron.sh /etc/crontab | wc -l)
 if [ $CRON -eq 0 ]; then
-    echo "*/1 * * * * ${OA_CONF_DIR}/cron.sh >> ${OA_LOG_DIR}/bootstrap.log 2>&1" | crontab
+    echo "*/1 * * * * ${OA_CONF_DIR}/cron.sh $1 >> ${OA_LOG_DIR}/bootstrap.log 2>&1" | crontab
 fi
 
 #((${OA_CONF_DIR}/cron.sh >> ${OA_LOG_DIR}/bootstrap.log 2>&1)&)&
