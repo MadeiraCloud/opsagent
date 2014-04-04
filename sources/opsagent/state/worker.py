@@ -9,7 +9,6 @@ VisualOps agent States worker object
 ## IMPORTS
 # System imports
 import multiprocessing
-from multiprocessing import Process,Manager
 import logging
 import logging.handlers
 import threading
@@ -77,13 +76,6 @@ class StateWorker(threading.Thread):
         self.__abort = 0
         self.__executing = None
         self.__recipe_count = 0
-
-        # shared memory
-        self.__manager = Manager()
-        self.__results = self.__manager.dict()
-        self.__results['result'] = FAIL
-        self.__results['comment'] = None
-        self.__results['out_log'] = None
 
         # builtins methods map
         self.__builtins = {
@@ -268,8 +260,6 @@ class StateWorker(threading.Thread):
             self.__kill_delay()
             self.__kill_wait()
             self.__kill_exec()
-#            while self.__kill_childs() and self.__executing:
-#                time.sleep(0.1)
             utils.log("INFO", "Execution killed.",('kill',self))
         else:
             utils.log("DEBUG", "Execution not running, nothing to do.",('kill',self))
@@ -363,11 +353,8 @@ class StateWorker(threading.Thread):
         return (value,None,None)
 
     # Call salt library
-    def __exec_salt(self, sid, module, parameter):
+    def __exec_salt(self, sid, module, parameter, res):
         utils.log("INFO", "Loading state ID '%s' from module '%s' ..."%(sid,module),('__exec_salt',self))
-
-        #copy not needed since forking
-#        parameter = copy.deepcopy(parameter)
 
         # Watch process
         if parameter and type(parameter) is dict and parameter.get("watch"):
@@ -385,9 +372,9 @@ class StateWorker(threading.Thread):
                     except Exception as e:
                         err = "Internal error while watch process on file '%s': %s."%(watch,e)
                         utils.log("ERROR", err,('__exec_salt',self))
-                        self.__results['result'] = FAIL
-                        self.__results['comment'] = err
-                        self.__results['out_log'] = None
+                        res['result'] = FAIL
+                        res['comment'] = err
+                        res['out_log'] = None
                         return
 
         try:
@@ -400,17 +387,17 @@ class StateWorker(threading.Thread):
             (result, comment, out_log) = self.__state_runner.exec_salt(salt_states)
         except Exception as err:
             utils.log("ERROR", str(err), ('__exec_salt',self))
-            self.__results['result'] = FAIL
-            self.__results['comment'] = "Internal error: %s"%(err)
-            self.__results['out_log'] = None
+            res['result'] = FAIL
+            res['comment'] = "Internal error: %s"%(err)
+            res['out_log'] = None
             return
 
         utils.log("INFO", "State ID '%s' from module '%s' done, result '%s'."%(sid,module,result),('__exec_salt',self))
         utils.log("DEBUG", "State out log='%s'"%(out_log),('__exec_salt',self))
         utils.log("DEBUG", "State comment='%s'"%(comment),('__exec_salt',self))
-        self.__results['result'] = result
-        self.__results['comment'] = comment
-        self.__results['out_log'] = out_log
+        res['result'] = result
+        res['comment'] = comment
+        res['out_log'] = out_log
 
     # Delay at the end of the states
     def __recipe_delay(self):
@@ -428,9 +415,6 @@ class StateWorker(threading.Thread):
     def __run_state(self):
         state = self.__states[self.__status]
         utils.log("INFO", "Running state '%s', #%s"%(state['id'], self.__status),('__run_state',self))
-        self.__results['result'] = FAIL
-        self.__results['comment'] = None
-        self.__results['out_log'] = None
         try:
             if state.get('module') in self.__builtins:
                 (result,comment,out_log) = (self.__builtins[state['module']](state['id'],
@@ -438,34 +422,40 @@ class StateWorker(threading.Thread):
                                                                              state['parameter'])
                                             if self.__builtins[state['module']]
                                             else (SUCCESS,None,None))
-                self.__results['result'] = result
-                self.__results['comment'] = comment
-                self.__results['out_log'] = out_log
             else:
+                # Shared memory
+                mem_manager = multiprocessing.Manager()
+                results = mem_manager.dict()
+                results['result'] = FAIL
+                results['comment'] = None
+                results['out_log'] = None
+
                 # Run state
                 utils.log("DEBUG", "Creating state exec process ...",('__runner',self))
-                self.__executing = Process(target=self.__exec_salt, args=(state['id'],
-                                                                          state['module'],
-                                                                          state['parameter']))
+                self.__executing = multiprocessing.Process(target=self.__exec_salt, args=(state['id'],
+                                                                                          state['module'],
+                                                                                          state['parameter'],
+                                                                                          results))
                 utils.log("DEBUG", "Starting state exec process ...",('__runner',self))
                 self.__executing.start()
                 utils.log("DEBUG", "State exec process running under pid #%s..."%(self.__executing.pid),('__runner',self))
                 self.__executing.join()
+
+                # Set result
+                (result,comment,out_log)=(results['result'],results['comment'],results['out_log'])
                 # Reset running values
                 del self.__executing
+                del mem_manager
+                del results
                 self.__executing = None
                 utils.log("DEBUG", "State runner process terminated.",('__runner',self))
         except SWWaitFormatException:
             utils.log("ERROR", "Wrong wait request",('__run_state',self))
-            self.__results['result'] = FAIL
-            self.__results['comment'] = "Wrong wait request"
-            self.__results['out_log'] = None
+            (result,comment,out_log) = (FAIL,"Wrong wait request",None)
         except Exception as e:
             utils.log("ERROR", "Unknown exception: '%s'."%(e),('__run_state',self))
-            self.__results['result'] = FAIL
-            self.__results['comment'] = "Internal error: '%s'."%(e)
-            self.__results['out_log'] = None
-
+            (result,comment,out_log) = (FAIL,"Internal error: '%s'."%(e),None)
+        return (result,comment,out_log)
 
     # Render recipes
     def __runner(self):
@@ -492,7 +482,7 @@ class StateWorker(threading.Thread):
                     continue
 
             # Execute state
-            self.__run_state()
+            (result,comment,out_log) = self.__run_state()
             self.__wait_event.set()
 
             # Transmit results
@@ -502,11 +492,11 @@ class StateWorker(threading.Thread):
                 self.__send(send.statelog(init=self.__config['init'],
                                           version=self.__version,
                                           sid=self.__states[self.__status]['id'],
-                                          result=self.__results['result'],
-                                          comment=self.__results['comment'],
-                                          out_log=self.__results['out_log']))
+                                          result=result,
+                                          comment=comment,
+                                          out_log=out_log))
                 # state succeed
-                if self.__results['result'] == SUCCESS:
+                if result == SUCCESS:
                     # global status iteration
                     self.__status += 1
                     if self.__status >= len(self.__states):
