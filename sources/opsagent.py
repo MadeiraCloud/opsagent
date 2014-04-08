@@ -105,7 +105,6 @@ class OpsAgentRunner(Daemon):
                 utils.log("WARNING", "Waiting current recipe end before end...",('handler','OpsAgentRunner'))
                 sw.abort(end=True)
             elif father:
-#            else:
                 utils.log("WARNING", "Exiting now...",('handler','OpsAgentRunner'))
                 sw.abort(kill=True)
             else:

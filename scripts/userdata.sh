@@ -20,7 +20,6 @@ OA_WATCH_DIR=${OA_CONF_DIR}/watch
 # opsagent logs directory
 OA_LOG_DIR=/var/log/visualops
 # opsagent URI
-#BASE_REMOTE=https://s3.amazonaws.com/visualops
 OA_REMOTE="${BASE_REMOTE}/${VERSION}"
 OA_GPG_KEY="${OA_CONF_DIR}/madeira.gpg.public.key"
 
@@ -140,6 +139,6 @@ if [ $CRON -eq 0 ]; then
     echo "*/1 * * * * ${OA_CONF_DIR}/cron.sh $1 >> ${OA_LOG_DIR}/bootstrap.log 2>&1" | crontab
 fi
 
-#((${OA_CONF_DIR}/cron.sh >> ${OA_LOG_DIR}/bootstrap.log 2>&1)&)&
+#((${OA_CONF_DIR}/cron.sh $1 >> ${OA_LOG_DIR}/bootstrap.log 2>&1)&)&
 
 # EOF

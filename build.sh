@@ -48,8 +48,7 @@ function tree() {
     # Copy ws4py sources
     cp -r ../${LIBS_DIR}/ws4py ${OPSAGENT_DIR}/${LIBS_DIR}/
     # Copy salt dependencies
-    cp -r ../${LIBS_DIR}/{msgpack,yaml,jinja2,markupsafe} ${OPSAGENT_DIR}/${LIBS_DIR}/
-#    cp -r ../${LIBS_DIR}/{msgpack,yaml,jinja2,markupsafe,salt} ${OPSAGENT_DIR}/${LIBS_DIR}/
+    cp -r ../${LIBS_DIR}/{chardet,requests,urllib3,msgpack,yaml,jinja2,markupsafe} ${OPSAGENT_DIR}/${LIBS_DIR}/
 
     # Copy opsagent sources
     for file in `find ../${SOURCES_DIR}/opsagent -type f -name '*.py'`
@@ -66,10 +65,6 @@ function tree() {
     else
         cp ../${SOURCES_DIR}/opsagent.py ${OPSAGENT_DIR}/${SCRIPTS_DIR}/opsagent
     fi
-
-
-#    # Copy config files
-#    cp ../${CONF_DIR}/opsagent.conf ${OPSAGENT_DIR}/${CONF_DIR}/
 
     # create tarball
     cd ${OPSAGENT_DIR}
@@ -103,7 +98,6 @@ function publish() {
     cksum opsagent.tgz.gpg > opsagent.tgz.gpg.cksum
     cd -
 
-#    cp ${BUILD_DIR}/{init.cksum,init.sh,opsagent.cksum,opsagent.tgz,userdata.cksum,userdata.sh} ${RELEASE_DIR}/
     git add . -A
     git commit -m "v${1}"
     git push

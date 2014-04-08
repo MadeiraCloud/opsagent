@@ -123,7 +123,6 @@ fi
 
 
 # Generates config file
-#if [ ! -f ${OA_CONFIG_FILE} ]; then
 cat <<EOF > ${OA_CONFIG_FILE}
 [global]
 envroot=${OA_ENV_DIR}
@@ -147,7 +146,6 @@ bootstrap=${SRC_SCRIPTS_DIR}/bootstrap.sh
 mod_repo=
 mod_tag=
 EOF
-#fi
 chown ${OA_USER}:root ${OA_CONFIG_FILE}
 chmod 640 ${OA_CONFIG_FILE}
 
@@ -259,7 +257,5 @@ fi
 (crontab -l | grep -v -e ${OA_CONF_DIR}/cron.sh -e ${OA_CONF_DIR}/update.sh) > ${OA_TMP_ROOT}.crontab
 crontab -r
 cat ${OA_TMP_ROOT}.crontab | crontab
-#(cat /etc/crontab | grep -v ${OA_CONF_DIR}/cron.sh) > ${OA_TMP_ROOT}.crontab
-#mv -f ${OA_TMP_ROOT}.crontab /etc/crontab
 
 # EOF
