@@ -48,7 +48,7 @@ function tree() {
     # Copy ws4py sources
     cp -r ../${LIBS_DIR}/ws4py ${OPSAGENT_DIR}/${LIBS_DIR}/
     # Copy salt dependencies
-    cp -r ../${LIBS_DIR}/{chardet,requests,urllib3,msgpack,yaml,jinja2,markupsafe} ${OPSAGENT_DIR}/${LIBS_DIR}/
+    cp -r ../${LIBS_DIR}/{requests,msgpack,yaml,jinja2,markupsafe} ${OPSAGENT_DIR}/${LIBS_DIR}/
 
     # Copy opsagent sources
     for file in `find ../${SOURCES_DIR}/opsagent -type f -name '*.py'`

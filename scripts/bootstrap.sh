@@ -19,7 +19,7 @@ cp -r ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_LIBS_DIR}/epel/${ARCH}/${OA_EPEL_FILE} ${
 # copy websocket libs
 cp -r ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_LIBS_DIR}/ws4py ${OA_ENV_DIR}/lib/${PYTHON}/site-packages/
 # copy salt dependencies
-cp -r ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_LIBS_DIR}/{chardet,requests,urllib3,msgpack,yaml,jinja2,markupsafe} ${OA_ENV_DIR}/lib/${PYTHON}/site-packages/
+cp -r ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_LIBS_DIR}/{requests,msgpack,yaml,jinja2,markupsafe} ${OA_ENV_DIR}/lib/${PYTHON}/site-packages/
 # copy opsagent sources
 cp -r ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_SOURCES_DIR}/opsagent ${OA_ENV_DIR}/lib/${PYTHON}/site-packages/
 
