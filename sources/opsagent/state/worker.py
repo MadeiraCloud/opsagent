@@ -254,15 +254,16 @@ class StateWorker(threading.Thread):
 
     # Kill the current execution
     def kill(self):
-        if self.__run:
+        if not self.__run:
+            utils.log("DEBUG", "Execution not running, nothing to do.",('kill',self))
+            return
+        while self.__run or self.__executing:
             utils.log("DEBUG", "Sending stop execution signal.",('kill',self))
             self.__run = False
             self.__kill_delay()
             self.__kill_wait()
             self.__kill_exec()
             utils.log("INFO", "Execution killed.",('kill',self))
-        else:
-            utils.log("DEBUG", "Execution not running, nothing to do.",('kill',self))
     ##
 
 
@@ -431,24 +432,30 @@ class StateWorker(threading.Thread):
                 results['out_log'] = None
 
                 # Run state
-                utils.log("DEBUG", "Creating state exec process ...",('__runner',self))
-                self.__executing = multiprocessing.Process(target=self.__exec_salt, args=(state['id'],
-                                                                                          state['module'],
-                                                                                          state['parameter'],
-                                                                                          results))
-                utils.log("DEBUG", "Starting state exec process ...",('__runner',self))
-                self.__executing.start()
-                utils.log("DEBUG", "State exec process running under pid #%s..."%(self.__executing.pid),('__runner',self))
-                self.__executing.join()
+                utils.log("DEBUG", "Creating state exec process ...",('__run_state',self))
+                self.__executing = True
+                if self.__run:
+                    self.__executing = multiprocessing.Process(target=self.__exec_salt, args=(state['id'],
+                                                                                              state['module'],
+                                                                                              state['parameter'],
+                                                                                              results))
+                    utils.log("DEBUG", "Starting state exec process ...",('__run_state',self))
+                    self.__executing.start()
+                    utils.log("DEBUG", "State exec process running under pid #%s..."%(self.__executing.pid),('__run_state',self))
+                    self.__executing.join()
+                else:
+                    utils.log("DEBUG", "Execution not meant to run",('__run_state',self))
 
                 # Set result
                 (result,comment,out_log)=(results['result'],results['comment'],results['out_log'])
+
                 # Reset running values
                 del self.__executing
+                self.__executing = None
                 del mem_manager
                 del results
-                self.__executing = None
-                utils.log("DEBUG", "State runner process terminated.",('__runner',self))
+
+                utils.log("DEBUG", "State runner process terminated.",('__run_state',self))
         except SWWaitFormatException:
             utils.log("ERROR", "Wrong wait request",('__run_state',self))
             (result,comment,out_log) = (FAIL,"Wrong wait request",None)
