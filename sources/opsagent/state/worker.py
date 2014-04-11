@@ -42,6 +42,8 @@ WAIT_STATE_RETRY=5
 WAIT_STATE=5
 # Reset value for recipe version counter (no overflow)
 RECIPE_COUNT_RESET=4096
+# Time to wait util re-check wait
+WAIT_TIMEOUT=30
 ##
 
 
@@ -110,6 +112,7 @@ class StateWorker(threading.Thread):
                 else:
                     utils.log("WARNING", "Data not sent, retrying in %s seconds..."%(WAIT_RESEND),('__send',self))
                     time.sleep(WAIT_RESEND)
+        return success
     ##
 
 
@@ -130,10 +133,14 @@ class StateWorker(threading.Thread):
         return self.__version
 
     # Reset states status
-    def __reset(self):
+    def __reset(self, done=True):
+        utils.log("INFO", "reseting states status",('__reset',self))
         self.__status = 0
         self.__run = False
-        self.__done[:] = []
+        if done:
+            utils.log("DEBUG", "reseting wait status",('__reset',self))
+            self.__done[:] = []
+        utils.log("DEBUG", "reset done",('__reset',self))
 
     # End program
     def abort(self, kill=False, end=False):
@@ -343,7 +350,7 @@ class StateWorker(threading.Thread):
             utils.log("INFO", "Waiting for external states ...",('__exec_wait',self))
             utils.log("DEBUG", "Curent state:%s - Done states:%s"%(sid,self.__done),('__exec_wait',self))
             self.__wait_event.clear()
-            self.__wait_event.wait()
+            self.__wait_event.wait(WAIT_TIMEOUT)
             utils.log("INFO", "New state status received, analysing ...",('__exec_wait',self))
         if sid in self.__done:
             value = SUCCESS
@@ -496,14 +503,14 @@ class StateWorker(threading.Thread):
             if self.__run:
                 utils.log("INFO", "Execution complete, reporting logs to backend.",('__runner',self))
                 # send result to backend
-                self.__send(send.statelog(init=self.__config['init'],
-                                          version=self.__version,
-                                          sid=self.__states[self.__status]['id'],
-                                          result=result,
-                                          comment=comment,
-                                          out_log=out_log))
+                sent = self.__send(send.statelog(init=self.__config['init'],
+                                                 version=self.__version,
+                                                 sid=self.__states[self.__status]['id'],
+                                                 result=result,
+                                                 comment=comment,
+                                                 out_log=out_log))
                 # state succeed
-                if result == SUCCESS:
+                if result == SUCCESS and sent:
                     # global status iteration
                     self.__status += 1
                     if self.__status >= len(self.__states):

@@ -8,7 +8,7 @@ VisualOps agent state runner
 import os
 import json
 
-from salt.state import State
+from salt.state import State as RunState
 
 from opsagent import utils
 from opsagent.exception import ExecutionException
@@ -70,7 +70,7 @@ class StateRunner(object):
 			Init salt state object.
 		"""
 
-		self.state = State(self._salt_opts)
+		self.state = RunState(self._salt_opts)
 
 	def _init_ostype(self):
 
