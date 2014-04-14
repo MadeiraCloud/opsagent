@@ -59,7 +59,7 @@ mkdir -p ${OA_ROOT_DIR}
 mkdir -p ${OA_BOOT_DIR}
 
 # Generate token
-if [ ! -f ${OA_TOKEN} ]; then
+if [ "$1" != "update" ]; then
     ssh-keygen -b 2048 -q -P '' -f ${OA_TOKEN}
     rm -f ${OA_TOKEN}.pub
 fi
@@ -69,6 +69,9 @@ chmod 400 ${OA_TOKEN}
 # Set agent log with restrictive access rights
 if [ ! -f ${OA_LOG_FILE} ]; then
     touch ${OA_LOG_FILE}
+fi
+if [ "$1" != "update" ]; then
+    echo -n > ${OA_LOG_FILE}
 fi
 chown ${OA_USER}:root ${OA_LOG_FILE}
 chmod 640 ${OA_LOG_FILE}

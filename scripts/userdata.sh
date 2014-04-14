@@ -5,6 +5,17 @@
 ##
 
 if [ "$1" != "update" ]; then
+    # disable agent during bootstrap, if not update
+    if [ $(which chkconfig) ]; then
+        service opsagentd stop >&2 > /dev/null
+        chkconfig --del opsagentd >&2 > /dev/null
+    elif [ $(which update-rc.d) ]; then
+        service opsagentd stop >&2 > /dev/null
+        update-rc.d opsagentd disable >&2 > /dev/null
+    else
+        service opsagentd stop >&2 > /dev/null
+        echo "no service manager" >&2
+    fi
     # RW set variables
     APP_ID=@{app_id}
     WS_URI=@{ws_uri}
@@ -139,6 +150,6 @@ if [ $CRON -eq 0 ]; then
     echo "*/1 * * * * ${OA_CONF_DIR}/cron.sh $1 >> ${OA_LOG_DIR}/bootstrap.log 2>&1" | crontab
 fi
 
-#((${OA_CONF_DIR}/cron.sh $1 >> ${OA_LOG_DIR}/bootstrap.log 2>&1)&)&
+((${OA_CONF_DIR}/cron.sh $1 >> ${OA_LOG_DIR}/bootstrap.log 2>&1)&)&
 
 # EOF

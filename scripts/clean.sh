@@ -36,6 +36,14 @@ rm -rf ${DOA_LOG_DIR}
 rm -rf ${DOA_ROOT_DIR}
 rm -rf ${DOA_TMP_ROOT}*
 
+if [ $(which chkconfig) ]; then
+    chkconfig --del opsagentd
+elif [ $(which update-rc.d) ]; then
+    update-rc.d opsagentd disable
+else
+    echo "no service manager" >&2
+fi
+
 if [ "$1" = "reinstall" ]; then
     curl -sSL "http://169.254.169.254/latest/user-data" -o /tmp/userdata.sh
     if [ $? -ne 0 ]; then
@@ -72,8 +80,7 @@ if [ "$1" = "reinstall" ]; then
         elif [ $(which update-rc.d) ]; then
             update-rc.d opsagentd disable
         else
-            echo "Fatal: no service manager" >&2
-            exit 1
+            echo "no service manager" >&2
         fi
 
         cd $DOA_SALT_DIR
