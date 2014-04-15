@@ -19,6 +19,7 @@ SOURCES_DIR=sources
 BUILD_DIR=build
 RELEASE_DIR=release
 OPSAGENT_DIR=opsagent
+MISC_DIR=misc
 
 
 function tree() {
