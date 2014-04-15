@@ -153,28 +153,52 @@ class Manager(WebSocketClient):
         utils.log("DEBUG", "Valid data.",('__act_recipe',self))
 
         # update repo
-        clone = False
+        self.__config['runtime']['clone'] = False
+        self.__config['runtime']['tag'] = False
         if module_repo != self.__config['module']['mod_repo']:
             utils.log("DEBUG", "Cloning repo...",('__act_recipe',self))
-            clone = utils.clone_repo(self.__config, self.__config['module']['root'],self.__config['module']['name'],module_repo)
-            self.__config['module']['mod_repo'] = module_repo
             try:
-                with open(self.__config['runtime']['config_path'], 'r+') as f:
-                    content = re.sub(r'mod_repo=(.*)\n',"mod_repo=%s\n"%(module_repo),f.read())
-                    f.seek(0)
-                    f.write(content)
-            except Exception as e:
-                utils.log("WARNING", "Can't save URI repo in config file '%s': %e"%(self.__config['runtime']['config_path'],e),('__act_recipe',self))
-        if clone or module_tag != self.__config['module']['mod_tag']:
-            utils.checkout_repo(self.__config, self.__config['module']['root'],self.__config['module']['name'],module_tag,module_repo)
-            self.__config['module']['mod_tag'] = module_tag
+                self.__config['runtime']['clone'] = utils.clone_repo(self.__config,
+                                                                     self.__config['module']['root'],
+                                                                     self.__config['module']['name'],
+                                                                     module_repo)
+            except ManagerInvalidStatesRepoException:
+                pass
+            else:
+                self.__config['module']['mod_repo'] = module_repo
+                try:
+                    with open(self.__config['runtime']['config_path'], 'r+') as f:
+                        content = re.sub(r'mod_repo=(.*)\n',"mod_repo=%s\n"%(module_repo),f.read())
+                        f.seek(0)
+                        f.write(content)
+                except Exception as e:
+                    utils.log("WARNING", "Can't save URI repo in config file '%s': %e"%(self.__config['runtime']['config_path'],e),('__act_recipe',self))
+        if self.__config['runtime']['clone'] or module_tag != self.__config['module']['mod_tag']:
             try:
-                with open(self.__config['runtime']['config_path'], 'r+') as f:
-                    content = re.sub(r'mod_tag=(.*)\n',"mod_tag=%s\n"%(module_tag),f.read())
-                    f.seek(0)
-                    f.write(content)
-            except Exception as e:
-                utils.log("WARNING", "Can't save tag version in config file '%s': %s"%(self.__config['runtime']['config_path'],e),('__act_recipe',self))
+                self.__config['runtime']['tag'] = utils.checkout_repo(self.__config,
+                                                                      self.__config['module']['root'],
+                                                                      self.__config['module']['name'],
+                                                                      module_tag,
+                                                                      module_repo)
+            except ManagerInvalidStatesRepoException:
+                pass
+            else:
+                self.__config['module']['mod_tag'] = module_tag
+                try:
+                    with open(self.__config['runtime']['config_path'], 'r+') as f:
+                        content = re.sub(r'mod_tag=(.*)\n',"mod_tag=%s\n"%(module_tag),f.read())
+                        f.seek(0)
+                        f.write(content)
+                except Exception as e:
+                    utils.log("WARNING", "Can't save tag version in config file '%s': %s"%(self.__config['runtime']['config_path'],e),('__act_recipe',self))
+
+        # ensure states are compatible
+        self.__config['runtime']['compat'] = (True
+                                              if utils.compat_checker(self.__config['userdata']['version'],
+                                                                      os.path.join(self.__config['module']['root'],
+                                                                                   self.__config['module']['name'],
+                                                                                   self.__config['module']['compat']))
+                                              else False)
 
         # load recipes
         curent_version = self.__states_worker.get_version()
@@ -380,8 +404,8 @@ class Manager(WebSocketClient):
                     utils.log("ERROR", "Invalid update format",('received_message',self))
                 except ManagerInvalidWaitFormatException:
                     utils.log("ERROR", "Invalid wait format",('received_message',self))
-                except ManagerInvalidStatesRepoException:
-                    utils.log("ERROR", "Invalid states repository",('received_message',self))
+#                except ManagerInvalidStatesRepoException:
+#                    utils.log("ERROR", "Invalid states repository",('received_message',self))
                 except Exception as e:
                     utils.log("ERROR", "Unknown exception cought '%s'"%(e),('received_message',self))
                 else:

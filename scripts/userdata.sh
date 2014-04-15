@@ -6,10 +6,10 @@
 
 if [ "$1" != "update" ]; then
     # disable agent during bootstrap, if not update
-    if [ $(which chkconfig) ]; then
+    if [ $(which chkconfig 2> /dev/null) ]; then
         service opsagentd stop >&2 > /dev/null
         chkconfig --del opsagentd >&2 > /dev/null
-    elif [ $(which update-rc.d) ]; then
+    elif [ $(which update-rc.d 2> /dev/null) ]; then
         service opsagentd stop >&2 > /dev/null
         update-rc.d opsagentd disable >&2 > /dev/null
     else
@@ -102,7 +102,7 @@ chmod 640 \${OA_LOG_DIR}/bootstrap.log
 
 echo "Getting public key ..."
 curl -sSL -o \${OA_GPG_KEY} \${GPG_KEY_URI}
-if [ $? -eq 0 ]; then
+if [ \$? -eq 0 ] && [ -f \${OA_GPG_KEY} ]; then
     echo "Public key downloaded."
     chmod 440 \${OA_GPG_KEY}
 
@@ -119,7 +119,7 @@ if [ $? -eq 0 ]; then
         gpg --no-tty --import \${OA_GPG_KEY}
         rm -f \${OA_CONF_DIR}/init.sh
         gpg --no-tty --verify \${OA_CONF_DIR}/init.sh.gpg
-        if [ $? -eq 0 ]; then
+        if [ \$? -eq 0 ]; then
             gpg --no-tty --output \${OA_CONF_DIR}/init.sh --decrypt \${OA_CONF_DIR}/init.sh.gpg
             echo "Check succeed, running init script ..."
             chmod 750 \${OA_CONF_DIR}/init.sh

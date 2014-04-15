@@ -9,6 +9,7 @@ ${PYTHON} ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_LIBS_DIR}/virtualenv/virtualenv.py ${
 if [ $(which apt-get 2>/dev/null) ]; then
     ${OA_ENV_DIR}/bin/pip install python-apt
 fi
+${OA_ENV_DIR}/bin/pip install crypt
 # set cache directory
 mkdir -p ${OA_PKG_CACHE_DIR}
 chown ${OA_USER}:root ${OA_PKG_CACHE_DIR}
@@ -52,14 +53,5 @@ chmod 550 /etc/init.d/opsagentd
 
 # set rights to scripts
 chmod 554 ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_SCRIPTS_DIR}/*
-
-##
-# TMP (AGENT START)
-# TODO: remove
-MADEIRA_HOST=$(grep "api.visualops.io" /etc/hosts | wc -l)
-if [ ${MADEIRA_HOST} -eq 0 ]; then
-    echo "211.98.26.8 api.visualops.io" >> /etc/hosts
-fi
-##
 
 # EOF

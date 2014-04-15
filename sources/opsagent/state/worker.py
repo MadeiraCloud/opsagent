@@ -282,6 +282,9 @@ class StateWorker(threading.Thread):
             utils.clone_repo(self.__config,self.__config['module']['root'],self.__config['module']['name'],self.__config['module']['mod_repo'])
             utils.checkout_repo(self.__config,self.__config['module']['root'],self.__config['module']['name'],self.__config['module']['mod_tag'],self.__config['module']['mod_repo'])
 
+        # avoid race (TODO improve)
+        time.sleep(1)
+
         # state adaptor
         if self.__state_adaptor:
             utils.log("DEBUG", "Deleting adaptor...",('load_modules',self))
@@ -471,29 +474,45 @@ class StateWorker(threading.Thread):
             (result,comment,out_log) = (FAIL,"Internal error: '%s'."%(e),None)
         return (result,comment,out_log)
 
+    # Runner init phase
+    def __runner_init(self):
+        # check empty list
+        if not self.__states:
+            utils.log("WARNING", "Empty states list.",('__runner',self))
+            self.__run = False
+            return False
+
+        err = None
+        if self.__status == 0:
+            try:
+                # Load modules on each round
+                self.__load_modules()
+            except Exception:
+                utils.log("WARNING", "Can't load states modules.",('__runner',self))
+                err="Can't load states modules."
+        if not self.__config['runtime']['clone']:
+            err = "Can't clone states repo"
+        elif not self.__config['runtime']['tag']:
+            err = "Can't checkout required states tag"
+        elif not self.__config['runtime']['compat']:
+            err = "States not compatible to current agent version"
+        if err:
+            self.__send(send.statelog(init=self.__config['init'],
+                                      version=self.__version,
+                                      sid=self.__states[self.__status]['id'],
+                                      result=FAIL,
+                                      comment=err,
+                                      out_log=None))
+            self.__run = False
+            return False
+        return True
+
     # Render recipes
     def __runner(self):
         utils.log("INFO", "Running StatesWorker ...",('__runner',self))
         while self.__run:
-            if not self.__states:
-                utils.log("WARNING", "Empty states list.",('__runner',self))
-                self.__run = False
-                continue
-
-            # Load modules on each round
-            if self.__status == 0:
-                try:
-                    self.__load_modules()
-                except Exception:
-                    utils.log("WARNING", "Can't load states modules.",('__runner',self))
-                    self.__send(send.statelog(init=self.__config['init'],
-                                              version=self.__version,
-                                              sid=self.__states[self.__status]['id'],
-                                              result=FAIL,
-                                              comment="Can't load states modules.",
-                                              out_log=None))
-                    self.__run = False
-                    continue
+            # Init
+            if not self.__runner_init(): continue
 
             # Execute state
             (result,comment,out_log) = self.__run_state()

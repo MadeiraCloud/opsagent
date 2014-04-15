@@ -135,3 +135,84 @@ def checkout_repo(config, path, name, tag, uri, n=0):
             break
     if n == 0:
         log("INFO", "Repo %s in %s successfully checkout at %s tag."%(name,spath,tag),('checkout_repo','utils'))
+    return True
+
+
+# ensure states compatibility
+class CompatMatrix():
+    def __init__(self):
+        self.__m = {}
+        self.__map = {
+            '>': self.gt,
+            '>=': self.ge,
+            '<=': self.le,
+            '<': self.lt,
+            '==': self.eq,
+            '!=': self.ne,
+            }
+
+    def add(self, sign, version):
+        self.__map[sign](version)
+
+    def gt(self, version):
+        self.__m.setdefault(version,{})
+        self.__m[version]['gt'] = True
+
+    def ge(self, version):
+        self.__m.setdefault(version,{})
+        self.__m[version]['gt'] = True
+        self.__m[version]['eq'] = True
+
+    def le(self, version):
+        self.__m.setdefault(version,{})
+        self.__m[version]['lt'] = True
+        self.__m[version]['eq'] = True
+
+    def lt(self, version):
+        self.__m.setdefault(version,{})
+        self.__m[version]['lt'] = True
+
+    def eq(self, version):
+        self.__m.setdefault(version,{})
+        self.__m[version]['eq'] = True
+
+    def ne(self, version):
+        self.__m.setdefault(version,{})
+        self.__m[version]['ne'] = True
+
+    def check(self, version):
+        if self.__m.get(version):
+            if self.__m[version].get('ne'):
+                return False
+            elif self.__m[version].get('eq'):
+                return True
+        for item in self.__m:
+            if item < version:
+                if self.__m[item].get('lt'): return False
+            elif item > version:
+                if self.__m[item].get('gt'): return False
+        for item in self.__m:
+            if item < version:
+                if self.__m[item].get('gt'): return True
+            elif item > version:
+                if self.__m[item].get('lt'): return True
+        return False
+
+
+def compat_checker(version, compat):
+    m = CompatMatrix()
+    try:
+        with open(compat,'r') as f:
+            lines = f.readline()
+            for l in lines:
+                l.strip().split()
+                m.add(l[0],l[1])
+    except Exception as e:
+        log("WARNING", "can't read compatibily file %s: %s"%(compat,e),('compat_checker','utils'))
+        return False
+    res = m.check(version)
+    if res:
+        log("INFO", "Curent version %s compatible with states"%(version),('compat_checker','utils'))
+    else:
+        log("WARNING", "Curent version %s NOT compatible with states"%(version),('compat_checker','utils'))
+    return res

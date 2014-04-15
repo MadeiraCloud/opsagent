@@ -21,6 +21,7 @@ class ManagerInvalidStateFormatException(Exception): pass
 class ManagerInvalidUpdateFormatException(Exception): pass
 class ManagerInvalidWaitFormatException(Exception): pass
 class ManagerInvalidStatesRepoException(Exception): pass
+class ManagerInvalidStatesCompatException(Exception): pass
 class ManagerInitDirDeniedException(Exception): pass
 
 # StatesWorker exceptions

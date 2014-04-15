@@ -30,7 +30,7 @@ case "$1" in
         ;;
     force-stop)
         echo "Killing opsagent..."
-        for id in `ps aux | grep "${OA_ROOT}/env/bin/opsagent -c /etc/opsagent.conf start" | sed -e 's/  */ /g' | cut -d ' ' -f 2`; do
+        for id in `ps aux | grep "${OA_ROOT}/env/bin/opsagent" | sed -e 's/  */ /g' | cut -d ' ' -f 2`; do
             kill -9 $id
         done
         ;;
@@ -40,7 +40,7 @@ case "$1" in
         ;;
     force-restart)
         echo "Killing opsagent..."
-        for id in `ps aux | grep "${OA_ROOT}/env/bin/opsagent -c /etc/opsagent.conf start" | sed -e 's/  */ /g' | cut -d ' ' -f 2`; do
+        for id in `ps aux | grep "${OA_ROOT}/env/bin/opsagent" | sed -e 's/  */ /g' | cut -d ' ' -f 2`; do
             kill -9 $id
         done
         sleep 1

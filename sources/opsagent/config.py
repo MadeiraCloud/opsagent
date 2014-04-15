@@ -57,6 +57,9 @@ class Config():
         'runtime': {
             'proc': False,
             'config_path': None,
+            'clone': False,
+            'tag': False,
+            'compat': False,
             },
         'network': {
             'instance_id': "http://169.254.169.254/latest/meta-data/instance-id",
@@ -66,7 +69,9 @@ class Config():
             'srv_root': '/srv/salt',
             'extension_modules': '/var/cache/salt/minion/extmods',
             'cachedir': '/var/cache/visualops',
-            'delay': '30',
+            # delay between each round
+            'delay': '10',
+            # command timeout (deprecated)
             'timeout': '30',
             },
         'module': {
@@ -75,6 +80,8 @@ class Config():
             # Locations relatives to salt repository (default /opt/visualops/boostrap/salt)
             'src_salt': 'sources/salt',
             'src_adaptor': 'sources/adaptor.py',
+            # Compatibility file relative to salt repository (default /opt/visualops/boostrap/salt)
+            'compat': 'compat.txt',
             },
         }
 

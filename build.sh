@@ -98,6 +98,7 @@ function publish() {
     cksum opsagent.tgz.gpg > opsagent.tgz.gpg.cksum
     cd -
 
+    cp ${MISC_DIR}/madeira.gpg.public.key ${RELEASE_DIR}/madeira.gpg.public.key
     git add . -A
     git commit -m "v${1}"
     git push

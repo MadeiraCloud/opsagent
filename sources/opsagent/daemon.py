@@ -141,7 +141,7 @@ class Daemon():
     def restart(self, wait=False, end=False):
         self.stop(wait, end)
         # don't go too fast ...
-        time.sleep(1)
+        time.sleep(3)
         self.start()
 
     # get daemon status
