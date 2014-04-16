@@ -95,30 +95,32 @@ if [ $PLATFORM = "APT" ]; then
     # install python
     echo "Platform: APT"
     apt-get -y install python2.7 2>/dev/null
-    if [ $? -ne 0 ]; then
-        echo "Failed to install python 2.7, trying with python 2.6 ..." >&2
-        apt-get -y install python2.6
-    fi
+    apt-get -y install python2.6 2>/dev/null
+#    if [ $? -ne 0 ]; then
+#        echo "Failed to install python 2.7, trying with python 2.6 ..." >&2
+#        apt-get -y install python2.6
+#    fi
     # install other dependencies
     apt-get -y install expect-dev python-dev libapt-pkg-dev g++
 elif [ $PLATFORM = "YUM" ]; then
     # install python
     echo "Platform: YUM"
     yum -y install python27 2>/dev/null
-    if [ $? -ne 0 ]; then
-        echo "Failed to install python 2.7, trying with python 2.6 ..." >&2
-        yum -y install python26
-    fi
+    yum -y install python26 2>/dev/null
+#    if [ $? -ne 0 ]; then
+#        echo "Failed to install python 2.7, trying with python 2.6 ..." >&2
+#        yum -y install python26
+#    fi
     # install other dependencies
     yum -y install expect yum-utils
 fi
 # define python version
-if [ $(which python2.7 2>/dev/null) ]; then
-    echo "python 2.7 found"
-    PYTHON="python2.7"
-elif [ $(which python2.6 2>/dev/null) ]; then
+if [ $(which python2.6 2>/dev/null) ]; then
     echo "python 2.6 found"
     PYTHON="python2.6"
+elif [ $(which python2.7 2>/dev/null) ]; then
+    echo "python 2.7 found"
+    PYTHON="python2.7"
 else
     echo "FATAL: Python2 not installed! (can't install!)" >&2
     exit 1
