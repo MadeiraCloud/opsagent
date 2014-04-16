@@ -48,8 +48,8 @@ class Config():
 
     defaultValues = {
         'global': {
-#            'loglvl': 'INFO', #TODO: switch
-            'loglvl': 'DEBUG',
+            'loglvl': 'INFO',
+#            'loglvl': 'DEBUG', #switch to debug
             'proc': '/proc',
             'pidfile': '/tmp/opsagentd.pid',
             'haltfile': '/tmp/opsagentd.halt',
