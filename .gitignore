@@ -17,6 +17,7 @@ develop-eggs
 .installed.cfg
 lib
 lib64
+__pycache__
 
 # Installer logs
 pip-log.txt
@@ -34,8 +35,23 @@ nosetests.xml
 .project
 .pydevproject
 
-# emacs files
+# emacs tmp
 *~
 .*~
-#*#
-.#*#
+\#*\#
+.\#*\#
+
+# mac folder info
+.DS_Store
+
+# others
+*.swp
+.settings/
+*DS_Store
+.idea/
+test*.sh
+
+build/
+build_old/
+build_stable/
+release/
