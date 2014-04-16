@@ -43,7 +43,7 @@ if [ $(which apt-get 2>/dev/null) ]; then
     PLATFORM="APT"
     apt-get -y update
     if [ "$1" != "update" ]; then
-        apt-get -y upgrade openssl
+        apt-get -y install openssl
     fi
 elif [ $(which yum 2>/dev/null) ]; then
     PLATFORM="YUM"

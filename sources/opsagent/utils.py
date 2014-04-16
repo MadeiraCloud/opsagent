@@ -152,7 +152,8 @@ class CompatMatrix():
             }
 
     def add(self, sign, version):
-        self.__map[sign](version)
+        if self.__map.get(sign):
+            self.__map[sign](version)
 
     def gt(self, version):
         self.__m.setdefault(version,{})
@@ -202,11 +203,13 @@ class CompatMatrix():
 def compat_checker(version, compat):
     m = CompatMatrix()
     try:
-        with open(compat,'r') as f:
-            lines = f.readline()
-            for l in lines:
-                l.strip().split()
-                m.add(l[0],l[1])
+        f = file(compat,'r')
+        for l in f:
+            l = l.strip()
+            if not l:
+                continue
+            l = l.split()
+            m.add(l[0],l[1])
     except Exception as e:
         log("WARNING", "can't read compatibily file %s: %s"%(compat,e),('compat_checker','utils'))
         return False
