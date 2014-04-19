@@ -133,6 +133,20 @@ class StateRunner(object):
 		for idx, state in enumerate(states):
 			utils.log("INFO", "Begin to execute the %dth salt state..." % (idx+1), ("exec_salt", self))
 			try:
+				# init state
+				try:
+					module_list = []
+					for tag in state.keys():
+						module_list += state[tag].keys()
+
+					utils.log("INFO", "Check module list %s" % str(module_list), ("exec_salt", self))
+					if module_list and any(['npm' in module_list, 'gem' in module_list, 'pip' in module_list]):
+						self._init_state()
+				except Exception, e:
+					utils.log("ERROR", "Re-init state exception: %s" % str(e), ("exec_salt", self))
+					pass
+
+				utils.log("INFO", "Begin to execute salt state...", ("exec_salt", self))
 				ret = self.state.call_high(state)
 			except Exception, e:
 				utils.log("ERROR", "Execute salt state %s failed: %s"% (json.dumps(state), str(e)), ("exec_salt", self))
