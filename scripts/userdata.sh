@@ -4,14 +4,16 @@
 ## (c) 2014 MadeiraCloud LTD.
 ##
 
+echo "$0: Bootstraping started"
+
 if [ "$1" != "update" ]; then
     # disable agent during bootstrap, if not update
     if [ $(which chkconfig 2> /dev/null) ]; then
-        service opsagentd stop >&2 > /dev/null
-        chkconfig --del opsagentd >&2 > /dev/null
+        service opsagentd stop >&2 2> /dev/null
+        chkconfig --del opsagentd >&2 2> /dev/null
     elif [ $(which update-rc.d 2> /dev/null) ]; then
-        service opsagentd stop >&2 > /dev/null
-        update-rc.d opsagentd disable >&2 > /dev/null
+        service opsagentd stop >&2 2> /dev/null
+        update-rc.d opsagentd disable >&2 2> /dev/null
     else
         service opsagentd stop >&2 > /dev/null
         echo "no service manager" >&2
@@ -151,5 +153,7 @@ if [ $CRON -eq 0 ]; then
 fi
 
 ((${OA_CONF_DIR}/cron.sh $1 >> ${OA_LOG_DIR}/bootstrap.log 2>&1)&)&
+
+echo "$0: Global bootstraping done. Cron launched in background ..."
 
 # EOF
