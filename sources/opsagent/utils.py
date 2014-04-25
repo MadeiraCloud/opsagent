@@ -20,7 +20,7 @@ from opsagent.exception import ManagerInvalidStatesRepoException
 # Defines
 DEBUG_DELAY=0
 DEBUG=10
-COLOR=True
+COLOR=False
 
 # Logging defines
 LOGGING_EQ = {
@@ -73,7 +73,7 @@ def log(action, content, fc=None):
                 if c
                 else "%s(): "%(f))
     pt = ("%s%s"%(out,content)
-          if not COLOR
+          if not COLOR and (logging.getLogger().getEffectiveLevel() is not DEBUG)
           else "%s%s%s%s"%(COLORS_EQ[action][0],out,content,COLORS_EQ[action][1]))
     LOGGING_EQ[action](pt)
 
