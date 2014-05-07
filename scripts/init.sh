@@ -49,6 +49,7 @@ elif [ $(which yum 2>/dev/null) ]; then
     PLATFORM="YUM"
     if [ "$1" != "update" ]; then
         yum -y update openssl
+        yum -y update nss-softokn-freebl
     fi
 fi
 
