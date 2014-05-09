@@ -282,8 +282,9 @@ class StateWorker(threading.Thread):
             utils.clone_repo(self.__config,self.__config['module']['root'],self.__config['module']['name'],self.__config['module']['mod_repo'])
             utils.checkout_repo(self.__config,self.__config['module']['root'],self.__config['module']['name'],self.__config['module']['mod_tag'],self.__config['module']['mod_repo'])
 
-        # avoid race (TODO improve)
-        time.sleep(1)
+        # avoid race (TODO ensure fix)
+        if self.__manager:
+            self.__manager.wait_recv()
 
         # state adaptor
         if self.__state_adaptor:

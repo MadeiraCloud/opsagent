@@ -12,6 +12,7 @@ import time
 import os
 import subprocess
 import re
+import threading
 # Library imports
 from ws4py.client.threadedclient import WebSocketClient
 # Custom import
@@ -44,6 +45,7 @@ class Manager(WebSocketClient):
         self.__config = config
         self.__connected = False
         self.__run = True
+        self.__recv_event = threading.Event()
 
         # actions map
         self.__actions = {
@@ -66,6 +68,10 @@ class Manager(WebSocketClient):
     # running status
     def running(self):
         return self.__run
+
+    # wait while receiving data
+    def wait_recv(self):
+        self.__recv_event.wait()
     ##
 
 
@@ -387,6 +393,9 @@ class Manager(WebSocketClient):
 
     # On message received
     def received_message(self, raw_data):
+        # don't init while receiving
+        self.__recv_event.clear()
+
         utils.log("INFO", "New message received from backend.",('received_message',self))
         utils.log("DEBUG", "Data: '%s'"%(raw_data),('received_message',self))
         try:
@@ -417,6 +426,9 @@ class Manager(WebSocketClient):
                     utils.log("INFO", "Action on code '%s' succeed"%(data['code']),('received_message',self))
             else:
                 utils.log("WARNING", "No action binded to received data",('received_message',self))
+
+        # free condition
+        self.__recv_event.set()
 
     ##
 ## ENF OF OBJECT
