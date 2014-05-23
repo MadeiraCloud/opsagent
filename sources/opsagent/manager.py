@@ -45,7 +45,10 @@ class Manager(WebSocketClient):
         self.__config = config
         self.__connected = False
         self.__run = True
+
+        # recv sync
         self.__recv_event = threading.Event()
+        self.__recv_event.set()
 
         # actions map
         self.__actions = {
@@ -63,6 +66,10 @@ class Manager(WebSocketClient):
         # states worker
         self.__states_worker = statesworker
 
+    # exit condition
+    def __exit__(self, type, value, traceback):
+        # avoid deadlock
+        self.__recv_event.set()
 
     ## HELPERS
     # running status
@@ -423,7 +430,7 @@ class Manager(WebSocketClient):
                 except Exception as e:
                     utils.log("ERROR", "Unknown exception cought '%s'"%(e),('received_message',self))
                 else:
-                    utils.log("INFO", "Action on code '%s' succeed"%(data['code']),('received_message',self))
+                    utils.log("INFO", "Action on code '%s' succeed"%((data.get('code') if data else None)),('received_message',self))
             else:
                 utils.log("WARNING", "No action binded to received data",('received_message',self))
 
