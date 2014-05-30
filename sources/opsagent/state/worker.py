@@ -37,7 +37,7 @@ FAIL=False
 # Time to resend if failure
 WAIT_RESEND=2
 # Time before retrying state execution
-WAIT_STATE_RETRY=0
+WAIT_STATE_RETRY=5
 # Time to wait between each state (don't overload)
 WAIT_STATE=0
 # Reset value for recipe version counter (no overflow)
