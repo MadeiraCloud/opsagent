@@ -102,6 +102,13 @@ fi
 chown root:root \${OA_LOG_DIR}/bootstrap.log
 chmod 640 \${OA_LOG_DIR}/bootstrap.log
 
+# install curl
+if [ \$(which apt-get 2>/dev/null) ]; then
+    apt-get -y install curl
+elif [ \$(which yum 2>/dev/null) ]; then
+    yum -y install curl
+fi
+
 echo "Getting public key ..."
 curl -sSL -o \${OA_GPG_KEY} \${GPG_KEY_URI}
 if [ \$? -eq 0 ] && [ -f \${OA_GPG_KEY} ]; then
