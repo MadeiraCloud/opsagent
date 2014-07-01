@@ -12,6 +12,7 @@ import subprocess
 import os
 import shutil
 import collections
+import re
 
 # Custom imports
 from opsagent.exception import ManagerInvalidStatesRepoException
@@ -219,3 +220,14 @@ def compat_checker(version, compat):
     else:
         log("WARNING", "Curent version %s NOT compatible with states"%(version),('compat_checker','utils'))
     return res
+
+# update config file value
+def update_config_file(config, key, value):
+    try:
+        with open(config['runtime']['config_path'], 'r+') as f:
+            content = re.sub(r"%s=(.*)\n"%(key),"%s=%s\n"%(key,value),f.read())
+            f.seek(0)
+            f.write(content)
+    except Exception as e:
+        log("WARNING",
+            "Can't save %s in config file '%s': %e"%(key,config['runtime']['config_path'],e),('update_config_file','utils'))

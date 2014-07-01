@@ -29,6 +29,33 @@ def get_aws_data(url):
         raise AWSNotFoundException
     return res
 
+# parse user data script
+def parse_ud(ud, keys):
+    v = {}
+    for key in keys:
+        m = re.search("%s=(.*)\n"%(key),ud)
+        if m:
+            v[key.lower()] = m.group(1)
+    return v
+
+# Get userdata
+def userdata(config, manager):
+    ud = None
+    while not ud:
+        if not manager.running():
+            utils.log("WARNING", "Execution aborting, exiting ...",('userdata','aws'))
+            return None
+        utils.log("DEBUG", "Getting userdata ...",('userdata','aws'))
+        try:
+            ud = get_aws_data(config['network']['userdata'])
+        except AWSNotFoundException:
+            utils.log("WARNING", "Userdata not found. Retrying in %s seconds."%(WAIT_RETRY),('userdata','aws'))
+            time.sleep(WAIT_RETRY)
+        except Exception as e:
+            utils.log("WARNING", "User data failure, error: '%s'. Retrying in %s seconds"%(e,WAIT_RETRY),('userdata','aws'))
+            time.sleep(WAIT_RETRY)
+    return parse_ud(ud, ["APP_ID","WS_URI","VERSION","BASE_REMOTE","GPG_KEY_URI"])
+
 # Get instance ID from AWS
 def instance_id(config, manager):
     iid = None
