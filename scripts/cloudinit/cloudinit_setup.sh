@@ -14,7 +14,7 @@ curl -sSLO http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-${VERSION}
 sudo rpm -Uvh epel-release-*.rpm
 
 # install cloudinitd and its depencies
-yum -y install python-devel gcc python-pip
+yum -y install python-devel gcc python-pip perl
 pip install --upgrade cloudinitd
 
 # place run userdata script
@@ -27,7 +27,8 @@ chkconfig ec2-run-user-data on
 # start service
 echo -n "Cloudinit has been correctly configured. Would you like to start the service now? [y/N] "
 if [ "$1" = "-y" ]; then
-    c_start="y" && echo "y"
+    c_start="y"
+    echo "y"
 else
     read c_start
 fi
