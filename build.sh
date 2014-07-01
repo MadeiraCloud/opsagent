@@ -111,6 +111,13 @@ function update() {
     git pull
 }
 
+function merge() {
+    git checkout master
+    git pull origin master
+    git merge develop
+    git push origin master
+}
+
 case $1 in
     tree)
         tree
@@ -129,6 +136,7 @@ case $1 in
         tree "${RELEASE_NAME}"
         cd ${ROOT}
         publish "${RELEASE_NAME}"
+        merge
         ;;
     *)
         echo -e "syntax error\nusage: $USAGE"
