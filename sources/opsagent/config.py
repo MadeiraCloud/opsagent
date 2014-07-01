@@ -12,6 +12,7 @@ from ConfigParser import SafeConfigParser
 from copy import deepcopy
 import sys
 import os
+import re
 
 # Custon imports
 from opsagent.exception import ConfigFileFormatException, ConfigFileException
@@ -63,6 +64,7 @@ class Config():
             },
         'network': {
             'instance_id': "http://169.254.169.254/latest/meta-data/instance-id",
+            'userdata': "http://169.254.169.254/latest/user-data",
             },
         'salt': {
             'pkg_cache': '/var/cache/pkg',

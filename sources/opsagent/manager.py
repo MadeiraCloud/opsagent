@@ -61,6 +61,7 @@ class Manager(WebSocketClient):
         # init
         self.__error_dir = self.__init_dir()
         self.__error_proc = self.__mount_proc()
+        self.__update_ud()
         self.__config['init'] = self.__get_id()
 
         # states worker
@@ -137,13 +138,7 @@ class Manager(WebSocketClient):
                 self.__config['runtime']['clone'] = False
             else:
                 self.__config['module']['mod_repo'] = module_repo
-                try:
-                    with open(self.__config['runtime']['config_path'], 'r+') as f:
-                        content = re.sub(r'mod_repo=(.*)\n',"mod_repo=%s\n"%(module_repo),f.read())
-                        f.seek(0)
-                        f.write(content)
-                except Exception as e:
-                    utils.log("WARNING", "Can't save URI repo in config file '%s': %e"%(self.__config['runtime']['config_path'],e),('__act_recipe',self))
+                utils.update_config_file(self.__config, "mod_repo", module_repo)
         if clone or module_tag != self.__config['module']['mod_tag']:
             try:
                 utils.checkout_repo(self.__config,
@@ -155,13 +150,7 @@ class Manager(WebSocketClient):
                 self.__config['runtime']['tag'] = False
             else:
                 self.__config['module']['mod_tag'] = module_tag
-                try:
-                    with open(self.__config['runtime']['config_path'], 'r+') as f:
-                        content = re.sub(r'mod_tag=(.*)\n',"mod_tag=%s\n"%(module_tag),f.read())
-                        f.seek(0)
-                        f.write(content)
-                except Exception as e:
-                    utils.log("WARNING", "Can't save tag version in config file '%s': %s"%(self.__config['runtime']['config_path'],e),('__act_recipe',self))
+                utils.update_config_file(self.__config, "mod_tag", module_tag)
 
     # Recipe object received
     def __act_recipe(self, data):
@@ -328,6 +317,18 @@ class Manager(WebSocketClient):
                 'app_id':app_id,
                 'instance_token':token,
                 })
+
+    # update userdata variables
+    def __update_ud(self):
+        utils.log("DEBUG", "Updating userdata variables ...",('__update_ud',self))
+        ud = aws.userdata(self.__config, self)
+        for key in ud:
+            if self.__config['userdata'].get(key) != ud[key]:
+                utils.update_config_file(self.__config, key, ud[key])
+                utils.log("INFO", "%s has been updated from %s to %s."%(key,self.__config['userdata'].get(key),ud[key]),
+                          ('__update_ud',self))
+                self.__config['userdata'][key] = ud[key]
+        utils.log("DEBUG", "Userdata variables updated.",('__update_ud',self))
     ##
 
 
