@@ -102,22 +102,22 @@ fi
 chown root:root \${OA_LOG_DIR}/bootstrap.log
 chmod 640 \${OA_LOG_DIR}/bootstrap.log
 
-# install curl
+# install wget
 if [ \$(which apt-get 2>/dev/null) ]; then
-    apt-get -y install curl
+    apt-get -y install wget
 elif [ \$(which yum 2>/dev/null) ]; then
-    yum -y install curl
+    yum -y install wget
 fi
 
 echo "Getting public key ..."
-curl -sSL -o \${OA_GPG_KEY} \${GPG_KEY_URI}
+wget -nv -O \${OA_GPG_KEY} \${GPG_KEY_URI}
 if [ \$? -eq 0 ] && [ -f \${OA_GPG_KEY} ]; then
     echo "Public key downloaded."
     chmod 440 \${OA_GPG_KEY}
 
     echo "Getting init script ..."
-    curl -sSL -o \${OA_CONF_DIR}/init.sh.gpg \${OA_REMOTE}/init.sh.gpg
-    curl -sSL -o \${OA_CONF_DIR}/init.sh.gpg.cksum \${OA_REMOTE}/init.sh.gpg.cksum
+    wget -nv -O \${OA_CONF_DIR}/init.sh.gpg \${OA_REMOTE}/init.sh.gpg
+    wget -nv -O \${OA_CONF_DIR}/init.sh.gpg.cksum \${OA_REMOTE}/init.sh.gpg.cksum
     cd \${OA_CONF_DIR}
     REF_CKSUM="\$(cat \${OA_CONF_DIR}/init.sh.gpg.cksum)"
     CUR_CKSUM="\$(cksum init.sh.gpg)"

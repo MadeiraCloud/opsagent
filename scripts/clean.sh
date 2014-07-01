@@ -45,9 +45,9 @@ else
 fi
 
 if [ "$1" = "reinstall" ]; then
-    curl -sSL "http://169.254.169.254/latest/user-data" -o /tmp/userdata.sh
+    wget -nv "http://169.254.169.254/latest/user-data" -O /tmp/userdata.sh
     if [ $? -ne 0 ]; then
-        curl -sSL ${DOA_REMOTE}/userdata.sh -o /tmp/userdata.sh
+        wget -nv ${DOA_REMOTE}/userdata.sh -O /tmp/userdata.sh
     fi
 
     bash /tmp/userdata.sh

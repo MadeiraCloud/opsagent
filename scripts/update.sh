@@ -32,8 +32,8 @@ export GPG_KEY_URI=$5
 
 OA_REMOTE="${BASE_REMOTE}/${VERSION}"
 
-curl -sSL -o ${OA_CONF_DIR}/userdata.sh.gpg ${OA_REMOTE}/userdata.sh.gpg
-curl -sSL -o ${OA_CONF_DIR}/userdata.sh.gpg.cksum ${OA_REMOTE}/userdata.sh.gpg.cksum
+wget -nv -O ${OA_CONF_DIR}/userdata.sh.gpg ${OA_REMOTE}/userdata.sh.gpg
+wget -nv -O ${OA_CONF_DIR}/userdata.sh.gpg.cksum ${OA_REMOTE}/userdata.sh.gpg.cksum
 
 cd ${OA_CONF_DIR}
 REF_CKSUM="$(cat ${OA_CONF_DIR}/userdata.sh.gpg.cksum)"

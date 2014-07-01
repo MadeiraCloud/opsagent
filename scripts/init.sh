@@ -162,7 +162,8 @@ function update_sources() {
     if [ -f ${OA_BOOT_DIR}/${1}.tgz ]; then
         CUR_VERSION="$(cat ${OA_BOOT_DIR}/${1}.tgz.gpg.cksum)"
         RETVAL_CUR=$?
-        LAST_VERSION="$(curl -sSL ${OA_REMOTE}/${1}.tgz.gpg.cksum)"
+        wget -nv ${OA_REMOTE}/${1}.tgz.gpg.cksum -O /tmp/opsagent.last
+        LAST_VERSION="$(cat /tmp/opsagent.last)"
         RETVAL_LAST=$?
         VALID="$(echo ${LAST_VERSION} | grep ${1}.tgz | wc -l)"
         RETVAL_VALID=$?
@@ -183,8 +184,8 @@ function update_sources() {
 # sources update fetch
 function get_sources() {
     rm -f ${OA_BOOT_DIR}/${1}.tgz.gpg
-    curl -sSL -o ${OA_BOOT_DIR}/${1}.tgz.gpg ${OA_REMOTE}/${1}.tgz.gpg
-    curl -sSL -o ${OA_BOOT_DIR}/${1}.tgz.gpg.cksum ${OA_REMOTE}/${1}.tgz.gpg.cksum
+    wget -nv -O ${OA_BOOT_DIR}/${1}.tgz.gpg ${OA_REMOTE}/${1}.tgz.gpg
+    wget -nv -O ${OA_BOOT_DIR}/${1}.tgz.gpg.cksum ${OA_REMOTE}/${1}.tgz.gpg.cksum
 
     cd ${OA_BOOT_DIR}
     REF_CKSUM="$(cat ${OA_BOOT_DIR}/${1}.tgz.gpg.cksum)"
