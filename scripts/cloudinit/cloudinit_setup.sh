@@ -1,7 +1,13 @@
 #!/bin/bash
 # Author: Thibault BRONCHAIN
 
+USAGE="$0 [-yh]"
 VERSION="6-8"
+
+if [ "$1" = "-h" ]; then
+    echo "syntax: $USAGE"
+    exit 0
+fi
 
 # activate EPEL repo
 curl -sSLO http://dl.fedoraproject.org/pub/epel/6/x86_64/epel-release-${VERSION}.noarch.rpm
@@ -20,7 +26,11 @@ chkconfig ec2-run-user-data on
 
 # start service
 echo -n "Cloudinit has been correctly configured. Would you like to start the service now? [y/N] "
-read c_start
+if [ "$1" = "-y" ]; then
+    c_start="y" && echo "y"
+else
+    read c_start
+fi
 if [ "$c_start" = "y" ]; then
     service ec2-run-user-data start
 else
