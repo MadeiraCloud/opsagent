@@ -49,7 +49,7 @@ def userdata(config, manager):
         try:
             ud = get_aws_data(config['network']['userdata'])
         except AWSNotFoundException:
-            utils.log("WARNING", "Userdata not found. Retrying in %s seconds."%(WAIT_RETRY),('userdata','aws'))
+            utils.log("WARNING", "Userdata not found. Retrying in %s seconds"%(WAIT_RETRY),('userdata','aws'))
             time.sleep(WAIT_RETRY)
         except Exception as e:
             utils.log("WARNING", "User data failure, error: '%s'. Retrying in %s seconds"%(e,WAIT_RETRY),('userdata','aws'))
@@ -67,21 +67,21 @@ def instance_id(config, manager):
         try:
             iid = get_aws_data(config['network']['instance_id'])
         except AWSNotFoundException:
-            utils.log("ERROR", "Instance ID not found, retrying in '%s' seconds."%(WAIT_RETRY),('instance_id','aws'))
+            utils.log("ERROR", "Instance ID not found, retrying in '%s' seconds"%(WAIT_RETRY),('instance_id','aws'))
             time.sleep(WAIT_RETRY)
         except Exception as e:
-            utils.log("ERROR", "Instance ID failure, unknown error: '%s', retrying in '%s' seconds."%(e,WAIT_RETRY),('instance_id','aws'))
+            utils.log("ERROR", "Instance ID failure, unknown error: '%s', retrying in '%s' seconds"%(e,WAIT_RETRY),('instance_id','aws'))
             time.sleep(WAIT_RETRY)
     return iid
 
 # Get token from disk
 def token(config):
     f = config['global'].get('token')
-    utils.log("DEBUG", "Getting token located in %s."%(f),('token','aws'))
+    utils.log("DEBUG", "Getting token located in %s"%(f),('token','aws'))
     t = ''
     try:
         with open(f, 'r') as f:
             t = f.read()
     except Exception as e:
-        utils.log("ERROR", "Can't get retreive token file (%s): %s."%(f,e),('token','aws'))
+        utils.log("ERROR", "Can't get retreive token file (%s): %s"%(f,e),('token','aws'))
     return t

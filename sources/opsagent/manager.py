@@ -171,7 +171,7 @@ class Manager(WebSocketClient):
                 raise ManagerInvalidStateFormatException
             module_tag = module.get("tag")
             if not module_tag or not isinstance(module_tag, basestring):
-                utils.log("ERROR", "Invalid modules tag.",('__act_recipe',self))
+                utils.log("ERROR", "Invalid modules tag",('__act_recipe',self))
                 raise ManagerInvalidStateFormatException
         elif (not self.__config['module']['mod_repo']) or (not self.__config['module']['mod_tag']):
             utils.log("ERROR", "No modules details and no repo details present",('__act_recipe',self))
@@ -277,12 +277,12 @@ class Manager(WebSocketClient):
             try:
                 os.makedirs(proc,0755)
             except Exception as e:
-                err = "Can't create '%s' directory: '%s'. FATAL."%(proc,e)
+                err = "Can't create '%s' directory: '%s'. FATAL"%(proc,e)
                 utils.log("ERROR", err,('__mount_proc_try',self))
                 return err
         p = subprocess.Popen(['mount','-t','proc','proc',proc])
         if p.wait():
-            err = "Can't mount procfs on '%s'. FATAL."%(proc)
+            err = "Can't mount procfs on '%s'. FATAL"%(proc)
             utils.log("ERROR", err,('__mount_proc_try',self))
             return err
         return None
@@ -297,7 +297,7 @@ class Manager(WebSocketClient):
                 return self.__mount_proc_try(proc, directory=True)
             self.__config['runtime']['proc'] = True
         except Exception as e:
-            err = "Unknown error: can't mount procfs on %s: '%s'. FATAL."%(e,proc)
+            err = "Unknown error: can't mount procfs on %s: '%s'. FATAL"%(e,proc)
             utils.log("ERROR", err,('__mount_proc',self))
             return [err]
         self.__config['runtime']['proc'] = True
@@ -325,10 +325,10 @@ class Manager(WebSocketClient):
         for key in ud:
             if self.__config['userdata'].get(key) != ud[key]:
                 utils.update_config_file(self.__config, key, ud[key])
-                utils.log("INFO", "%s has been updated from %s to %s."%(key,self.__config['userdata'].get(key),ud[key]),
+                utils.log("INFO", "%s has been updated from %s to %s"%(key,self.__config['userdata'].get(key),ud[key]),
                           ('__update_ud',self))
                 self.__config['userdata'][key] = ud[key]
-        utils.log("DEBUG", "Userdata variables updated.",('__update_ud',self))
+        utils.log("DEBUG", "Userdata variables updated",('__update_ud',self))
     ##
 
 
@@ -348,7 +348,7 @@ class Manager(WebSocketClient):
             utils.log("DEBUG", "Reset succeed",('__close',self))
         utils.log("DEBUG", "Closing socket ...",('__close',self))
         self.close(code, reason)
-        utils.log("INFO", "Socket closed, connection terminated.",('__close',self))
+        utils.log("INFO", "Socket closed, connection terminated",('__close',self))
 
     # Send data to backend
     def send_json(self, raw_data):
@@ -409,7 +409,7 @@ class Manager(WebSocketClient):
         try:
             utils.log("DEBUG", "Converting received json data to dict",('received_message',self))
             data = json.loads(u'%s'%(raw_data))
-            utils.log("INFO", "Message converted from json.",('received_message',self))
+            utils.log("INFO", "Message converted from json",('received_message',self))
         except Exception as e:
             utils.log("CRITICAL", "Can't convert received json data to dict '%s'. FATAL"%(e),('received_message',self))
             self.__close(reset=True,
