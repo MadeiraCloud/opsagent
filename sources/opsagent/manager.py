@@ -86,27 +86,27 @@ class Manager(WebSocketClient):
     ## ACTIONS
     # Renegociate Hangshake if app not started
     def __act_retry_hs(self, data):
-        utils.log("INFO", "Handshake rejected by server.",('__act_retry_hs',self))
+        utils.log("INFO", "Handshake rejected by server",('__act_retry_hs',self))
         self.__config['init'] = self.__get_id()
-        utils.log("INFO", "Retrying in %s seconds."%(WAIT_CONNECT),('__act_retry_hs',self))
+        utils.log("INFO", "Retrying in %s seconds"%(WAIT_CONNECT),('__act_retry_hs',self))
         time.sleep(WAIT_CONNECT)
         utils.log("DEBUG", "Reconnecting ...",('__act_retry_hs',self))
         self.send_json(send.handshake(self.__config, self.__error_proc+self.__error_dir))
 
     # Update agent signal received
     def __act_update(self, data):
-        utils.log("INFO", "Update signal received.",('__act_update',self))
+        utils.log("INFO", "Update signal received",('__act_update',self))
 
         # check version
         version = str(data.get("version"))
         if not version:
-            utils.log("ERROR", "Invalid version.",('__act_update',self))
+            utils.log("ERROR", "Invalid version",('__act_update',self))
             raise ManagerInvalidUpdateFormatException
 
         # check url
         url = str(data.get("url"))
         if not url:
-            utils.log("ERROR", "Invalid URL.",('__act_update',self))
+            utils.log("ERROR", "Invalid URL",('__act_update',self))
             raise ManagerInvalidUpdateFormatException
 
         utils.my_subprocess([[
@@ -120,7 +120,7 @@ class Manager(WebSocketClient):
                 os.path.join(self.__config['global']['log_path'],'bootstrap.log')),
         ],["crontab"]])
 
-        utils.log("INFO", "Update planned.",('__act_update',self))
+        utils.log("INFO", "Update planned",('__act_update',self))
 
     # update states repo
     def __update_repo(self, module_repo, module_tag):
@@ -154,12 +154,12 @@ class Manager(WebSocketClient):
 
     # Recipe object received
     def __act_recipe(self, data):
-        utils.log("INFO", "New recipe received.",('__act_recipe',self))
+        utils.log("INFO", "New recipe received",('__act_recipe',self))
 
         # check version
         version = data.get("recipe_version")
         if not version or type(version) is not int:
-            utils.log("ERROR", "Invalid version.",('__act_recipe',self))
+            utils.log("ERROR", "Invalid version",('__act_recipe',self))
             raise ManagerInvalidStateFormatException
 
         # check module
@@ -167,14 +167,14 @@ class Manager(WebSocketClient):
         if module and type(module) is dict:
             module_repo = module.get("repo")
             if not module_repo or not isinstance(module_repo, basestring):
-                utils.log("ERROR", "Invalid modules repo URI.",('__act_recipe',self))
+                utils.log("ERROR", "Invalid modules repo URI",('__act_recipe',self))
                 raise ManagerInvalidStateFormatException
             module_tag = module.get("tag")
             if not module_tag or not isinstance(module_tag, basestring):
                 utils.log("ERROR", "Invalid modules tag.",('__act_recipe',self))
                 raise ManagerInvalidStateFormatException
         elif (not self.__config['module']['mod_repo']) or (not self.__config['module']['mod_tag']):
-            utils.log("ERROR", "No modules details and no repo details present.",('__act_recipe',self))
+            utils.log("ERROR", "No modules details and no repo details present",('__act_recipe',self))
             raise ManagerInvalidStateFormatException
         else:
             module_repo = self.__config['module']['mod_repo']
@@ -184,17 +184,17 @@ class Manager(WebSocketClient):
         states = data.get("state")
         if states:
             if type(states) is not list:
-                utils.log("ERROR", "Invalid states: not list.",('__act_recipe',self))
+                utils.log("ERROR", "Invalid states: not list",('__act_recipe',self))
                 raise ManagerInvalidStateFormatException
             for state in states:
                 if type(state) is not dict:
-                    utils.log("ERROR", "Invalid state: not a dict.",('__act_recipe',self))
+                    utils.log("ERROR", "Invalid state: not a dict",('__act_recipe',self))
                     raise ManagerInvalidStateFormatException
                 if ("id" not in state) or ("module" not in state) or ("parameter" not in state):
-                    utils.log("ERROR", "Invalid state: parameter missing.",('__act_recipe',self))
+                    utils.log("ERROR", "Invalid state: parameter missing",('__act_recipe',self))
                     raise ManagerInvalidStateFormatException
 
-        utils.log("DEBUG", "Valid data.",('__act_recipe',self))
+        utils.log("DEBUG", "Valid data",('__act_recipe',self))
 
         # update repo
         self.__update_repo(module_repo, module_tag)
@@ -212,33 +212,33 @@ class Manager(WebSocketClient):
         if (not curent_version) or (curent_version != version) or (not self.__states_worker.is_running()):
             utils.log("INFO", "Killing current execution ...",('__act_recipe',self))
             self.__states_worker.kill()
-            utils.log("DEBUG", "Execution killed.",('__act_recipe',self))
+            utils.log("DEBUG", "Execution killed",('__act_recipe',self))
             utils.log("INFO", "Loading states received ...",('__act_recipe',self))
             self.__states_worker.load(version=version,states=states)
-            utils.log("INFO", "States loaded.",('__act_recipe',self))
+            utils.log("INFO", "States loaded",('__act_recipe',self))
         else:
-            utils.log("WARNING", "Version '%s' is already the current version."%(version),('__act_recipe',self))
+            utils.log("WARNING", "Version '%s' is already the current version"%(version),('__act_recipe',self))
 
 
     # Waited state succeed
     def __act_wait(self, data):
-        utils.log("INFO", "Waited state done received.",('__act_wait',self))
+        utils.log("INFO", "Waited state done received",('__act_wait',self))
         version = data.get("recipe_version")
         if not version or type(version) is not int:
-            utils.log("ERROR", "Invalid version.",('__act_wait',self))
+            utils.log("ERROR", "Invalid version",('__act_wait',self))
             raise ManagerInvalidWaitFormatException
         state_id = data.get("id")
         if not state_id or not isinstance(state_id, basestring):
-            utils.log("ERROR", "Invalid state id.",('__act_wait',self))
+            utils.log("ERROR", "Invalid state id",('__act_wait',self))
             raise ManagerInvalidWaitFormatException
 
-        utils.log("DEBUG", "Valid data.",('__act_wait',self))
+        utils.log("DEBUG", "Valid data",('__act_wait',self))
 
         curent_version = self.__states_worker.get_version()
         if (curent_version) and (curent_version == version):
-            utils.log("INFO", "Adding state '%s' to done list."%(state_id),('__act_wait',self))
+            utils.log("INFO", "Adding state '%s' to done list"%(state_id),('__act_wait',self))
             self.__states_worker.state_done(state_id)
-            utils.log("DEBUG", "State '%s' added to done list."%(state_id),('__act_wait',self))
+            utils.log("DEBUG", "State '%s' added to done list"%(state_id),('__act_wait',self))
         else:
             utils.log("WARNING", "Wrong version number, curent='%s', received='%s'"%(curent_version,version),('__act_wait',self))
     ##
@@ -261,11 +261,11 @@ class Manager(WebSocketClient):
                 if not os.access(directory, os.W_OK):
                     raise ManagerInitDirDeniedException
             except ManagerInitDirDeniedException:
-                err = "'%s' directory not writable. FATAL."%(directory)
+                err = "'%s' directory not writable. FATAL"%(directory)
                 utils.log("ERROR", err,('__init_dir',self))
                 errors.append(err)
             except Exception as e:
-                err = "Can't create '%s' directory: '%s'. FATAL."%(directory,e)
+                err = "Can't create '%s' directory: '%s'. FATAL"%(directory,e)
                 utils.log("ERROR", err,('__init_dir',self))
                 errors.append(err)
         return (errors)
@@ -369,13 +369,13 @@ class Manager(WebSocketClient):
             try:
                 self.send(json_data)
             except Exception as e:
-                utils.log("ERROR", "Data failed to send: '%s'."%(e),('send_json',self))
+                utils.log("ERROR", "Data failed to send: '%s'"%(e),('send_json',self))
                 self.__close(reset=False,
                              code=codes.C_INVALID_WRITE,
                              reason=codes.M_INVALID_WRITE)
             else:
                 success = True
-                utils.log("INFO", "Data successfully sent to backend.",('send_json',self))
+                utils.log("INFO", "Data successfully sent to backend",('send_json',self))
         return success
 
     # Connection status
@@ -404,7 +404,7 @@ class Manager(WebSocketClient):
         # don't init while receiving
         self.__recv_event.clear()
 
-        utils.log("INFO", "New message received from backend.",('received_message',self))
+        utils.log("INFO", "New message received from backend",('received_message',self))
         utils.log("DEBUG", "Data: '%s'"%(raw_data),('received_message',self))
         try:
             utils.log("DEBUG", "Converting received json data to dict",('received_message',self))
