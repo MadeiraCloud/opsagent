@@ -324,10 +324,12 @@ class Manager(WebSocketClient):
         ud = aws.userdata(self.__config, self)
         for key in ud:
             if self.__config['userdata'].get(key) != ud[key]:
-                utils.update_config_file(self.__config, key, ud[key])
-                utils.log("INFO", "%s has been updated from %s to %s"%(key,self.__config['userdata'].get(key),ud[key]),
-                          ('__update_ud',self))
-                self.__config['userdata'][key] = ud[key]
+                if utils.update_config_file(self.__config, key, ud[key]):
+                    utils.log("INFO", "%s has been updated from %s to %s"%(key,self.__config['userdata'].get(key),ud[key]),
+                              ('__update_ud',self))
+                    self.__config['userdata'][key] = ud[key]
+                    if key in self.__config['global']['token_reset']:
+                        utils.reset_token(self.__config)
         utils.log("DEBUG", "Userdata variables updated",('__update_ud',self))
     ##
 
