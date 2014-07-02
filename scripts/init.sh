@@ -137,6 +137,7 @@ log_path=${OA_LOG_DIR}
 package_path=${OA_ENV_DIR}/lib/${PYTHON}/site-packages
 scripts_path=${OA_BOOT_DIR}/opsagent/scripts
 token=${OA_TOKEN}
+user=${OA_USER}
 watch=${OA_WATCH_DIR}
 logfile=${OA_LOG_FILE}
 [userdata]

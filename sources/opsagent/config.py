@@ -49,11 +49,13 @@ class Config():
 
     defaultValues = {
         'global': {
+            'user': 'root',
             'loglvl': 'INFO',
 #            'loglvl': 'DEBUG', #switch to debug
             'proc': '/proc',
             'pidfile': '/tmp/opsagentd.pid',
             'haltfile': '/tmp/opsagentd.halt',
+            'token_reset': ['app_id'],
             },
         'runtime': {
             'proc': False,

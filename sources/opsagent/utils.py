@@ -231,3 +231,24 @@ def update_config_file(config, key, value):
     except Exception as e:
         log("WARNING",
             "Can't save %s in config file '%s': %e"%(key,config['runtime']['config_path'],e),('update_config_file','utils'))
+        return False
+    return True
+
+# reset token file
+def reset_token(config):
+    commands = [
+        ["rm","-f",config['global']['token']],
+        ["ssh-keygen","-b","2048","-q","-P","''","-f",config['global']['token']],
+        ["rm","-f","%s.pub"%(config['global']['token'])],
+        ["chown","%s:root"%(config['global']['user']),config['global']['token']],
+        ["chmod","400",config['global']['token']],
+    ]
+    for cmd in commands:
+        try:
+            r = subprocess.check_call(cmd)
+            log("INFO", "Command succeed %s: %s"%(" ".join(cmd),r),('reset_token','utils'))
+        except Exception as e:
+            log("WARNING", "Can't run command '%s': %s"%(cmd,e),('reset_token','utils'))
+            return False
+    log("INFO", "Token updated",('reset_token','utils'))
+    return True
