@@ -104,21 +104,21 @@ class Config():
                 self.check_required(Config.requiredKeys)
                 self.chroot(root=self.__c['global']['envroot'], mod=Config.chrootKeys)
             except ConfigFileFormatException:
-                sys.stderr.write("ERROR: Invalid config file '%s'.\n"%(f))
+                sys.stderr.write("ERROR: Invalid config file '%s'\n"%(f))
                 raise ConfigFileException
             except Exception as e:
                 sys.stderr.write("ERROR: Invalid config file '%s': %s\n"%(f,e))
                 raise ConfigFileException
             else:
-                sys.stdout.write("Config file loaded '%s'.\n"%(f))
+                sys.stdout.write("Config file loaded '%s'\n"%(f))
 
     def __read_file(self, f):
         try:
             self.__parser.read(f)
         except ConfigParser.ParsingError as e:
-            sys.stderr.write("ERROR: Can't load config file %s, %s.\n"%(f,e))
+            sys.stderr.write("ERROR: Can't load config file %s, %s\n"%(f,e))
         else:
-            sys.stdout.write("Config file parsed '%s'.\n"%(f))
+            sys.stdout.write("Config file parsed '%s'\n"%(f))
 
     def parse_file(self, f=None):
         if f:
@@ -133,12 +133,12 @@ class Config():
         valid = True
         for section in required:
             if section not in self.__c:
-                sys.stderr.write("ERROR: Missing section '%s' in current configuration file.\n"%(section))
+                sys.stderr.write("ERROR: Missing section '%s' in current configuration file\n"%(section))
                 valid = False
                 continue
             for key in required[section]:
                 if key not in self.__c[section]:
-                    sys.stderr.write("ERROR: Missing key '%s' in section '%s' in current configuration file.\n"%(key,section))
+                    sys.stderr.write("ERROR: Missing key '%s' in section '%s' in current configuration file\n"%(key,section))
                     valid = False
         if not valid:
             raise ConfigFileException

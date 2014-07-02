@@ -102,8 +102,8 @@ class StateWorker(threading.Thread):
                     raise SWNoManagerException("Can't reach backend ...")
                 sent = self.__manager.send_json(data)
             except Exception as e:
-                utils.log("ERROR", "Can't send data '%s', reason: '%s'."%(data,e),('__send',self))
-                utils.log("WARNING", "Retrying in %s seconds."%(WAIT_RESEND),('__send',self))
+                utils.log("ERROR", "Can't send data '%s', reason: '%s'"%(data,e),('__send',self))
+                utils.log("WARNING", "Retrying in %s seconds"%(WAIT_RESEND),('__send',self))
                 time.sleep(WAIT_RESEND)
             else:
                 if sent:

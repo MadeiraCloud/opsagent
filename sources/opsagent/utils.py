@@ -131,11 +131,11 @@ def checkout_repo(config, path, name, tag, uri, n=0):
             if n == 0:
                 checkout_repo(config, path, name, tag, uri, n+1)
             else:
-                log("ERROR", "Can't switch to requested tag after cloning clean repo, aborting.",('checkout_repo','utils'))
+                log("ERROR", "Can't switch to requested tag after cloning clean repo, aborting",('checkout_repo','utils'))
                 raise ManagerInvalidStatesRepoException
             break
     if n == 0:
-        log("INFO", "Repo %s in %s successfully checkout at %s tag."%(name,spath,tag),('checkout_repo','utils'))
+        log("INFO", "Repo %s in %s successfully checkout at %s tag"%(name,spath,tag),('checkout_repo','utils'))
     return True
 
 

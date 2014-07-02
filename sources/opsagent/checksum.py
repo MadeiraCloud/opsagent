@@ -24,9 +24,9 @@ class Checksum():
             with open(self.__cksumpath,'r') as f:
                 self.__cksum = f.read()
         except Exception as e:
-            utils.log("DEBUG", "checksum can't be fetched from disk (file %s): %s."%(self.__cksumpath,e),('__init__',self))
+            utils.log("DEBUG", "checksum can't be fetched from disk (file %s): %s"%(self.__cksumpath,e),('__init__',self))
         else:
-            utils.log("DEBUG", "checksum fetched from disk (file %s): %s."%(self.__cksumpath,self.__cksum),('__init__',self))
+            utils.log("DEBUG", "checksum fetched from disk (file %s): %s"%(self.__cksumpath,self.__cksum),('__init__',self))
 
     # update checksum if changed, return change state
     # cksum:new checksum (if external)  persist:write on disk  tfirst:return true if no old cksum
