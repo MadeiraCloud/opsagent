@@ -44,6 +44,12 @@ WAIT_STATE=0
 RECIPE_COUNT_RESET=4096
 # Time to wait util re-check wait
 WAIT_TIMEOUT=30
+
+# Watch map
+WATCH={
+    "linux.service": "watch",
+    "common.dockerio.installed": "path",
+}
 ##
 
 
@@ -369,8 +375,10 @@ class StateWorker(threading.Thread):
         utils.log("INFO", "Loading state ID '%s' from module '%s' ..."%(sid,module),('__exec_salt',self))
 
         # Watch process
-        if parameter and type(parameter) is dict and parameter.get("watch"):
-            watchs = parameter.get("watch")
+        if parameter and type(parameter) is dict and parameter.get(WATCH[module]):
+            watchs = parameter.get(WATCH[module])
+            if type(watchs) is str:
+                watchs = [watchs]
             if type(watchs) is list:
                 utils.log("DEBUG", "Watched state detected",('__exec_salt',self))
                 del parameter["watch"]
