@@ -487,7 +487,7 @@ class StateWorker(threading.Thread):
     def __runner_init(self):
         # check empty list
         if not self.__states:
-            utils.log("WARNING", "Empty states list",('__runner',self))
+            utils.log("WARNING", "Empty states list",('__runner_init',self))
             self.__run = False
             return False
 
@@ -496,8 +496,8 @@ class StateWorker(threading.Thread):
             try:
                 # Load modules on each round
                 self.__load_modules()
-            except Exception:
-                utils.log("WARNING", "Can't load states modules",('__runner',self))
+            except Exception as e:
+                utils.log("WARNING", "Can't load states modules: %s",(e),('__runner_init',self))
                 err="Can't load states modules"
         if not self.__config['runtime']['clone']:
             err = "Can't clone states repo"

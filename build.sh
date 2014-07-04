@@ -142,7 +142,10 @@ case $1 in
         read MERGE
         if [ "$MERGE" = "y" ]; then
             merge
+        else
+            echo "No"
         fi
+        echo "Done."
         ;;
     *)
         echo -e "syntax error\nusage: $USAGE"
