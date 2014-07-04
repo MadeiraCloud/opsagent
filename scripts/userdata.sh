@@ -6,7 +6,30 @@
 
 echo "$0: Bootstraping started"
 
+# opsagent config directory
+OA_CONF_DIR=/var/lib/visualops/opsagent
+# ops agent watch files crc directory
+OA_WATCH_DIR=${OA_CONF_DIR}/watch
+# opsagent logs directory
+OA_LOG_DIR=/var/log/visualops
+# OpsAgent directories
+OA_ROOT_DIR=/opt/visualops
+OA_BOOT_DIR=${OA_ROOT_DIR}/bootstrap
+OA_ENV_DIR=${OA_ROOT_DIR}/env
+# internal var
+OA_EXEC_FILE=/tmp/opsagent.boot
+OA_AGENT=opsagent
+
+
 if [ "$1" != "update" ]; then
+    if [ "$1" != "reinstall"]; then
+        if [ -f ${OA_BOOT_DIR}/${OA_AGENT}.tgz ]; then
+            echo "$0: OpsAgent already installed."
+            exit 0
+        fi
+    else
+        echo "$0: Reinstalling OpsAgent."
+    fi
     # disable agent during bootstrap, if not update
     if [ $(which chkconfig 2> /dev/null) ]; then
         service opsagentd stop >&2 2> /dev/null
@@ -26,23 +49,10 @@ if [ "$1" != "update" ]; then
     GPG_KEY_URI=@{gpg_key_uri}
 fi
 
-# opsagent config directory
-OA_CONF_DIR=/var/lib/visualops/opsagent
-# ops agent watch files crc directory
-OA_WATCH_DIR=${OA_CONF_DIR}/watch
-# opsagent logs directory
-OA_LOG_DIR=/var/log/visualops
 # opsagent URI
 OA_REMOTE="${BASE_REMOTE}/${VERSION}"
 OA_GPG_KEY="${OA_CONF_DIR}/madeira.gpg.public.key"
 
-# OpsAgent directories
-OA_ROOT_DIR=/opt/visualops
-OA_BOOT_DIR=${OA_ROOT_DIR}/bootstrap
-OA_ENV_DIR=${OA_ROOT_DIR}/env
-
-# internal var
-OA_EXEC_FILE=/tmp/opsagent.boot
 
 mkdir -p {$OA_LOG_DIR,$OA_CONF_DIR}
 

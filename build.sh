@@ -48,6 +48,8 @@ function tree() {
     cp -r ../${LIBS_DIR}/virtualenv ${OPSAGENT_DIR}/${LIBS_DIR}/
     # Copy ws4py sources
     cp -r ../${LIBS_DIR}/ws4py ${OPSAGENT_DIR}/${LIBS_DIR}/
+    # Copy Docker python wrapper sources
+    cp -r ../${LIBS_DIR}/docker ${OPSAGENT_DIR}/${LIBS_DIR}/
     # Copy salt dependencies
     cp -r ../${LIBS_DIR}/{requests,msgpack,yaml,jinja2,markupsafe} ${OPSAGENT_DIR}/${LIBS_DIR}/
 
@@ -136,7 +138,14 @@ case $1 in
         tree "${RELEASE_NAME}"
         cd ${ROOT}
         publish "${RELEASE_NAME}"
-        merge
+        echo -n "Merge to master? [y/N]: "
+        read MERGE
+        if [ "$MERGE" = "y" ]; then
+            merge
+        else
+            echo "No"
+        fi
+        echo "Done."
         ;;
     *)
         echo -e "syntax error\nusage: $USAGE"

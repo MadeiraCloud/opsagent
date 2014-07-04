@@ -46,6 +46,7 @@ class StateRunner(object):
 			'pillar_roots':      '',
 			'cachedir':          None,
 			'test':              False,
+                        'environment':       None,
 		}
 
 		# file roots

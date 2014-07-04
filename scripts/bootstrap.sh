@@ -19,6 +19,8 @@ ARCH=`uname -p`
 cp -r ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_LIBS_DIR}/epel/${ARCH}/${OA_EPEL_FILE} ${OA_PKG_CACHE_DIR}/
 # copy websocket libs
 cp -r ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_LIBS_DIR}/ws4py ${OA_ENV_DIR}/lib/${PYTHON}/site-packages/
+# copy docker python wrapper libs
+cp -r ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_LIBS_DIR}/docker ${OA_ENV_DIR}/lib/${PYTHON}/site-packages/
 # copy salt dependencies
 cp -r ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_LIBS_DIR}/{requests,msgpack,yaml,jinja2,markupsafe} ${OA_ENV_DIR}/lib/${PYTHON}/site-packages/
 # copy opsagent sources

@@ -44,6 +44,12 @@ WAIT_STATE=0
 RECIPE_COUNT_RESET=4096
 # Time to wait util re-check wait
 WAIT_TIMEOUT=30
+
+# Watch map
+WATCH={
+    "linux.service": "watch",
+    "common.dockerio.installed": "path",
+}
 ##
 
 
@@ -369,8 +375,10 @@ class StateWorker(threading.Thread):
         utils.log("INFO", "Loading state ID '%s' from module '%s' ..."%(sid,module),('__exec_salt',self))
 
         # Watch process
-        if parameter and type(parameter) is dict and parameter.get("watch"):
-            watchs = parameter.get("watch")
+        if parameter and type(parameter) is dict and WATCH.get(module) and parameter.get(WATCH[module]):
+            watchs = parameter.get(WATCH[module])
+            if type(watchs) is str:
+                watchs = [watchs]
             if type(watchs) is list:
                 utils.log("DEBUG", "Watched state detected",('__exec_salt',self))
                 del parameter["watch"]
@@ -479,7 +487,7 @@ class StateWorker(threading.Thread):
     def __runner_init(self):
         # check empty list
         if not self.__states:
-            utils.log("WARNING", "Empty states list",('__runner',self))
+            utils.log("WARNING", "Empty states list",('__runner_init',self))
             self.__run = False
             return False
 
@@ -488,8 +496,8 @@ class StateWorker(threading.Thread):
             try:
                 # Load modules on each round
                 self.__load_modules()
-            except Exception:
-                utils.log("WARNING", "Can't load states modules",('__runner',self))
+            except Exception as e:
+                utils.log("WARNING", "Can't load states modules: %s"%(e),('__runner_init',self))
                 err="Can't load states modules"
         if not self.__config['runtime']['clone']:
             err = "Can't clone states repo"
