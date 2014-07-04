@@ -22,8 +22,8 @@ OA_AGENT=opsagent
 
 
 if [ "$1" != "update" ]; then
-    if [ "$1" != "reinstall"]; then
-        if [ -f ${OA_BOOT_DIR}/${OA_AGENT}.tgz ]; then
+    if [ "$1" != "reinstall" ]; then
+        if [ -f "${OA_BOOT_DIR}/${OA_AGENT}.tgz" ]; then
             echo "$0: OpsAgent already installed."
             exit 0
         fi
