@@ -375,7 +375,7 @@ class StateWorker(threading.Thread):
         utils.log("INFO", "Loading state ID '%s' from module '%s' ..."%(sid,module),('__exec_salt',self))
 
         # Watch process
-        if parameter and type(parameter) is dict and parameter.get(WATCH[module]):
+        if parameter and type(parameter) is dict and WATCH.get(module) and parameter.get(WATCH[module]):
             watchs = parameter.get(WATCH[module])
             if type(watchs) is str:
                 watchs = [watchs]
@@ -497,7 +497,7 @@ class StateWorker(threading.Thread):
                 # Load modules on each round
                 self.__load_modules()
             except Exception as e:
-                utils.log("WARNING", "Can't load states modules: %s",(e),('__runner_init',self))
+                utils.log("WARNING", "Can't load states modules: %s"%(e),('__runner_init',self))
                 err="Can't load states modules"
         if not self.__config['runtime']['clone']:
             err = "Can't clone states repo"
