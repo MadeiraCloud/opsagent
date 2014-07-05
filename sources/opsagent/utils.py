@@ -238,7 +238,7 @@ def update_config_file(config, key, value):
 def reset_token(config):
     commands = [
         ["rm","-f",config['global']['token']],
-        ["ssh-keygen","-b","2048","-q","-P","''","-f",config['global']['token']],
+        ["ssh-keygen","-b","2048","-q","-P","","-f",config['global']['token']],
         ["rm","-f","%s.pub"%(config['global']['token'])],
         ["chown","%s:root"%(config['global']['user']),config['global']['token']],
         ["chmod","400",config['global']['token']],
