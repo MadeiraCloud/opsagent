@@ -1,8 +1,5 @@
 #!/bin/bash
-##
-## @author: Thibault BRONCHAIN
 ## (c) 2014 MadeiraCloud LTD.
-##
 
 echo "$0: Bootstraping started"
 
