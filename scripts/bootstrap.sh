@@ -13,6 +13,9 @@ if [ ! -d ${OA_ENV_DIR} ]; then
         ${OA_ENV_DIR}/bin/pip install python-apt
     fi
     ${OA_ENV_DIR}/bin/pip install crypt
+else
+    echo "BORDEL"
+    ls -l ${OA_ENV_DIR}
 fi
 # set cache directory
 mkdir -p ${OA_PKG_CACHE_DIR}
