@@ -4,7 +4,7 @@
 ## (c) 2014 MadeiraCloud LTD.
 ##
 
-echo "$0: Bootstraping started"
+echo "$0: Global init started"
 
 # opsagent config directory
 OA_CONF_DIR=/var/lib/visualops/opsagent
@@ -157,6 +157,6 @@ fi
 
 ((${OA_CONF_DIR}/cron.sh "${AGENT_UPDATE}" >> ${OA_LOG_DIR}/bootstrap.log 2>&1)&)&
 
-echo "$0: Global bootstraping done. Cron launched in background ..."
+echo "$0: Global init done. Cron launched in background ..."
 
 # EOF
