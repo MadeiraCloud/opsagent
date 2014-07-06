@@ -8,7 +8,8 @@
 if [ ! -d ${OA_ENV_DIR} ]; then
     ${PYTHON} ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_LIBS_DIR}/virtualenv/virtualenv.py ${OA_ENV_DIR}
     if [ $(which apt-get 2>/dev/null) ]; then
-        apt-get -y install python2.6-dev
+        apt-get -y install python-dev 2> /dev/null
+        apt-get -y install python2.6-dev 2> /dev/null
         ${OA_ENV_DIR}/bin/pip install python-apt
     fi
     ${OA_ENV_DIR}/bin/pip install crypt
