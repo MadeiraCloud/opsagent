@@ -5,7 +5,7 @@
 ##
 
 # create virtualenv
-if [ ! -d ${OA_ENV_DIR} ]; then
+if [ ! -f ${OA_ENV_DIR}/bin/${PYTHON} ]; then
     ${PYTHON} ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_LIBS_DIR}/virtualenv/virtualenv.py ${OA_ENV_DIR}
     if [ $(which apt-get 2>/dev/null) ]; then
         apt-get -y install python-dev 2> /dev/null
@@ -13,9 +13,6 @@ if [ ! -d ${OA_ENV_DIR} ]; then
         ${OA_ENV_DIR}/bin/pip install python-apt
     fi
     ${OA_ENV_DIR}/bin/pip install crypt
-else
-    echo "BORDEL"
-    ls -l ${OA_ENV_DIR}
 fi
 # set cache directory
 mkdir -p ${OA_PKG_CACHE_DIR}
