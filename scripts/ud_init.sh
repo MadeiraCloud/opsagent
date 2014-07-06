@@ -40,7 +40,7 @@ OA_REMOTE="${BASE_REMOTE}/${VERSION}"
 OA_GPG_KEY="${OA_CONF_DIR}/madeira.gpg.public.key"
 
 
-mkdir -p {$OA_LOG_DIR,$OA_CONF_DIR}
+mkdir -p $OA_LOG_DIR $OA_CONF_DIR
 
 # bootstrap
 cat <<EOF > ${OA_CONF_DIR}/cron.sh
