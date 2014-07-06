@@ -80,7 +80,7 @@ function publish() {
     rm -rf ${RELEASE_DIR}
     mkdir -p ${RELEASE_DIR}
 
-    cp ${BUILD_DIR}/{clean.sh,init.sh,opsagent.tgz,userdata.sh} ${RELEASE_DIR}/
+    cp ${BUILD_DIR}/{clean.sh,init.sh,ud_init.sh,opsagent.tgz,userdata.sh} ${RELEASE_DIR}/
 
     # GPG
     gpg --allow-secret-key-import --import ${GPG_PRIVATE_PATH}

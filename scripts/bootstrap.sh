@@ -18,7 +18,9 @@ chown ${OA_USER}:root ${OA_PKG_CACHE_DIR}
 chmod 755 ${OA_PKG_CACHE_DIR}
 # copy EPEL rpm
 ARCH=`uname -p`
-cp -r ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_LIBS_DIR}/epel/${ARCH}/${OA_EPEL_FILE} ${OA_PKG_CACHE_DIR}/
+if [ -f ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_LIBS_DIR}/epel/${ARCH}/${OA_EPEL_FILE} ]; then
+    cp -r ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_LIBS_DIR}/epel/${ARCH}/${OA_EPEL_FILE} ${OA_PKG_CACHE_DIR}/
+fi
 # copy websocket libs
 cp -r ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_LIBS_DIR}/ws4py ${OA_ENV_DIR}/lib/${PYTHON}/site-packages/
 # copy docker python wrapper libs
@@ -40,7 +42,7 @@ chmod 554 ${OA_ENV_DIR}/bin/opsagent
 cp ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_SCRIPTS_DIR}/daemon.sh /etc/init.d/opsagentd
 # set service script rights
 chown root:root /etc/init.d/opsagentd
-chmod 550 /etc/init.d/opsagentd
+chmod 755 /etc/init.d/opsagentd
 
 if [ $(which chkconfig 2>/dev/null) ]; then
     echo "chkconfig based daemons platform"
