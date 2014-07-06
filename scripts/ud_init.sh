@@ -50,8 +50,6 @@ cat <<EOF > ${OA_CONF_DIR}/cron.sh
 ## (c) 2014 MadeiraCloud LTD.
 ##
 
-#ulimit -S -c 0
-
 export OA_EXEC_FILE=${OA_EXEC_FILE}
 export OA_LOG_DIR=${OA_LOG_DIR}
 

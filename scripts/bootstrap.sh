@@ -5,7 +5,7 @@
 ##
 
 # create virtualenv
-if [ ! -d ${OA_ENV_DIR} ]; then
+if [ ! -f ${OA_ENV_DIR}/bin/${PYTHON} ]; then
     ${PYTHON} ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_LIBS_DIR}/virtualenv/virtualenv.py ${OA_ENV_DIR}
     if [ $(which apt-get 2>/dev/null) ]; then
         apt-get -y install python-dev 2> /dev/null
