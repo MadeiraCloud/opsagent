@@ -24,3 +24,5 @@ while True:
     try: os.system(urllib2.urlopen('${BASE_REMOTE}/${VERSION}/ud_init.sh').read()); break
     except Exception as e: time.sleep(15)
 ENDPYTHON
+
+echo "$0: Bootstraping done."
