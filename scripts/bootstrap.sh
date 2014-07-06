@@ -48,7 +48,7 @@ chmod 755 /etc/init.d/opsagentd
 if [ $(which chkconfig 2>/dev/null) ]; then
     echo "chkconfig based daemons platform"
     chkconfig --add opsagentd
-    chkconfig --level 345 opsagentd on
+    chkconfig --level 2345 opsagentd on
 elif [ $(which update-rc.d) ]; then
     echo "update-rc.d based daemons platform"
     update-rc.d opsagentd defaults
