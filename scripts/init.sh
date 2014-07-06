@@ -239,7 +239,7 @@ if [ ${UPDATE_AGENT} -ne 0 ] && [ -d ${OA_ENV_DIR} ]; then
 fi
 
 # bootstrap agent
-if [ ! -d ${OA_ENV_DIR} ]; then
+if [ ! -d ${OA_ENV_DIR}/lib/${PYTHON}/site-packages/opsagent ]; then
     if [ ${UPDATE_AGENT} -eq 0 ]; then
         UPDATE_AGENT=3
     fi
