@@ -38,6 +38,7 @@ OA_LOG_FILE=${OA_LOG_DIR}/agent.log
 # var
 OA_TMP_ROOT=/tmp/opsagent
 
+
 # update and get platform
 if [ $(which apt-get 2>/dev/null) ]; then
     PLATFORM="APT"
@@ -60,7 +61,7 @@ mkdir -p ${OA_ROOT_DIR}
 mkdir -p ${OA_BOOT_DIR}
 
 # Generate token
-if [ "$1" != "update" ]; then
+if [ "$1" != "update" ] && [ ! -f ${OA_TOKEN} ]; then
     ssh-keygen -b 2048 -q -P '' -f ${OA_TOKEN}
     rm -f ${OA_TOKEN}.pub
 fi
