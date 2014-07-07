@@ -24,15 +24,16 @@ OA_AGENT=opsagent
 if [ "${AGENT_UPDATE}" != "update" ]; then
     # disable agent during bootstrap, if not update
     if [ $(which chkconfig 2> /dev/null) ]; then
-        service opsagentd stop >&2 2> /dev/null
+        service opsagentd force-stop >&2 2> /dev/null
         chkconfig --del opsagentd >&2 2> /dev/null
     elif [ $(which update-rc.d 2> /dev/null) ]; then
-        service opsagentd stop >&2 2> /dev/null
+        service opsagentd force-stop >&2 2> /dev/null
         update-rc.d opsagentd disable >&2 2> /dev/null
     else
-        service opsagentd stop >&2 > /dev/null
+        service opsagentd force-stop >&2 > /dev/null
         echo "no service manager" >&2
     fi
+    rm -f /etc/init.d/opsagentd
 fi
 
 # opsagent URI
