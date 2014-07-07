@@ -50,8 +50,10 @@ function tree() {
     cp -r ../${LIBS_DIR}/ws4py ${OPSAGENT_DIR}/${LIBS_DIR}/
     # Copy Docker python wrapper sources
     cp -r ../${LIBS_DIR}/docker ${OPSAGENT_DIR}/${LIBS_DIR}/
+    # Copy docker dependencies
+    cp -r ../${LIBS_DIR}/{requests,mock.py,six.py,websocket.py} ${OPSAGENT_DIR}/${LIBS_DIR}/
     # Copy salt dependencies
-    cp -r ../${LIBS_DIR}/{requests,msgpack,yaml,jinja2,markupsafe} ${OPSAGENT_DIR}/${LIBS_DIR}/
+    cp -r ../${LIBS_DIR}/{msgpack,yaml,jinja2,markupsafe} ${OPSAGENT_DIR}/${LIBS_DIR}/
 
     # Copy opsagent sources
     for file in `find ../${SOURCES_DIR}/opsagent -type f -name '*.py'`
