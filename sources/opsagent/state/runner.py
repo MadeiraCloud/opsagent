@@ -114,11 +114,6 @@ class StateRunner(object):
 		comment = ''
 		out_log = ''
 
-                # add temporary config
-                if config:
-                        for k,v in config:
-                                self._salt_opts[k] = v
-
 		# check
 		if not states:
 			out_log = "Null states"
@@ -126,6 +121,10 @@ class StateRunner(object):
 		if not states or not isinstance(states, list):
 			out_log = "Invalid state format %s" % str(states)
 			return (result, comment, out_log)
+
+                # add temporary config
+                if self.state:
+                        self.state.update_opts(config)
 
 		# check whether contain specail module
 		try:
@@ -231,7 +230,7 @@ class StateRunner(object):
 		is_special = False
 		for state in states:
 			for tag, module in state.iteritems():
-				if len([ m for m in module.keys() if m in['gem', 'npm', 'pip'] ]) > 0:
+				if len([ m for m in module.keys() if m in['gem', 'npm', 'pip', 'docker'] ]) > 0:
 					is_special = True
 					break
 
