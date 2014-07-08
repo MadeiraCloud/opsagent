@@ -104,7 +104,7 @@ class StateRunner(object):
 			utils.log("ERROR", "Fetch agent's os type failed...", ("_init_ostype", self))
 			raise ExecutionException("Fetch agent's os type failed")
 
-	def exec_salt(self, states):
+	def exec_salt(self, states, config=None):
 		"""
 			Transfer and exec salt state.
 			return result format: (result,comment,out_log), result:True/False
@@ -113,6 +113,11 @@ class StateRunner(object):
 		result = False
 		comment = ''
 		out_log = ''
+
+                # add temporary config
+                if config:
+                        for k,v in config:
+                                self._salt_opts[k] = v
 
 		# check
 		if not states:

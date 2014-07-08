@@ -45,7 +45,7 @@ RECIPE_COUNT_RESET=4096
 # Time to wait util re-check wait
 WAIT_TIMEOUT=30
 
-# Watch map
+# Default watch map
 WATCH={
     "linux.service": "watch",
     "common.dockerio.installed": "path",
@@ -311,6 +311,7 @@ class StateWorker(threading.Thread):
         reload(opsagent.state.runner)
         from opsagent.state.runner import StateRunner
         self.__state_runner = StateRunner(config=self.__config['salt'])
+
         utils.log("DEBUG", "Modules loaded",('load_modules',self))
 
     # Load new recipe
@@ -375,8 +376,14 @@ class StateWorker(threading.Thread):
         utils.log("INFO", "Loading state ID '%s' from module '%s' ..."%(sid,module),('__exec_salt',self))
 
         # Watch process
-        if parameter and type(parameter) is dict and WATCH.get(module) and parameter.get(WATCH[module]):
-            watchs = parameter.get(WATCH[module])
+        try:
+            watch_map = self.__state_adaptor.watch
+            utils.log("DEBUG", "StateAdaptor watch map loaded",('__exec_salt',self))
+        except Exception:
+            watch_map = WATCH
+            utils.log("DEBUG", "Default watch map loaded",('__exec_salt',self))
+        if parameter and type(parameter) is dict and watch_map.get(module) and parameter.get(watch_map[module]):
+            watchs = parameter.get(watch_map[module])
             if type(watchs) is str:
                 watchs = [watchs]
             if type(watchs) is list:
@@ -404,7 +411,11 @@ class StateWorker(threading.Thread):
 
             # exec salt state
             utils.log("INFO", "Begin to execute salt states...", ('__exec_salt', self))
-            (result, comment, out_log) = self.__state_runner.exec_salt(salt_states)
+            # ensure compatibility
+            if re.search("v2014-04-15",self.__config['module']['mod_tag']):
+                (result, comment, out_log) = self.__state_runner.exec_salt(salt_states)
+            else:
+                (result, comment, out_log) = self.__state_runner.exec_salt(salt_states, self.__state_adaptor.get_config())
         except Exception as err:
             utils.log("ERROR", str(err), ('__exec_salt',self))
             res['result'] = FAIL
