@@ -22,6 +22,9 @@ class StateRunner(object):
 		# init salt opts
 		self._init_opts(config)
 
+		# init custom os type
+		self._init_cust_ostype()
+
 		# init state
 		self._init_state()
 
@@ -49,6 +52,8 @@ class StateRunner(object):
                         'environment':       None,
 		}
 
+                self._salt_opts.update(config['runtime'])
+
 		# file roots
 		for path in config['srv_root'].split(':'):
 			# check and make path
@@ -73,38 +78,46 @@ class StateRunner(object):
 
 		self.state = RunState(self._salt_opts)
 
-	def _init_ostype(self):
+        def _init_cust_ostype(self):
+                try:
+                        import subprocess
 
+                        config_file = self.__is_existed(['/etc/issue', '/etc/redhat-release'])
+                        if not config_file:
+                                raise ExecutionException("Cannot find the system config file")
+
+                        cmd = 'grep -io -E  "ubuntu|debian|centos|redhat|amazon" ' + config_file
+                        process = subprocess.Popen(
+                                cmd,
+                                shell=True,
+                                stdout=subprocess.PIPE,
+                                stderr=subprocess.PIPE)
+
+                        out, err = process.communicate()
+
+                        if process.returncode != 0:
+                                utils.log("ERROR", "Excute cmd %s failed..."%cmd, ("_init_ostype", self))
+                                raise ExecutionException("Excute cmd %s failed"%cmd)
+
+                        self._salt_opts['cust_ostype'] = out
+		except Exception, e:
+			utils.log("ERROR", "Fetch custom agent's os type failed...", ("_init_cust_ostype", self))
+
+	def _init_ostype(self):
 		try:
 			self.os_type = self.state.opts['grains']['os'].lower() if self.state.opts and \
 				'grains' in self.state.opts and 'os' in self.state.opts['grains'] else 'unknown'
 
 			if self.os_type == 'unknown':
-				import subprocess
+                                if self._salt_opts.get('cust_ostype') is None:
+                                        raise Exception
+                                else: self.os_type = self._salt_opts['cust_ostype']
 
-				config_file = self.__is_existed(['/etc/issue', '/etc/redhat-release'])
-				if not config_file:
-					raise ExecutionException("Cannot find the system config file")
-
-				cmd = 'grep -io -E  "ubuntu|debian|centos|redhat|amazon" ' + config_file
-				process = subprocess.Popen(
-					cmd,
-					shell=True,
-					stdout=subprocess.PIPE,
-					stderr=subprocess.PIPE)
-
-				out, err = process.communicate()
-
-				if process.returncode != 0:
-					utils.log("ERROR", "Excute cmd %s failed..."%cmd, ("_init_ostype", self))
-					raise ExecutionException("Excute cmd %s failed"%cmd)
-
-				self.os_type = out
 		except Exception, e:
 			utils.log("ERROR", "Fetch agent's os type failed...", ("_init_ostype", self))
 			raise ExecutionException("Fetch agent's os type failed")
 
-	def exec_salt(self, states, config=None):
+	def exec_salt(self, states):
 		"""
 			Transfer and exec salt state.
 			return result format: (result,comment,out_log), result:True/False
@@ -121,10 +134,6 @@ class StateRunner(object):
 		if not states or not isinstance(states, list):
 			out_log = "Invalid state format %s" % str(states)
 			return (result, comment, out_log)
-
-                # add temporary config
-                if config and self.state:
-                        self.state.update_opts(config)
 
 		# check whether contain specail module
 		try:
