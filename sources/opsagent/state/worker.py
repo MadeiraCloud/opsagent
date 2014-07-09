@@ -292,16 +292,6 @@ class StateWorker(threading.Thread):
         if self.__manager:
             self.__manager.wait_recv()
 
-        # state adaptor
-        if self.__state_adaptor:
-            utils.log("DEBUG", "Deleting adaptor...",('load_modules',self))
-            del self.__state_adaptor
-        utils.log("DEBUG", "Loading adaptor...",('load_modules',self))
-        import opsagent.state.adaptor
-        reload(opsagent.state.adaptor)
-        from opsagent.state.adaptor import StateAdaptor
-        self.__state_adaptor = StateAdaptor()
-
         # state runner
         if self.__state_runner:
             utils.log("DEBUG", "Deleting runner...",('load_modules',self))
@@ -311,6 +301,16 @@ class StateWorker(threading.Thread):
         reload(opsagent.state.runner)
         from opsagent.state.runner import StateRunner
         self.__state_runner = StateRunner(config=self.__config['salt'])
+
+        # state adaptor
+        if self.__state_adaptor:
+            utils.log("DEBUG", "Deleting adaptor...",('load_modules',self))
+            del self.__state_adaptor
+        utils.log("DEBUG", "Loading adaptor...",('load_modules',self))
+        import opsagent.state.adaptor
+        reload(opsagent.state.adaptor)
+        from opsagent.state.adaptor import StateAdaptor
+        self.__state_adaptor = StateAdaptor()
 
         utils.log("DEBUG", "Modules loaded",('load_modules',self))
 
@@ -411,11 +411,7 @@ class StateWorker(threading.Thread):
 
             # exec salt state
             utils.log("INFO", "Begin to execute salt states...", ('__exec_salt', self))
-            # ensure compatibility
-            if re.search("v2014-04-15",self.__config['module']['mod_tag']):
-                (result, comment, out_log) = self.__state_runner.exec_salt(salt_states)
-            else:
-                (result, comment, out_log) = self.__state_runner.exec_salt(salt_states, self.__state_adaptor.get_config())
+            (result, comment, out_log) = self.__state_runner.exec_salt(salt_states)
         except Exception as err:
             utils.log("ERROR", str(err), ('__exec_salt',self))
             res['result'] = FAIL

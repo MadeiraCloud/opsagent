@@ -77,6 +77,7 @@ class Config():
             'delay': '10',
             # command timeout (deprecated)
             'timeout': '30',
+            'runtime': {}
             },
         'module': {
             # Locations relatives to modules directory (default /opt/visualops/env/lib/python-*/sites-package)
