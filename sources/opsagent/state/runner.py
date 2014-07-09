@@ -86,12 +86,20 @@ class StateRunner(object):
                         if not config_file:
                                 raise ExecutionException("Cannot find the system config file")
 
+<<<<<<< HEAD
                         cmd = 'grep -io -E  "ubuntu|debian|centos|redhat|amazon" ' + config_file
                         process = subprocess.Popen(
                                 cmd,
                                 shell=True,
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE)
+=======
+			self.os_release = self.state.opts['grains']['osrelease'].lower() if self.state.opts and \
+				'grains' in self.state.opts and 'osrelease' in self.state.opts['grains'] else 'unknown'
+
+			if self.os_type == 'unknown':
+				import subprocess
+>>>>>>> 85e8ce4029df469ee27f01d25b1ee15ba7dea4e0
 
                         out, err = process.communicate()
 
@@ -252,8 +260,11 @@ class StateRunner(object):
 		if self.os_type not in ['centos', 'redhat', 'amazon']:	return
 
 		try:
+			epel_rpm = 'epel-release-6-8.noarch.rpm'
+			if self.os_type in ['centos', 'redhat'] and self.os_release and float(self.os_release) >= 7.0:
+				epel_rpm = 'epel-release-7-0.2.noarch.rpm'
 			if not self._pkg_cache.endswith('/'):	self._pkg_cache += '/'
-			if not self.__is_existed(self._pkg_cache+'epel-release-6-8.noarch.rpm'):
+			if not self.__is_existed(self._pkg_cache+epel_rpm):
 				utils.log("WARNING", "Cannot find the epel rpm package in %s" % self._pkg_cache, ("_enable_epel", self))
 				return
 
