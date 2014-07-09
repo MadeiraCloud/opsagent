@@ -86,20 +86,12 @@ class StateRunner(object):
                         if not config_file:
                                 raise ExecutionException("Cannot find the system config file")
 
-<<<<<<< HEAD
                         cmd = 'grep -io -E  "ubuntu|debian|centos|redhat|amazon" ' + config_file
                         process = subprocess.Popen(
                                 cmd,
                                 shell=True,
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE)
-=======
-			self.os_release = self.state.opts['grains']['osrelease'].lower() if self.state.opts and \
-				'grains' in self.state.opts and 'osrelease' in self.state.opts['grains'] else 'unknown'
-
-			if self.os_type == 'unknown':
-				import subprocess
->>>>>>> 85e8ce4029df469ee27f01d25b1ee15ba7dea4e0
 
                         out, err = process.communicate()
 
@@ -113,8 +105,17 @@ class StateRunner(object):
 
 	def _init_ostype(self):
 		try:
-			self.os_type = self.state.opts['grains']['os'].lower() if self.state.opts and \
-				'grains' in self.state.opts and 'os' in self.state.opts['grains'] else 'unknown'
+			self.os_type = (self.state.opts['grains']['os'].lower()
+                                        if self.state.opts
+                                        and 'grains' in self.state.opts
+                                        and 'os' in self.state.opts['grains']
+                                        else 'unknown')
+
+                        self.os_release = (self.state.opts['grains']['osrelease'].lower()
+                                           if self.state.opts
+                                           and 'grains' in self.state.opts
+                                           and 'osrelease' in self.state.opts['grains']
+                                           else 'unknown')
 
 			if self.os_type == 'unknown':
                                 if self._salt_opts.get('cust_ostype') is None:

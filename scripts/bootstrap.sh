@@ -25,9 +25,9 @@ chown ${OA_USER}:root ${OA_PKG_CACHE_DIR}
 chmod 755 ${OA_PKG_CACHE_DIR}
 # copy EPEL rpm
 ARCH=`uname -p`
-if [ -f ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_LIBS_DIR}/epel/${ARCH}/${OA_EPEL_FILE} ]; then
-    cp -r ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_LIBS_DIR}/epel/${ARCH}/${OA_EPEL_FILE} ${OA_PKG_CACHE_DIR}/
-fi
+#if [ -f ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_LIBS_DIR}/epel/${ARCH}/${OA_EPEL_FILE} ]; then
+cp -r ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_LIBS_DIR}/epel/${ARCH}/* ${OA_PKG_CACHE_DIR}/
+#fi
 # copy websocket libs
 cp -r ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_LIBS_DIR}/ws4py ${OA_ENV_DIR}/lib/${PYTHON}/site-packages/
 # copy docker python wrapper libs
