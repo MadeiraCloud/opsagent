@@ -123,7 +123,7 @@ class StateRunner(object):
 			return (result, comment, out_log)
 
                 # add temporary config
-                if self.state:
+                if config and self.state:
                         self.state.update_opts(config)
 
 		# check whether contain specail module
