@@ -52,7 +52,8 @@ class StateRunner(object):
                         'environment':       None,
 		}
 
-                self._salt_opts.update(config['runtime'])
+                if config.get('runtime'):
+                        self._salt_opts.update(config['runtime'])
 
 		# file roots
 		for path in config['srv_root'].split(':'):
