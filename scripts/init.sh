@@ -102,8 +102,9 @@ if [ $PLATFORM = "APT" ]; then
 #        echo "Failed to install python 2.7, trying with python 2.6 ..." >&2
 #        apt-get -y install python2.6
 #    fi
-    # install other dependencies
-    apt-get -y install expect-dev python-dev libapt-pkg-dev g++
+#    # install other dependencies
+#    apt-get -y install expect-dev python-dev libapt-pkg-dev g++
+    apt-get -y install expect-dev
 elif [ $PLATFORM = "YUM" ]; then
     # install python
     echo "Platform: YUM"
@@ -114,7 +115,7 @@ elif [ $PLATFORM = "YUM" ]; then
 #        yum -y install python26
 #    fi
     # install other dependencies
-    yum -y install expect yum-utils
+    yum -y install expect
 fi
 # define python version
 if [ $(which python2.6 2>/dev/null) ]; then
@@ -233,9 +234,12 @@ fi
 if [ ${UPDATE_AGENT} -ne 0 ] && [ -d ${OA_ENV_DIR} ]; then
     echo "shutdown agent"
     service opsagentd stop-end
-#    rm -rf ${OA_ENV_DIR}
-    rm -rf ${OA_PKG_CACHE_DIR}
-    rm -rf ${OA_ENV_DIR}/lib/${PYTHON}/site-packages/{ws4py,docker,requests,msgpack,yaml,jinja2,markupsafe,opsagent,salt}
+    if [ "$1" == "update" ]; then
+        rm -rf ${OA_ENV_DIR}
+    else
+        rm -rf ${OA_PKG_CACHE_DIR}
+        rm -rf ${OA_ENV_DIR}/lib/${PYTHON}/site-packages/{ws4py,docker,requests,msgpack,yaml,jinja2,markupsafe,opsagent,salt}
+    fi
 fi
 
 # bootstrap agent
