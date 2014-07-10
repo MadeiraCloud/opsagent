@@ -356,9 +356,6 @@ class Client(requests.Session):
         if utils.compare_version('1.8', self._version) >= 0:
             stream = True
 
-        # disable streams
-        stream = False
-
         u = self._url('/build')
         params = {
             't': tag,
