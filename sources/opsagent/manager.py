@@ -125,6 +125,7 @@ class Manager(WebSocketClient):
     # update states repo
     def __update_repo(self, module_repo, module_tag):
         clone = False
+        ret = False
         self.__config['runtime']['tag'] = True
         self.__config['runtime']['clone'] = True
         if module_repo != self.__config['module']['mod_repo']:
@@ -137,6 +138,7 @@ class Manager(WebSocketClient):
             except ManagerInvalidStatesRepoException:
                 self.__config['runtime']['clone'] = False
             else:
+                ret = True
                 self.__config['module']['mod_repo'] = module_repo
                 utils.update_config_file(self.__config, "mod_repo", module_repo)
         if clone or module_tag != self.__config['module']['mod_tag']:
@@ -149,6 +151,7 @@ class Manager(WebSocketClient):
             except ManagerInvalidStatesRepoException:
                 self.__config['runtime']['tag'] = False
             else:
+                ret = True
                 self.__config['module']['mod_tag'] = module_tag
                 utils.update_config_file(self.__config, "mod_tag", module_tag)
         if ret:
