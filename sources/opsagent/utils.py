@@ -101,7 +101,7 @@ def bootstrap_mod(config):
         r = subprocess.check_call("bash {0} {1}".format(bootstrap,c_path).split(" "))
         log("INFO", "Modules bootstrap succeed (%s): %s"%(bootstrap,r),('bootstrap_mod','utils'))
     except Exception as e:
-        log("WARNING", "Can't bootstrap modules (%s): %s"%(bootstrap,r),('bootstrap_mod','utils'))
+        log("WARNING", "Can't bootstrap modules (%s): %s"%(bootstrap,e),('bootstrap_mod','utils'))
 
 # clone a git repository
 def clone_repo(config, path, name, uri):
