@@ -59,6 +59,7 @@ mkdir -p ${OA_CONF_DIR}
 mkdir -p ${OA_LOG_DIR}
 mkdir -p ${OA_ROOT_DIR}
 mkdir -p ${OA_BOOT_DIR}
+chmod 755 ${OA_CONF_DIR} ${OA_LOG_DIR} ${OA_ROOT_DIR} ${OA_BOOT_DIR}
 
 # Generate token
 if [ "$1" != "update" ] && [ ! -f ${OA_TOKEN} ]; then
@@ -216,6 +217,7 @@ function get_sources() {
         rm -rf ${OA_BOOT_DIR}/${1}
     fi
     mkdir -p ${OA_BOOT_DIR}/${1}
+    chmod 755 ${OA_BOOT_DIR}/${1}
     cd ${OA_BOOT_DIR}/${1}
     tar xfz ../${1}.tgz
     cd - 2>&1 > /dev/null
