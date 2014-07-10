@@ -20,7 +20,6 @@ OA_ENV_DIR=${OA_ROOT_DIR}/env
 OA_EXEC_FILE=/tmp/opsagent.boot
 OA_AGENT=opsagent
 
-
 if [ "${AGENT_UPDATE}" != "update" ]; then
     # disable agent during bootstrap, if not update
     if [ $(which chkconfig 2> /dev/null) ]; then
