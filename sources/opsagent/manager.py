@@ -151,6 +151,9 @@ class Manager(WebSocketClient):
             else:
                 self.__config['module']['mod_tag'] = module_tag
                 utils.update_config_file(self.__config, "mod_tag", module_tag)
+        if ret:
+            utils.bootstrap_mod(self.__config)
+        return ret
 
     # Recipe object received
     def __act_recipe(self, data):
