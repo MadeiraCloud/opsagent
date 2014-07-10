@@ -35,7 +35,7 @@ function tree() {
     cp ../${SCRIPTS_DIR}/{bootstrap.sh,daemon.sh,kill.sh,update.sh} ${OPSAGENT_DIR}/${SCRIPTS_DIR}/
     # Copy standalone scripts
     cp ../${SCRIPTS_DIR}/{init.sh,userdata.sh,clean.sh,ud_init.sh} ./
-    cp ../${SCRIPTS_DIR}/{ud_init.sh} ./userdata.sh
+    cp -f ../${SCRIPTS_DIR}/ud_init.sh ./userdata.sh
     if [ "${1}" != "" ]; then
         sed "s/OA_VERSION=.*/OA_VERSION='${1}'/" < ../${SCRIPTS_DIR}/init.sh > ./init.sh
     else
