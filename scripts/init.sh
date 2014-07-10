@@ -240,7 +240,7 @@ if [ ${UPDATE_AGENT} -ne 0 ] && [ -d ${OA_ENV_DIR} ]; then
         rm -rf ${OA_ENV_DIR}
     else
         rm -rf ${OA_PKG_CACHE_DIR}
-        rm -rf ${OA_ENV_DIR}/lib/${PYTHON}/site-packages/{ws4py,docker,requests,msgpack,yaml,jinja2,markupsafe,opsagent,salt}
+        rm -rf ${OA_ENV_DIR}/lib/${PYTHON}/site-packages/{opsagent,salt}
     fi
 fi
 

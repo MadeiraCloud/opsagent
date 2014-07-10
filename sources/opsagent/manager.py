@@ -127,7 +127,6 @@ class Manager(WebSocketClient):
         clone = False
         self.__config['runtime']['tag'] = True
         self.__config['runtime']['clone'] = True
-        ret = False
         if module_repo != self.__config['module']['mod_repo']:
             utils.log("DEBUG", "Cloning repo...",('__act_recipe',self))
             try:
@@ -140,7 +139,6 @@ class Manager(WebSocketClient):
             else:
                 self.__config['module']['mod_repo'] = module_repo
                 utils.update_config_file(self.__config, "mod_repo", module_repo)
-                ret = True
         if clone or module_tag != self.__config['module']['mod_tag']:
             try:
                 utils.checkout_repo(self.__config,
@@ -153,10 +151,6 @@ class Manager(WebSocketClient):
             else:
                 self.__config['module']['mod_tag'] = module_tag
                 utils.update_config_file(self.__config, "mod_tag", module_tag)
-                ret = True
-        if ret:
-            utils.bootstrap_mod(self.__config)
-        return ret
 
     # Recipe object received
     def __act_recipe(self, data):

@@ -10,7 +10,6 @@ import logging
 import time
 import subprocess
 import os
-import os.path
 import shutil
 import collections
 import re
@@ -113,19 +112,6 @@ def clone_repo(config, path, name, uri):
         log("ERROR", "Can't clone %s repo from %s: %s"%(name,uri,e),('clone_repo','utils'))
         raise ManagerInvalidStatesRepoException
     return True
-
-# bootstrap modules config
-def bootstrap_mod(config):
-    bootstrap = os.path.join(config["module"]["root"],config["module"]["name"],config["module"]["bootstrap"])
-    if not os.path.isfile(bootstrap):
-        log("INFO", "No bootstrap script for modules in %s"%(bootstrap),('bootstrap_mod','utils'))
-        return
-    try:
-        c_path = (config["runtime"]["config_path"] if config["runtime"].get("config_path") else "")
-        r = subprocess.check_call("bash {0} {1}".format(bootstrap,c_path).split(" "))
-        log("INFO", "Modules bootstrap succeed (%s): %s"%(bootstrap,r),('bootstrap_mod','utils'))
-    except Exception as e:
-        log("WARNING", "Can't bootstrap modules (%s): %s"%(bootstrap,r),('bootstrap_mod','utils'))
 
 # clone a git branch/tag
 def checkout_repo(config, path, name, tag, uri, n=0):
