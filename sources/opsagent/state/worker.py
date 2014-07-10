@@ -14,6 +14,7 @@ import logging.handlers
 import threading
 import time
 import os
+import os.path
 import signal
 import re
 import sys
@@ -382,14 +383,24 @@ class StateWorker(threading.Thread):
         except Exception:
             watch_map = WATCH
             utils.log("DEBUG", "Default watch map loaded",('__exec_salt',self))
-        if parameter and type(parameter) is dict and watch_map.get(module) and parameter.get(watch_map[module]):
-            watchs = parameter.get(watch_map[module])
+
+        watch_key = None
+        if watch_map.get(module):
+            watch_key = (watch_map[module]["file_key"]
+                         if watch_map[module].get("file_key")
+                         else watch_map[module].get("dir_key"))
+
+        if parameter and type(parameter) is dict and watch_key and parameter.get(watch_key):
+            watchs = parameter.get(watch_key)
             if type(watchs) is str:
                 watchs = [watchs]
             if type(watchs) is list:
                 utils.log("DEBUG", "Watched state detected",('__exec_salt',self))
-                del parameter["watch"]
+                if "watch" in parameter:
+                    del parameter["watch"]
                 for watch in watchs:
+                    if watch_map[module].get("file"):
+                        watch = os.path.join(watch,watch_map[module]['file'])
                     try:
                         utils.log("DEBUG", "Watched file '%s' found"%(watch),('__exec_salt',self))
                         cs = Checksum(watch,sid,self.__config['global']['watch'])
