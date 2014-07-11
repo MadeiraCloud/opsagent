@@ -381,6 +381,10 @@ class StateWorker(threading.Thread):
     def __exec_salt(self, sid, module, parameter, res):
         utils.log("INFO", "Loading state ID '%s' from module '%s' ..."%(sid,module),('__exec_salt',self))
 
+        # init
+        cs = None
+        result = False
+
         # Watch process
         try:
             watch_map = self.__state_adaptor.watch
