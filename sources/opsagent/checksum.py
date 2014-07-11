@@ -62,6 +62,9 @@ class Checksum():
     def get(self):
         return self.__cksum
 
+    def filepath(self):
+        return self.__filepath
+
     # reset curent checksum
     # persiste: write on disk
     def reset(self, persist=True):

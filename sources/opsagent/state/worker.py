@@ -409,7 +409,7 @@ class StateWorker(threading.Thread):
                     try:
                         utils.log("DEBUG", "Watched file '%s' found"%(watch),('__exec_salt',self))
                         cs = Checksum(watch,sid,self.__config['global']['watch'])
-                        if cs.update():
+                        if cs.update(edit=False):
                             parameter["watch"] = True
                             utils.log("INFO","Watch event triggered, replacing standard action ...",('__exec_salt',self))
                     except Exception as e:
@@ -434,6 +434,12 @@ class StateWorker(threading.Thread):
             res['comment'] = "Internal error: %s"%(err)
             res['out_log'] = None
             return
+
+        if result and cs and parameter.get("watch"):
+            if cs.update(edit=True):
+                utils.log("INFO", "New checksum stored for file %s"%(cs.filepath()),('__exec_salt',self))
+            else:
+                utils.log("WARNING", "Failed to store new checksum for file %s"%(cs.filepath()),('__exec_salt',self))
 
         utils.log("INFO", "State ID '%s' from module '%s' done, result '%s'"%(sid,module,result),('__exec_salt',self))
         utils.log("DEBUG", "State out log='%s'"%(out_log),('__exec_salt',self))
