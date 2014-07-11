@@ -397,7 +397,7 @@ class StateWorker(threading.Thread):
 
         if parameter and type(parameter) is dict and watch_key and parameter.get(watch_key):
             watchs = parameter.get(watch_key)
-            if type(watchs) is str:
+            if type(watchs) is str or type(watchs) is unicode:
                 watchs = [watchs]
             if type(watchs) is list:
                 utils.log("DEBUG", "Watched state detected",('__exec_salt',self))
