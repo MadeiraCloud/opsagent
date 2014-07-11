@@ -88,6 +88,7 @@ class StateWorker(threading.Thread):
         self.__cv_wait = False
         self.__run = False
         self.__abort = 0
+        self.dead = False
         self.__executing = None
         self.__recipe_count = 0
 
@@ -137,7 +138,7 @@ class StateWorker(threading.Thread):
     # Return waiting state
     def is_waiting(self):
         utils.log("DEBUG", "Wait status: %s"%(self.__wait_event.is_set()),('is_waiting',self))
-        return (True if not self.__wait_event.is_set() else False)
+        return (False if not self.__wait_event.is_set() else True)
 
     # Return version ID
     def get_version(self):
@@ -283,6 +284,8 @@ class StateWorker(threading.Thread):
             self.__kill_wait()
             self.__kill_exec()
             utils.log("INFO", "Execution killed",('kill',self))
+        while not self.__cv_wait and not self.dead:
+            time.sleep(0.1)
     ##
 
 
@@ -594,8 +597,9 @@ class StateWorker(threading.Thread):
                     else:
                         utils.log("WARNING", "Something went wrong, retrying current state in %s seconds"%(WAIT_STATE_RETRY),('__runner',self))
                         time.sleep(WAIT_STATE_RETRY)
-            else:
-                utils.log("WARNING", "Execution aborted",('__runner',self))
+#            else:
+#                utils.log("WARNING", "Execution aborted",('__runner',self))
+        utils.log("WARNING", "Execution aborted",('__runner',self))
 
 
     # Callback on start
@@ -614,6 +618,7 @@ class StateWorker(threading.Thread):
                 utils.log("ERROR", "Unexpected error: %s"%(e),('run',self))
             self.__reset()
             self.__cv.release()
+        self.dead = True
         utils.log("WARNING", "Exiting...",('run',self))
         if self.__manager:
             utils.log("INFO", "Stopping manager...",('run',self))
