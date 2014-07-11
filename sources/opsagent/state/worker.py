@@ -47,9 +47,14 @@ RECIPE_COUNT_RESET=4096
 WAIT_TIMEOUT=30
 
 # Default watch map
-WATCH={
-    "linux.service": "watch",
-    "common.dockerio.installed": "path",
+WATCH = {
+    "linux.service": {
+        "file_key": "watch"
+    },
+    "common.docker.built": {
+        "file": "Dockerfile",
+        "dir_key": "path"
+    }
 }
 ##
 
@@ -386,7 +391,7 @@ class StateWorker(threading.Thread):
 
         watch_key = None
         if watch_map.get(module):
-            watch_key = (watch_map[module]["file_key"]
+            watch_key = (watch_map[module].get("file_key")
                          if watch_map[module].get("file_key")
                          else watch_map[module].get("dir_key"))
 
