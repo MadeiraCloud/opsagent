@@ -152,7 +152,7 @@ class StateRunner(object):
             mods = self.get_mods(states)
 
             # whether special module
-            inter_mods = list(set(mods).intersection(set(spec_mods)))
+            inter_mods = list(set(mods).intersection(set(self.spec_mods)))
             if len(inter_mods)>0:
                 self._enable_epel()
 
@@ -161,9 +161,10 @@ class StateRunner(object):
                     if self.os_type in ['redhat', 'centos'] and float(self.os_release) >= 7.0 or self.os_type == 'debian':
                         self.__preinstall_npm()
 
-        except:
+        except Exception, e:
             utils.log("WARNING", "Enable epel repo failed...",("exec_salt", self))
-            pass
+            comment = 'Enable epel repo failed'
+            return (result, comment, str(e))
 
         utils.log("INFO", "Begin to execute salt state...", ("exec_salt", self))
         for idx, state in enumerate(states):
