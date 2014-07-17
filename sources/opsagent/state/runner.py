@@ -99,7 +99,7 @@ class StateRunner(object):
             out, err = process.communicate()
 
             if process.returncode != 0:
-                    utils.log("ERROR", "Excute cmd %s failed..."%cmd, ("_init_ostype", self))
+                    utils.log("ERROR", "Excute cmd %s failed..."%cmd, ("_init_cust_ostype", self))
                     raise ExecutionException("Excute cmd %s failed"%cmd)
 
             self._salt_opts['cust_ostype'] = out
@@ -279,13 +279,14 @@ class StateRunner(object):
             if self.os_type in ['centos', 'redhat'] and self.os_release and float(self.os_release) >= 7.0:
                 epel_rpm = 'epel-release-7-0.2.noarch.rpm'
             if not self._pkg_cache.endswith('/'):   self._pkg_cache += '/'
-            if not self.__is_existed(self._pkg_cache+epel_rpm):
+            epel_rpm = self._pkg_cache+epel_rpm
+            if not self.__is_existed(epel_rpm):
                 utils.log("WARNING", "Cannot find the epel rpm package in %s" % self._pkg_cache, ("_enable_epel", self))
                 return
 
             import subprocess
             if self.os_type in ['centos', 'redhat']:    # install with rpm on centos|redhat
-                cmd = 'rpm -ivh ' + self._pkg_cache + 'epel-release-6-8.noarch.rpm'
+                cmd = 'rpm -ivh ' + epel_rpm
             else:   # install with yum on amazon ami
                 cmd = 'yum -y install epel-release'
 
@@ -370,7 +371,7 @@ class StateRunner(object):
                 out, err = process.communicate()
                 if process.returncode != 0:
                     utils.log("ERROR", "Excute cmd {0} failed: {1}".format(cmd, err), ("__preinstall_npm", self))
-                    raise StateException("Excute cmd %s failed"%cmd)
+                    raise ExecutionException("Excute cmd %s failed"%cmd)
 
             elif self.os_type in ['debian']:
                 cmd = 'echo "deb http://ftp.us.debian.org/debian wheezy-backports main" >> /etc/apt/sources.list && apt-get update && apt-get install -y nodejs-legacy curl'
@@ -384,7 +385,7 @@ class StateRunner(object):
                 out, err = process.communicate()
                 if process.returncode != 0:
                     utils.log("ERROR", "Excute cmd {0} failed: {1}".format(cmd, err), ("__preinstall_npm", self))
-                    raise StateException("Excute cmd %s failed"%cmd)
+                    raise ExecutionException("Excute cmd %s failed"%cmd)
 
             # install npm
             tmp_dir = '/opt/visualops/tmp'
@@ -398,10 +399,10 @@ class StateRunner(object):
             out, err = process.communicate()
             if process.returncode != 0:
                 utils.log("ERROR", "Excute cmd {0} failed: {1}".format(cmd, err), ("__preinstall_npm", self))
-                raise StateException("Excute cmd %s failed"%cmd)
+                raise ExecutionException("Excute cmd %s failed"%cmd)
         except Exception, e:
             utils.log("ERROR", str(e), ("__preinstall_npm", self))
-            raise StateException("Install npm failed")
+            raise ExecutionException("Install npm failed")
 
 
 # For unit tests only
