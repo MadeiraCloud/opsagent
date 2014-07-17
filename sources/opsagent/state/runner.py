@@ -15,318 +15,318 @@ from opsagent.exception import ExecutionException
 
 class StateRunner(object):
 
-	def __init__(self, config):
+    def __init__(self, config):
 
-		self.state = None
+        self.state = None
 
-		# init salt opts
-		self._init_opts(config)
+        # init salt opts
+        self._init_opts(config)
 
-		# init custom os type
-		self._init_cust_ostype()
+        # init custom os type
+        self._init_cust_ostype()
 
-		# init state
-		self._init_state()
+        # init state
+        self._init_state()
 
-		# init os type
-		self._init_ostype()
+        # init os type
+        self._init_ostype()
 
-		# pkg cache dir
-		self._pkg_cache = (config['pkg_cache'] if 'pkg_cache' in config and config['pkg_cache'] and isinstance(config['pkg_cache'], basestring) else '/tmp/')
+        # pkg cache dir
+        self._pkg_cache = (config['pkg_cache'] if 'pkg_cache' in config and config['pkg_cache'] and isinstance(config['pkg_cache'], basestring) else '/tmp/')
 
-	def _init_opts(self, config):
+    def _init_opts(self, config):
 
-		self._salt_opts = {
-			'file_client':       'local',
-			'renderer':          'yaml_jinja',
-			'failhard':          False,
-			'state_top':         'salt://top.sls',
-			'nodegroups':        {},
-			'file_roots':        {'base': [ ]},
-			'state_auto_order':  False,
-			'extension_modules': None,
-			'id':                '',
-			'pillar_roots':      '',
-			'cachedir':          None,
-			'test':              False,
-                        'environment':       None,
-		}
+        self._salt_opts = {
+            'file_client':       'local',
+            'renderer':          'yaml_jinja',
+            'failhard':          False,
+            'state_top':         'salt://top.sls',
+            'nodegroups':        {},
+            'file_roots':        {'base': [ ]},
+            'state_auto_order':  False,
+            'extension_modules': None,
+            'id':                '',
+            'pillar_roots':      '',
+            'cachedir':          None,
+            'test':              False,
+            'environment':       None,
+        }
 
-                if config.get('runtime'):
-                        self._salt_opts.update(config['runtime'])
+        if config.get('runtime'):
+            self._salt_opts.update(config['runtime'])
 
-		# file roots
-		for path in config['srv_root'].split(':'):
-			# check and make path
-			if not self.__mkdir(path):
-				continue
+        # file roots
+        for path in config['srv_root'].split(':'):
+            # check and make path
+            if not self.__mkdir(path):
+                continue
 
-			self._salt_opts['file_roots']['base'].append(path)
+            self._salt_opts['file_roots']['base'].append(path)
 
-		if len(self._salt_opts['file_roots']['base']) == 0:		raise ExecutionException("Missing file roots argument")
-		if not self.__mkdir(config['extension_modules']):		raise ExecutionException("Missing extension modules argument")
+        if len(self._salt_opts['file_roots']['base']) == 0:     raise ExecutionException("Missing file roots argument")
+        if not self.__mkdir(config['extension_modules']):       raise ExecutionException("Missing extension modules argument")
 
-		self._salt_opts['extension_modules'] = config['extension_modules']
+        self._salt_opts['extension_modules'] = config['extension_modules']
 
-		if not self.__mkdir(config['cachedir']):	raise ExecutionException("Missing cachedir argument")
+        if not self.__mkdir(config['cachedir']):    raise ExecutionException("Missing cachedir argument")
 
-		self._salt_opts['cachedir'] = config['cachedir']
+        self._salt_opts['cachedir'] = config['cachedir']
 
-	def _init_state(self):
-		"""
-			Init salt state object.
-		"""
+    def _init_state(self):
+        """
+            Init salt state object.
+        """
 
-		self.state = RunState(self._salt_opts)
+        self.state = RunState(self._salt_opts)
 
         def _init_cust_ostype(self):
+            try:
+                import subprocess
+
+                config_file = self.__is_existed(['/etc/issue', '/etc/redhat-release'])
+                if not config_file:
+                        raise ExecutionException("Cannot find the system config file")
+
+                cmd = 'grep -io -E  "ubuntu|debian|centos|redhat|amazon" ' + config_file
+                process = subprocess.Popen(
+                        cmd,
+                        shell=True,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE)
+
+                out, err = process.communicate()
+
+                if process.returncode != 0:
+                        utils.log("ERROR", "Excute cmd %s failed..."%cmd, ("_init_ostype", self))
+                        raise ExecutionException("Excute cmd %s failed"%cmd)
+
+                self._salt_opts['cust_ostype'] = out
+            except Exception, e:
+                utils.log("ERROR", "Fetch custom agent's os type failed...", ("_init_cust_ostype", self))
+
+    def _init_ostype(self):
+        try:
+            self.os_type = (self.state.opts['grains']['os'].lower()
+                            if self.state.opts
+                            and 'grains' in self.state.opts
+                            and 'os' in self.state.opts['grains']
+                            else 'unknown')
+
+            self.os_release = (self.state.opts['grains']['osrelease'].lower()
+                            if self.state.opts
+                            and 'grains' in self.state.opts
+                            and 'osrelease' in self.state.opts['grains']
+                            else 'unknown')
+
+            if self.os_type == 'unknown':
+                if self._salt_opts.get('cust_ostype') is None:
+                    raise Exception
+                else: self.os_type = self._salt_opts['cust_ostype']
+
+        except Exception, e:
+            utils.log("ERROR", "Fetch agent's os type failed...", ("_init_ostype", self))
+            raise ExecutionException("Fetch agent's os type failed")
+
+    def exec_salt(self, states):
+        """
+            Transfer and exec salt state.
+            return result format: (result,comment,out_log), result:True/False
+        """
+
+        result = False
+        comment = ''
+        out_log = ''
+
+        # check
+        if not states:
+            out_log = "Null states"
+            return (result, comment, out_log)
+        if not states or not isinstance(states, list):
+            out_log = "Invalid state format %s" % str(states)
+            return (result, comment, out_log)
+
+        # check whether contain specail module
+        try:
+            if self._is_special(states):
+                self._enable_epel()
+        except:
+            utils.log("WARNING", "Enable epel repo failed...",("exec_salt", self))
+            pass
+
+        utils.log("INFO", "Begin to execute salt state...", ("exec_salt", self))
+        for idx, state in enumerate(states):
+            utils.log("INFO", "Begin to execute the %dth salt state..." % (idx+1), ("exec_salt", self))
+            try:
+                # init state
                 try:
-                        import subprocess
+                    module_list = []
+                    for tag in state.keys():
+                        module_list += state[tag].keys()
 
-                        config_file = self.__is_existed(['/etc/issue', '/etc/redhat-release'])
-                        if not config_file:
-                                raise ExecutionException("Cannot find the system config file")
+                    utils.log("INFO", "Check module list %s" % str(module_list), ("exec_salt", self))
+                    if module_list and any(['npm' in module_list, 'gem' in module_list, 'pip' in module_list]):
+                        self._init_state()
+                except Exception, e:
+                    utils.log("ERROR", "Re-init state exception: %s" % str(e), ("exec_salt", self))
+                    pass
 
-                        cmd = 'grep -io -E  "ubuntu|debian|centos|redhat|amazon" ' + config_file
-                        process = subprocess.Popen(
-                                cmd,
-                                shell=True,
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE)
+                utils.log("INFO", "Begin to execute salt state...", ("exec_salt", self))
+                ret = self.state.call_high(state)
+            except Exception, e:
+                utils.log("ERROR", "Execute salt state %s failed: %s"% (json.dumps(state), str(e)), ("exec_salt", self))
+                return (False, "Execute salt state exception", "")
 
-                        out, err = process.communicate()
+            if ret:
+                # parse the ret and return
+                utils.log("INFO", json.dumps(ret), ("exec_salt", self))
 
-                        if process.returncode != 0:
-                                utils.log("ERROR", "Excute cmd %s failed..."%cmd, ("_init_ostype", self))
-                                raise ExecutionException("Excute cmd %s failed"%cmd)
+                # set comment and output log
+                require_in_comment = ''
+                require_in_log = ''
+                for r_tag, r_value in ret.items():
+                    if 'result' not in r_value: continue    # filter no result
 
-                        self._salt_opts['cust_ostype'] = out
-		except Exception, e:
-			utils.log("ERROR", "Fetch custom agent's os type failed...", ("_init_cust_ostype", self))
+                    # parse require in result
+                    if 'require_in' in r_tag:
+                        require_in_comment = '{0}{1}{2}'.format(
+                                require_in_comment,
+                                '\n\n' if require_in_comment else '',
+                                r_value['comment'] if 'comment' in r_value and r_value['comment'] else ''
+                            )
+                        require_in_log = '{0}{1}{2}'.format(
+                                require_in_log,
+                                '\n\n' if require_in_log else '',
+                                r_value['state_stdout'] if 'state_stdout' in r_value and r_value['state_stdout'] else ''
+                            )
 
-	def _init_ostype(self):
-		try:
-			self.os_type = (self.state.opts['grains']['os'].lower()
-                                        if self.state.opts
-                                        and 'grains' in self.state.opts
-                                        and 'os' in self.state.opts['grains']
-                                        else 'unknown')
+                    # parse require result
+                    elif 'require' in r_tag:
+                        comment = '{0}{1}{2}'.format(
+                            r_value['comment'] if 'comment' in r_value and r_value['comment'] else '',
+                            '\n\n' if comment else '',
+                            comment
+                            )
+                        out_log = '{0}{1}{2}'.format(
+                            r_value['state_stdout'] if 'state_stdout' in r_value and r_value['state_stdout'] else '',
+                            '\n\n' if out_log else '',
+                            out_log
+                            )
 
-                        self.os_release = (self.state.opts['grains']['osrelease'].lower()
-                                           if self.state.opts
-                                           and 'grains' in self.state.opts
-                                           and 'osrelease' in self.state.opts['grains']
-                                           else 'unknown')
+                    # parse common result
+                    else:
+                        comment = '{0}{1}{2}'.format(
+                            comment,
+                            '\n\n' if comment else '',
+                            r_value['comment'] if 'comment' in r_value and r_value['comment'] else ''
+                            )
+                        out_log = '{0}{1}{2}'.format(
+                            out_log,
+                            '\n\n' if out_log else '',
+                            r_value['state_stdout'] if 'state_stdout' in r_value and r_value['state_stdout'] else ''
+                            )
 
-			if self.os_type == 'unknown':
-                                if self._salt_opts.get('cust_ostype') is None:
-                                        raise Exception
-                                else: self.os_type = self._salt_opts['cust_ostype']
+                    result = r_value['result']
+                    # break when one state runs failed
+                    if not result:
+                        break
 
-		except Exception, e:
-			utils.log("ERROR", "Fetch agent's os type failed...", ("_init_ostype", self))
-			raise ExecutionException("Fetch agent's os type failed")
+                # add require in comment and log
+                if require_in_comment:
+                    comment += '\n\n' + require_in_comment
 
-	def exec_salt(self, states):
-		"""
-			Transfer and exec salt state.
-			return result format: (result,comment,out_log), result:True/False
-		"""
+                if require_in_log:
+                    out_log += '\n\n' + require_in_log
 
-		result = False
-		comment = ''
-		out_log = ''
+            else:
+                out_log = "wait failed"
 
-		# check
-		if not states:
-			out_log = "Null states"
-			return (result, comment, out_log)
-		if not states or not isinstance(states, list):
-			out_log = "Invalid state format %s" % str(states)
-			return (result, comment, out_log)
+        return (result, comment, out_log)
 
-		# check whether contain specail module
-		try:
-			if self._is_special(states):
-				self._enable_epel()
-		except:
-			utils.log("WARNING", "Enable epel repo failed...",("exec_salt", self))
-			pass
+    def _is_special(self, states):
+        """
+            Check whether contain gem/npm/pip state.
+        """
+        is_special = False
+        for state in states:
+            for tag, module in state.iteritems():
+                if len([ m for m in module.keys() if m in['gem', 'npm', 'pip', 'docker'] ]) > 0:
+                    is_special = True
+                    break
 
-		utils.log("INFO", "Begin to execute salt state...", ("exec_salt", self))
-		for idx, state in enumerate(states):
-			utils.log("INFO", "Begin to execute the %dth salt state..." % (idx+1), ("exec_salt", self))
-			try:
-				# init state
-				try:
-					module_list = []
-					for tag in state.keys():
-						module_list += state[tag].keys()
+        return is_special
 
-					utils.log("INFO", "Check module list %s" % str(module_list), ("exec_salt", self))
-					if module_list and any(['npm' in module_list, 'gem' in module_list, 'pip' in module_list]):
-						self._init_state()
-				except Exception, e:
-					utils.log("ERROR", "Re-init state exception: %s" % str(e), ("exec_salt", self))
-					pass
+    def _enable_epel(self):
+        """
+            Install and enbale epel in yum package manager system.
+        """
+        if self.os_type not in ['centos', 'redhat', 'amazon']:  return
 
-				utils.log("INFO", "Begin to execute salt state...", ("exec_salt", self))
-				ret = self.state.call_high(state)
-			except Exception, e:
-				utils.log("ERROR", "Execute salt state %s failed: %s"% (json.dumps(state), str(e)), ("exec_salt", self))
-				return (False, "Execute salt state exception", "")
+        try:
+            epel_rpm = 'epel-release-6-8.noarch.rpm'
+            if self.os_type in ['centos', 'redhat'] and self.os_release and float(self.os_release) >= 7.0:
+                epel_rpm = 'epel-release-7-0.2.noarch.rpm'
+            if not self._pkg_cache.endswith('/'):   self._pkg_cache += '/'
+            if not self.__is_existed(self._pkg_cache+epel_rpm):
+                utils.log("WARNING", "Cannot find the epel rpm package in %s" % self._pkg_cache, ("_enable_epel", self))
+                return
 
-			if ret:
-				# parse the ret and return
-				utils.log("INFO", json.dumps(ret), ("exec_salt", self))
+            import subprocess
+            if self.os_type in ['centos', 'redhat']:    # install with rpm on centos|redhat
+                cmd = 'rpm -ivh ' + self._pkg_cache + 'epel-release-6-8.noarch.rpm'
+            else:   # install with yum on amazon ami
+                cmd = 'yum -y install epel-release'
 
-				# set comment and output log
-				require_in_comment = ''
-				require_in_log = ''
-				for r_tag, r_value in ret.items():
-					if 'result' not in r_value:	continue 	# filter no result
+            cmd += '; yum-config-manager --enable epel'
 
-					# parse require in result
- 					if 'require_in' in r_tag:
-						require_in_comment = '{0}{1}{2}'.format(
-								require_in_comment,
-								'\n\n' if require_in_comment else '',
-								r_value['comment'] if 'comment' in r_value and r_value['comment'] else ''
-							)
-						require_in_log = '{0}{1}{2}'.format(
-								require_in_log,
-								'\n\n' if require_in_log else '',
-								r_value['state_stdout'] if 'state_stdout' in r_value and r_value['state_stdout'] else ''
-							)
+            devnull = open('/dev/null', 'w')
+            subprocess.Popen(
+                cmd,
+                shell=True,
+                stdout=devnull,
+                stderr=devnull,
+                ).wait()
+        except Exception, e:
+            utils.log("ERROR", str(e), ("_enable_epel", self))
+            return
 
-					# parse require result
-					elif 'require' in r_tag:
-						comment = '{0}{1}{2}'.format(
-							r_value['comment'] if 'comment' in r_value and r_value['comment'] else '',
-							'\n\n' if comment else '',
-							comment
-							)
-						out_log = '{0}{1}{2}'.format(
-							r_value['state_stdout'] if 'state_stdout' in r_value and r_value['state_stdout'] else '',
-							'\n\n' if out_log else '',
-							out_log
-							)
+    def __mkdir(self, path):
+        """
+            Check and make directory.
+        """
+        if not os.path.isdir(path):
+            try:
+                os.makedirs(path)
+            except OSError, e:
+                utils.log("ERROR", "Create directory %s failed" % path, ("__mkdir", self))
+                return False
 
-					# parse common result
-					else:
-						comment = '{0}{1}{2}'.format(
-							comment,
-							'\n\n' if comment else '',
-							r_value['comment'] if 'comment' in r_value and r_value['comment'] else ''
-							)
-						out_log = '{0}{1}{2}'.format(
-							out_log,
-							'\n\n' if out_log else '',
-							r_value['state_stdout'] if 'state_stdout' in r_value and r_value['state_stdout'] else ''
-							)
+        return True
 
-					result = r_value['result']
-					# break when one state runs failed
-					if not result:
-						break
+    def __is_existed(self, files):
+        """
+            Check files whether existed.
+        """
+        file_list = []
 
-				# add require in comment and log
-				if require_in_comment:
-					comment += '\n\n' + require_in_comment
+        if isinstance(files, basestring):
+            file_list.append(files)
+        elif isinstance(files, list):
+            file_list = files
+        else:
+            utils.log("WARNING", "No input files to check...", ("__is_existed", self))
+            return
 
-				if require_in_log:
-					out_log += '\n\n' + require_in_log
+        the_file = None
+        for f in file_list:
+            if os.path.isfile(f):
+                the_file = f
+                break
 
-			else:
-				out_log = "wait failed"
+        if not the_file:
+            utils.log("WARNING", "No files in %s existed..." % str(files), ("__is_existed", self))
+            return
 
-		return (result, comment, out_log)
-
-	def _is_special(self, states):
-		"""
-			Check whether contain gem/npm/pip state.
-		"""
-		is_special = False
-		for state in states:
-			for tag, module in state.iteritems():
-				if len([ m for m in module.keys() if m in['gem', 'npm', 'pip', 'docker'] ]) > 0:
-					is_special = True
-					break
-
-		return is_special
-
-	def _enable_epel(self):
-		"""
-			Install and enbale epel in yum package manager system.
-		"""
-		if self.os_type not in ['centos', 'redhat', 'amazon']:	return
-
-		try:
-			epel_rpm = 'epel-release-6-8.noarch.rpm'
-			if self.os_type in ['centos', 'redhat'] and self.os_release and float(self.os_release) >= 7.0:
-				epel_rpm = 'epel-release-7-0.2.noarch.rpm'
-			if not self._pkg_cache.endswith('/'):	self._pkg_cache += '/'
-			if not self.__is_existed(self._pkg_cache+epel_rpm):
-				utils.log("WARNING", "Cannot find the epel rpm package in %s" % self._pkg_cache, ("_enable_epel", self))
-				return
-
-			import subprocess
-			if self.os_type in ['centos', 'redhat']:	# install with rpm on centos|redhat
-				cmd = 'rpm -ivh ' + self._pkg_cache + 'epel-release-6-8.noarch.rpm'
-			else:	# install with yum on amazon ami
-				cmd = 'yum -y install epel-release'
-
-			cmd += '; yum-config-manager --enable epel'
-
-			devnull = open('/dev/null', 'w')
-			subprocess.Popen(
-				cmd,
-				shell=True,
-				stdout=devnull,
-				stderr=devnull,
-				).wait()
-		except Exception, e:
-			utils.log("ERROR", str(e), ("_enable_epel", self))
-			return
-
-	def __mkdir(self, path):
-		"""
-			Check and make directory.
-		"""
-		if not os.path.isdir(path):
-			try:
-				os.makedirs(path)
-			except OSError, e:
-				utils.log("ERROR", "Create directory %s failed" % path, ("__mkdir", self))
-				return False
-
-		return True
-
-	def __is_existed(self, files):
-		"""
-			Check files whether existed.
-		"""
-		file_list = []
-
-		if isinstance(files, basestring):
-			file_list.append(files)
-		elif isinstance(files, list):
-			file_list = files
-		else:
-			utils.log("WARNING", "No input files to check...", ("__is_existed", self))
-			return
-
-		the_file = None
-		for f in file_list:
-			if os.path.isfile(f):
-				the_file = f
-				break
-
-		if not the_file:
-			utils.log("WARNING", "No files in %s existed..." % str(files), ("__is_existed", self))
-			return
-
-		return the_file
+        return the_file
 
 # For unit tests only
 def main():
@@ -370,4 +370,4 @@ def main():
                 print "wait failed"
 
 if __name__ == '__main__':
-		main()
+        main()
