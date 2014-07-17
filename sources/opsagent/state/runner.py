@@ -81,30 +81,30 @@ class StateRunner(object):
 
         self.state = RunState(self._salt_opts)
 
-        def _init_cust_ostype(self):
-            try:
-                import subprocess
+    def _init_cust_ostype(self):
+        try:
+            import subprocess
 
-                config_file = self.__is_existed(['/etc/issue', '/etc/redhat-release'])
-                if not config_file:
-                        raise ExecutionException("Cannot find the system config file")
+            config_file = self.__is_existed(['/etc/issue', '/etc/redhat-release'])
+            if not config_file:
+                    raise ExecutionException("Cannot find the system config file")
 
-                cmd = 'grep -io -E  "ubuntu|debian|centos|redhat|amazon" ' + config_file
-                process = subprocess.Popen(
-                        cmd,
-                        shell=True,
-                        stdout=subprocess.PIPE,
-                        stderr=subprocess.PIPE)
+            cmd = 'grep -io -E  "ubuntu|debian|centos|redhat|amazon" ' + config_file
+            process = subprocess.Popen(
+                    cmd,
+                    shell=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE)
 
-                out, err = process.communicate()
+            out, err = process.communicate()
 
-                if process.returncode != 0:
-                        utils.log("ERROR", "Excute cmd %s failed..."%cmd, ("_init_ostype", self))
-                        raise ExecutionException("Excute cmd %s failed"%cmd)
+            if process.returncode != 0:
+                    utils.log("ERROR", "Excute cmd %s failed..."%cmd, ("_init_ostype", self))
+                    raise ExecutionException("Excute cmd %s failed"%cmd)
 
-                self._salt_opts['cust_ostype'] = out
-            except Exception, e:
-                utils.log("ERROR", "Fetch custom agent's os type failed...", ("_init_cust_ostype", self))
+            self._salt_opts['cust_ostype'] = out
+        except Exception, e:
+            utils.log("ERROR", "Fetch custom agent's os type failed...", ("_init_cust_ostype", self))
 
     def _init_ostype(self):
         try:
@@ -152,7 +152,7 @@ class StateRunner(object):
             mods = self.get_mods(states)
 
             # whether special module
-            inter_mods = list(set(mods).intersection(set(spec_mods)))
+            inter_mods = list(set(mods).intersection(set(self.spec_mods)))
             if len(inter_mods)>0:
                 self._enable_epel()
 
@@ -161,9 +161,10 @@ class StateRunner(object):
                     if self.os_type in ['redhat', 'centos'] and float(self.os_release) >= 7.0 or self.os_type == 'debian':
                         self.__preinstall_npm()
 
-        except:
+        except Exception, e:
             utils.log("WARNING", "Enable epel repo failed...",("exec_salt", self))
-            pass
+            comment = 'Enable epel repo failed'
+            return (result, comment, str(e))
 
         utils.log("INFO", "Begin to execute salt state...", ("exec_salt", self))
         for idx, state in enumerate(states):
