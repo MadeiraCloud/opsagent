@@ -319,7 +319,10 @@ class StateWorker(threading.Thread):
         import opsagent.state.adaptor
         reload(opsagent.state.adaptor)
         from opsagent.state.adaptor import StateAdaptor
-        self.__state_adaptor = StateAdaptor()
+        if self.__config['module']['mod_tag'] == "v2014-04-15":
+            self.__state_adaptor = StateAdaptor()
+        else:
+            self.__state_adaptor = StateAdaptor(self.__state_runner)
 
         utils.log("DEBUG", "Modules loaded",('load_modules',self))
 
@@ -430,7 +433,10 @@ class StateWorker(threading.Thread):
         try:
             # state convert
             utils.log("INFO", "Begin to convert salt states...", ('__exec_salt', self))
-            salt_states = self.__state_adaptor.convert(sid, module, parameter, self.__state_runner.os_type)
+            if self.__config['module']['mod_tag'] == "v2014-04-15":
+                salt_states = self.__state_adaptor.convert(sid, module, parameter, self.__state_runner.os_type)
+            else:
+                salt_states = self.__state_adaptor.convert(sid, module, parameter)
 
             # exec salt state
             utils.log("INFO", "Begin to execute salt states...", ('__exec_salt', self))
