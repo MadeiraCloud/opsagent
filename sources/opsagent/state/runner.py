@@ -81,30 +81,30 @@ class StateRunner(object):
 
         self.state = RunState(self._salt_opts)
 
-        def _init_cust_ostype(self):
-            try:
-                import subprocess
+    def _init_cust_ostype(self):
+        try:
+            import subprocess
 
-                config_file = self.__is_existed(['/etc/issue', '/etc/redhat-release'])
-                if not config_file:
-                        raise ExecutionException("Cannot find the system config file")
+            config_file = self.__is_existed(['/etc/issue', '/etc/redhat-release'])
+            if not config_file:
+                    raise ExecutionException("Cannot find the system config file")
 
-                cmd = 'grep -io -E  "ubuntu|debian|centos|redhat|amazon" ' + config_file
-                process = subprocess.Popen(
-                        cmd,
-                        shell=True,
-                        stdout=subprocess.PIPE,
-                        stderr=subprocess.PIPE)
+            cmd = 'grep -io -E  "ubuntu|debian|centos|redhat|amazon" ' + config_file
+            process = subprocess.Popen(
+                    cmd,
+                    shell=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE)
 
-                out, err = process.communicate()
+            out, err = process.communicate()
 
-                if process.returncode != 0:
-                        utils.log("ERROR", "Excute cmd %s failed..."%cmd, ("_init_ostype", self))
-                        raise ExecutionException("Excute cmd %s failed"%cmd)
+            if process.returncode != 0:
+                    utils.log("ERROR", "Excute cmd %s failed..."%cmd, ("_init_ostype", self))
+                    raise ExecutionException("Excute cmd %s failed"%cmd)
 
-                self._salt_opts['cust_ostype'] = out
-            except Exception, e:
-                utils.log("ERROR", "Fetch custom agent's os type failed...", ("_init_cust_ostype", self))
+            self._salt_opts['cust_ostype'] = out
+        except Exception, e:
+            utils.log("ERROR", "Fetch custom agent's os type failed...", ("_init_cust_ostype", self))
 
     def _init_ostype(self):
         try:
