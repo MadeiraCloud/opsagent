@@ -89,7 +89,7 @@ class StateRunner(object):
             if not config_file:
                     raise ExecutionException("Cannot find the system config file")
 
-            cmd = 'grep -io -E  "ubuntu|debian|centos|redhat|amazon" ' + config_file
+            cmd = 'grep -io -E  "ubuntu|debian|centos|redhat|red hat|amazon" ' + config_file
             process = subprocess.Popen(
                     cmd,
                     shell=True,
@@ -102,7 +102,7 @@ class StateRunner(object):
                     utils.log("ERROR", "Excute cmd %s failed..."%cmd, ("_init_ostype", self))
                     raise ExecutionException("Excute cmd %s failed"%cmd)
 
-            self._salt_opts['cust_ostype'] = out
+            self._salt_opts['cust_ostype'] = out.lower().replace(" ","")
         except Exception, e:
             utils.log("ERROR", "Fetch custom agent's os type failed...", ("_init_cust_ostype", self))
 
