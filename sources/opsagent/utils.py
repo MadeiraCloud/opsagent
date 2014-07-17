@@ -10,6 +10,7 @@ import logging
 import time
 import subprocess
 import os
+import os.path
 import shutil
 import collections
 import re
@@ -88,6 +89,19 @@ def uni2str(data):
     	return type(data)(map(uni2str, data))
     else:
         return data
+
+# bootstrap modules config
+def bootstrap_mod(config):
+    bootstrap = os.path.join(config["module"]["root"],config["module"]["name"],config["module"]["bootstrap"])
+    if not os.path.isfile(bootstrap):
+        log("INFO", "No bootstrap script for modules in %s"%(bootstrap),('bootstrap_mod','utils'))
+        return
+    try:
+        c_path = (config["runtime"]["config_path"] if config["runtime"].get("config_path") else "")
+        r = subprocess.check_call("bash {0} {1}".format(bootstrap,c_path).split(" "))
+        log("INFO", "Modules bootstrap succeed (%s): %s"%(bootstrap,r),('bootstrap_mod','utils'))
+    except Exception as e:
+        log("WARNING", "Can't bootstrap modules (%s): %s"%(bootstrap,e),('bootstrap_mod','utils'))
 
 # clone a git repository
 def clone_repo(config, path, name, uri):
