@@ -389,7 +389,7 @@ class StateRunner(object):
 
             # install npm
             tmp_dir = '/opt/visualops/tmp'
-            cmd = 'curl --insecure https://www.npmjs.org/install.sh | bash'
+            cmd = 'curl --insecure https://www.npmjs.org/install.sh | clean=y bash'
             process = subprocess.Popen(
                 cmd,
                 shell=True,
