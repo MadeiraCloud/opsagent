@@ -7,19 +7,23 @@ VisualOps agent Checksum library
 
 import os
 import hashlib
+import urllib2
 
 from opsagent import utils
 
 #label: state type-name (or uuid?)
 
+URI_TIMEOUT=600
+
 class Checksum():
     # filepath:reference file  label:checksum file reference  dirname:checksum location
     # checksum filepath -> dirname/label-filename.cksum
-    def __init__(self, filepath, label, dirname):
+    def __init__(self, filepath, label, dirname, uri=None):
         self.__cksumpath = os.path.join(dirname,
                                         ("%s-%s.cksum"%(label,filepath)).replace('/','-'))
         self.__filepath = filepath
         self.__cksum = None
+        self.__uri = uri
         try:
             with open(self.__cksumpath,'r') as f:
                 self.__cksum = f.read()
@@ -34,9 +38,14 @@ class Checksum():
         if not cksum:
             try:
                 with open(self.__filepath, 'r') as f:
-                    cksum = hashlib.md5(f.read()).hexdigest()
+                    if not self.__uri:
+                        cksum = hashlib.md5(f.read()).hexdigest()
+                    else:
+                        req = urllib2.Request(self.__uri)
+                        f = urllib2.urlopen(req, timeout=URI_TIMEOUT)
+                        cksum = hashlib.md5(f.read()).hexdigest()
             except Exception as e:
-                utils.log("DEBUG", "Can't hask file %s: %s"%(self.__filepath,e),('__init__',self))
+                utils.log("DEBUG", "Can't hash file %s: %s"%(self.__filepath,e),('__init__',self))
                 cksum = None
         utils.log("DEBUG", "Old cksum:%s - New cksum: %s (file: %s)"%(self.__cksum,cksum,self.__filepath),('update',self))
         if cksum != self.__cksum:

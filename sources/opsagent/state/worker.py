@@ -44,7 +44,7 @@ WAIT_STATE=0
 # Reset value for recipe version counter (no overflow)
 RECIPE_COUNT_RESET=4096
 # Time to wait util re-check wait
-WAIT_TIMEOUT=30
+WAIT_TIMEOUT=1
 
 # Default watch map
 WATCH = {
@@ -370,11 +370,11 @@ class StateWorker(threading.Thread):
     def __exec_wait(self, sid, module, parameter):
         utils.log("INFO", "Entering wait process ...",('__exec_wait',self))
         while (sid not in self.__done) and (self.__run):
-            utils.log("INFO", "Waiting for external states ...",('__exec_wait',self))
+            utils.log("DEBUG", "Waiting for external states ...",('__exec_wait',self))
             utils.log("DEBUG", "Curent state:%s - Done states:%s"%(sid,self.__done),('__exec_wait',self))
             self.__wait_event.clear()
             self.__wait_event.wait(WAIT_TIMEOUT)
-            utils.log("INFO", "New state status received, analysing ...",('__exec_wait',self))
+            utils.log("DEBUG", "New state status received, analysing ...",('__exec_wait',self))
         if sid in self.__done:
             value = SUCCESS
             utils.log("INFO", "Waited state completed",('__exec_wait',self))
