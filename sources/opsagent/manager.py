@@ -128,20 +128,20 @@ class Manager(WebSocketClient):
         ret = False
         self.__config['runtime']['tag'] = True
         self.__config['runtime']['clone'] = True
-#        if module_repo != self.__config['module']['mod_repo']:
-        utils.log("DEBUG", "Cloning repo...",('__act_recipe',self))
-        try:
-            clone = utils.clone_repo(self.__config,
-                                     self.__config['module']['root'],
-                                     self.__config['module']['name'],
-                                     module_repo)
-        except ManagerInvalidStatesRepoException:
-            self.__config['runtime']['clone'] = False
-            return ret
-        else:
-            ret = True
-            self.__config['module']['mod_repo'] = module_repo
-            utils.update_config_file(self.__config, "mod_repo", module_repo)
+        if module_repo != self.__config['module']['mod_repo']:
+            utils.log("DEBUG", "Cloning repo...",('__act_recipe',self))
+            try:
+                clone = utils.clone_repo(self.__config,
+                                         self.__config['module']['root'],
+                                         self.__config['module']['name'],
+                                         module_repo)
+            except ManagerInvalidStatesRepoException:
+                self.__config['runtime']['clone'] = False
+#                return ret
+            else:
+                ret = True
+                self.__config['module']['mod_repo'] = module_repo
+                utils.update_config_file(self.__config, "mod_repo", module_repo)
         if clone or module_tag != self.__config['module']['mod_tag']:
             try:
                 utils.checkout_repo(self.__config,
