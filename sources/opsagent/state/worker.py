@@ -51,6 +51,9 @@ WATCH = {
     "linux.service": {
         "file_key": "watch"
     },
+    "linux.supervisord": {
+        "file_key": "watch"
+    },
     "common.docker.built": {
         "file": "Dockerfile",
         "dir_key": "path"
