@@ -250,7 +250,6 @@ class StateWorker(threading.Thread):
             while self.__executing and not brk:
                 try:
                     os.killpg(self.__executing.pid,signal.SIGKILL)
-                    time.sleep(0.1)
                 except OSError as e:
                     e = str(e)
                     if e.find("No such process"):
@@ -264,6 +263,7 @@ class StateWorker(threading.Thread):
                 try:
                     self.__executing.terminate()
                 except Exception: pass
+                time.sleep(0.1)
         else:
             utils.log("DEBUG", "Execution not running",('__kill_exec',self))
 

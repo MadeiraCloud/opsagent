@@ -137,6 +137,7 @@ class Manager(WebSocketClient):
                                      module_repo)
         except ManagerInvalidStatesRepoException:
             self.__config['runtime']['clone'] = False
+            return ret
         else:
             ret = True
             self.__config['module']['mod_repo'] = module_repo
@@ -203,7 +204,12 @@ class Manager(WebSocketClient):
         utils.log("DEBUG", "Valid data",('__act_recipe',self))
 
         # update repo
-        self.__update_repo(module_repo, module_tag)
+        update_status = False
+        while not update_status:
+            update_status = self.__update_repo(module_repo, module_tag)
+            if not update_status:
+                utils.log("WARNING", "Retrying clone repo",('__act_recipe',self))
+                time.sleep(0.1)
 
         # ensure states are compatible
         self.__config['runtime']['compat'] = (True
