@@ -403,6 +403,7 @@ class StateWorker(threading.Thread):
             utils.log("DEBUG", "Default watch map loaded",('__exec_salt',self))
 
         watch_key = None
+        watchs = None
         if watch_map.get(module):
             watch_key = (watch_map[module].get("file_key")
                          if watch_map[module].get("file_key")
@@ -451,11 +452,21 @@ class StateWorker(threading.Thread):
             res['out_log'] = None
             return
 
-        if result and cs and parameter.get("watch"):
-            if cs.update(edit=True):
-                utils.log("INFO", "New checksum stored for file %s"%(cs.filepath()),('__exec_salt',self))
-            else:
-                utils.log("WARNING", "Failed to store new checksum for file %s"%(cs.filepath()),('__exec_salt',self))
+
+        if result and watchs:
+            for watch in watchs:
+                if watch_map[module].get("file"):
+                    watch = os.path.join(watch,watch_map[module]['file'])
+                try:
+                    cs = Checksum(watch,sid,self.__config['global']['watch'])
+                    if cs.update(edit=True):
+                        utils.log("INFO", "New checksum stored for file %s"%(cs.filepath()),('__exec_salt',self))
+                    else:
+                        utils.log("WARNING", "Failed to store new checksum for file %s"%(cs.filepath()),('__exec_salt',self))
+                except Exception as e:
+                    utils.log("WARNING", "Failed to store new checksum for file %s: %s"%(cs.filepath(),e),('__exec_salt',self))
+
+
 
         utils.log("INFO", "State ID '%s' from module '%s' done, result '%s'"%(sid,module,result),('__exec_salt',self))
         utils.log("DEBUG", "State out log='%s'"%(out_log),('__exec_salt',self))
