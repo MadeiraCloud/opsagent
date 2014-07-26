@@ -4,6 +4,9 @@
 ## (c) 2014 MadeiraCloud LTD.
 ##
 
+# ensure good umask
+umask 022
+
 OA_VERSION=""
 
 # Set path
