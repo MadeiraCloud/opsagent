@@ -27,7 +27,8 @@ from opsagent.objects import send
 from opsagent.exception import \
     OpsAgentException, \
     SWNoManagerException, \
-    SWWaitFormatException
+    SWWaitFormatException, \
+    ManagerInvalidStatesRepoException
 ##
 
 ## DEFINES
@@ -54,7 +55,7 @@ WATCH = {
     "linux.supervisord": {
         "file_key": "watch"
     },
-    "common.docker.built": {
+    "linux.docker.built": {
         "file": "Dockerfile",
         "dir_key": "path"
     }
@@ -295,14 +296,41 @@ class StateWorker(threading.Thread):
     ## LOAD PROCESS
     # Load states modules
     def __load_modules(self):
-        # clone states if not exists
-        if not os.path.isdir("%s/%s"%(self.__config['module']['root'],self.__config['module']['name'])):
-            utils.clone_repo(self.__config,self.__config['module']['root'],self.__config['module']['name'],self.__config['module']['mod_repo'])
-            utils.checkout_repo(self.__config,self.__config['module']['root'],self.__config['module']['name'],self.__config['module']['mod_tag'],self.__config['module']['mod_repo'])
-
-        # avoid race (TODO ensure fix)
+        # avoid race
         if self.__manager:
             self.__manager.wait_recv()
+
+#        if not os.path.isdir("%s/%s"%(self.__config['module']['root'],self.__config['module']['name'])):
+        # clone states
+        try:
+            utils.clone_repo(
+                self.__config,
+                self.__config['module']['root'],
+                self.__config['module']['name'],
+                self.__config['module']['mod_repo'])
+        except ManagerInvalidStatesRepoException:
+            self.__config['runtime']['clone'] = False
+        else:
+            self.__config['runtime']['clone'] = True
+        try:
+            utils.checkout_repo(
+                self.__config,
+                self.__config['module']['root'],
+                self.__config['module']['name'],
+                self.__config['module']['mod_tag'],
+                self.__config['module']['mod_repo'])
+        except ManagerInvalidStatesRepoException:
+            self.__config['runtime']['tag'] = False
+        else:
+            self.__config['runtime']['tag'] = True
+
+        # ensure states are compatible
+        self.__config['runtime']['compat'] = (True
+                                              if utils.compat_checker(self.__config['userdata']['version'],
+                                                                      os.path.join(self.__config['module']['root'],
+                                                                                   self.__config['module']['name'],
+                                                                                   self.__config['module']['compat']))
+                                              else False)
 
         # state runner
         if self.__state_runner:
@@ -547,20 +575,20 @@ class StateWorker(threading.Thread):
             self.__run = False
             return False
 
-        err = None
+        err = ""
         if self.__status == 0:
             try:
                 # Load modules on each round
                 self.__load_modules()
             except Exception as e:
                 utils.log("WARNING", "Can't load states modules: %s"%(e),('__runner_init',self))
-                err="Can't load states modules"
+                err+="Can't load states modules.\n"
         if not self.__config['runtime']['clone']:
-            err = "Can't clone states repo"
-        elif not self.__config['runtime']['tag']:
-            err = "Can't checkout required states tag"
-        elif not self.__config['runtime']['compat']:
-            err = "States not compatible to current agent version"
+            err += "Can't clone states repo.\n"
+        if not self.__config['runtime']['tag']:
+            err += "Can't checkout required states tag.\n"
+        if not self.__config['runtime']['compat']:
+            err += "States not compatible to current agent version.\n"
         if err:
             self.__send(send.statelog(init=self.__config['init'],
                                       version=self.__version,

@@ -23,8 +23,7 @@ from opsagent.exception import \
     ManagerInvalidStateFormatException, \
     ManagerInvalidUpdateFormatException, \
     ManagerInitDirDeniedException, \
-    ManagerInvalidWaitFormatException, \
-    ManagerInvalidStatesRepoException
+    ManagerInvalidWaitFormatException
 from opsagent import utils
 ##
 
@@ -122,42 +121,42 @@ class Manager(WebSocketClient):
 
         utils.log("INFO", "Update planned",('__act_update',self))
 
-    # update states repo
-    def __update_repo(self, module_repo, module_tag):
-        clone = False
-        ret = False
-        self.__config['runtime']['tag'] = True
-        self.__config['runtime']['clone'] = True
-        if module_repo != self.__config['module']['mod_repo']:
-            utils.log("DEBUG", "Cloning repo...",('__act_recipe',self))
-            try:
-                clone = utils.clone_repo(self.__config,
-                                         self.__config['module']['root'],
-                                         self.__config['module']['name'],
-                                         module_repo)
-            except ManagerInvalidStatesRepoException:
-                self.__config['runtime']['clone'] = False
-#                return ret
-            else:
-                ret = True
-                self.__config['module']['mod_repo'] = module_repo
-                utils.update_config_file(self.__config, "mod_repo", module_repo)
-        if clone or module_tag != self.__config['module']['mod_tag']:
-            try:
-                utils.checkout_repo(self.__config,
-                                    self.__config['module']['root'],
-                                    self.__config['module']['name'],
-                                    module_tag,
-                                    module_repo)
-            except ManagerInvalidStatesRepoException:
-                self.__config['runtime']['tag'] = False
-            else:
-                ret = True
-                self.__config['module']['mod_tag'] = module_tag
-                utils.update_config_file(self.__config, "mod_tag", module_tag)
-        if ret:
-            utils.bootstrap_mod(self.__config)
-        return ret
+#    # update states repo
+#    def __update_repo(self, module_repo, module_tag):
+#        clone = False
+#        ret = False
+#        self.__config['runtime']['tag'] = True
+#        self.__config['runtime']['clone'] = True
+#        if module_repo != self.__config['module']['mod_repo']:
+#            utils.log("DEBUG", "Cloning repo...",('__act_recipe',self))
+#            try:
+#                clone = utils.clone_repo(self.__config,
+#                                         self.__config['module']['root'],
+#                                         self.__config['module']['name'],
+#                                         module_repo)
+#            except ManagerInvalidStatesRepoException:
+#                self.__config['runtime']['clone'] = False
+##                return ret
+#            else:
+#                ret = True
+#                self.__config['module']['mod_repo'] = module_repo
+#                utils.update_config_file(self.__config, "mod_repo", module_repo)
+#        if clone or module_tag != self.__config['module']['mod_tag']:
+#            try:
+#                utils.checkout_repo(self.__config,
+#                                    self.__config['module']['root'],
+#                                    self.__config['module']['name'],
+#                                    module_tag,
+#                                    module_repo)
+#            except ManagerInvalidStatesRepoException:
+#                self.__config['runtime']['tag'] = False
+#            else:
+#                ret = True
+#                self.__config['module']['mod_tag'] = module_tag
+#                utils.update_config_file(self.__config, "mod_tag", module_tag)
+#        if ret:
+#            utils.bootstrap_mod(self.__config)
+#        return ret
 
     # Recipe object received
     def __act_recipe(self, data):
@@ -203,21 +202,23 @@ class Manager(WebSocketClient):
 
         utils.log("DEBUG", "Valid data",('__act_recipe',self))
 
-        # update repo
-        update_status = self.__update_repo(module_repo, module_tag)
+#        # update repo
+#        self.__update_repo(module_repo, module_tag)
+
+#        # update repo
+#        if self.__update_repo(module_repo, module_tag) is None:
+#            utils.log("ERROR", "Can't clone states repo, disconnecting ...",('__act_recipe',self))
+#            self.__close(code=codes.C_CLONE,reason=codes.M_CLONE)
+#            return
+
+#        # update repo
 #        update_status = False
 #        while not update_status:
+#            update_status = self.__update_repo(module_repo, module_tag)
 #            if not update_status:
 #                utils.log("WARNING", "Retrying clone repo",('__act_recipe',self))
 #                time.sleep(0.1)
 
-        # ensure states are compatible
-        self.__config['runtime']['compat'] = (True
-                                              if utils.compat_checker(self.__config['userdata']['version'],
-                                                                      os.path.join(self.__config['module']['root'],
-                                                                                   self.__config['module']['name'],
-                                                                                   self.__config['module']['compat']))
-                                              else False)
 
         # load recipes
         curent_version = self.__states_worker.get_version()
