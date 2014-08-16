@@ -121,6 +121,16 @@ class Manager(WebSocketClient):
 
         utils.log("INFO", "Update planned",('__act_update',self))
 
+    # update states repo
+    def __update_repo(self, module_repo, module_tag):
+        if module_repo != self.__config['module']['mod_repo']:
+            self.__config['module']['mod_repo'] = module_repo
+            utils.update_config_file(self.__config, "mod_repo", module_repo)
+        if module_tag != self.__config['module']['mod_tag']:
+            self.__config['module']['mod_tag'] = module_tag
+            utils.update_config_file(self.__config, "mod_tag", module_tag)
+
+
 #    # update states repo
 #    def __update_repo(self, module_repo, module_tag):
 #        clone = False
@@ -202,8 +212,8 @@ class Manager(WebSocketClient):
 
         utils.log("DEBUG", "Valid data",('__act_recipe',self))
 
-#        # update repo
-#        self.__update_repo(module_repo, module_tag)
+        # update repo
+        self.__update_repo(module_repo, module_tag)
 
 #        # update repo
 #        if self.__update_repo(module_repo, module_tag) is None:
