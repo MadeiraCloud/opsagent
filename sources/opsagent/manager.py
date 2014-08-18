@@ -234,7 +234,7 @@ class Manager(WebSocketClient):
         curent_version = self.__states_worker.get_version()
         if (not curent_version) or (curent_version != version) or (not self.__states_worker.is_running()):
             utils.log("INFO", "Killing current execution ...",('__act_recipe',self))
-            self.__states_worker.kill()
+            self.__states_worker.kill(wait=True)
             utils.log("DEBUG", "Execution killed",('__act_recipe',self))
             utils.log("INFO", "Loading states received ...",('__act_recipe',self))
             self.__states_worker.load(version=version,states=states)

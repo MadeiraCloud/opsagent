@@ -167,12 +167,12 @@ class StateWorker(threading.Thread):
 
         self.__abort = (1 if kill else 2)
 
-        if kill:
-            self.kill()
-        else:
-            if not end:
-                self.__run = False
+        if (not kill) and (end):
             self.__kill_delay()
+        elif (not kill) and (not end):
+            self.kill(wait=True)
+        else:
+            self.kill()
 
         if self.__cv_wait:
             utils.log("DEBUG", "Aquire conditional lock ...",('abort',self))
@@ -277,7 +277,7 @@ class StateWorker(threading.Thread):
             utils.log("DEBUG", "worker not waiting",('kill_wait',self))
 
     # Kill the current execution
-    def kill(self):
+    def kill(self, wait=False):
         if not self.__run:
             utils.log("DEBUG", "Execution not running, nothing to do",('kill',self))
             return
@@ -286,8 +286,9 @@ class StateWorker(threading.Thread):
             self.__run = False
             self.__kill_delay()
             self.__kill_wait()
-            self.__kill_exec()
-            utils.log("INFO", "Execution killed",('kill',self))
+            if wait is False:
+                self.__kill_exec()
+        utils.log("INFO", "Execution killed",('kill',self))
         while not self.__cv_wait and not self.dead:
             time.sleep(0.1)
     ##
@@ -300,7 +301,6 @@ class StateWorker(threading.Thread):
         if self.__manager:
             self.__manager.wait_recv()
 
-#        if not os.path.isdir("%s/%s"%(self.__config['module']['root'],self.__config['module']['name'])):
         # clone states
         try:
             utils.clone_repo(
@@ -323,6 +323,9 @@ class StateWorker(threading.Thread):
             self.__config['runtime']['tag'] = False
         else:
             self.__config['runtime']['tag'] = True
+
+        if self.__config['runtime']['clone'] or self.__config['runtime']['tag']:
+            utils.bootstrap_mod(self.__config)
 
         # ensure states are compatible
         self.__config['runtime']['compat'] = (True
