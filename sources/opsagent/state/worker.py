@@ -343,7 +343,7 @@ class StateWorker(threading.Thread):
         import opsagent.state.runner
         reload(opsagent.state.runner)
         from opsagent.state.runner import StateRunner
-        self.__state_runner = StateRunner(config=self.__config['salt'])
+        self.__state_runner = StateRunner(config=self.__config)
 
         # state adaptor
         if self.__state_adaptor:
