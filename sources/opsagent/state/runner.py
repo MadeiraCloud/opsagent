@@ -52,6 +52,7 @@ class StateRunner(object):
             'cachedir':          None,
             'test':              False,
             'environment':       None,
+            'watch_dir':         config['global']['watch'],
         }
 
         if config.get('runtime'):

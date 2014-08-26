@@ -31,6 +31,9 @@ function tree() {
     # Move to build directory
     cd ${BUILD_DIR}
 
+    # Add License
+    cp ../LICENSE ${OPSAGENT_DIR}/
+
     # Copy bootstrap scripts
     cp ../${SCRIPTS_DIR}/{bootstrap.sh,daemon.sh,kill.sh,update.sh} ${OPSAGENT_DIR}/${SCRIPTS_DIR}/
     # Copy standalone scripts
