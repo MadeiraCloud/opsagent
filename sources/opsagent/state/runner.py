@@ -24,6 +24,9 @@ class StateRunner(object):
         # init salt opts
         self._init_opts(config)
 
+        # change config to salt config
+        config = config.get("salt",{})
+
         # init custom os type
         self._init_cust_ostype()
 
@@ -37,6 +40,7 @@ class StateRunner(object):
         self._pkg_cache = (config['pkg_cache'] if 'pkg_cache' in config and config['pkg_cache'] and isinstance(config['pkg_cache'], basestring) else '/tmp/')
 
     def _init_opts(self, config):
+        salt_config = config.get('salt',{})
 
         self._salt_opts = {
             'file_client':       'local',
@@ -55,11 +59,11 @@ class StateRunner(object):
             'watch_dir':         config['global']['watch'],
         }
 
-        if config.get('runtime'):
-            self._salt_opts.update(config['runtime'])
+        if salt_config.get('runtime'):
+            self._salt_opts.update(salt_config['runtime'])
 
         # file roots
-        for path in config['srv_root'].split(':'):
+        for path in salt_config['srv_root'].split(':'):
             # check and make path
             if not self.__mkdir(path):
                 continue
@@ -67,13 +71,13 @@ class StateRunner(object):
             self._salt_opts['file_roots']['base'].append(path)
 
         if len(self._salt_opts['file_roots']['base']) == 0:     raise ExecutionException("Missing file roots argument")
-        if not self.__mkdir(config['extension_modules']):       raise ExecutionException("Missing extension modules argument")
+        if not self.__mkdir(salt_config['extension_modules']):       raise ExecutionException("Missing extension modules argument")
 
-        self._salt_opts['extension_modules'] = config['extension_modules']
+        self._salt_opts['extension_modules'] = salt_config['extension_modules']
 
-        if not self.__mkdir(config['cachedir']):    raise ExecutionException("Missing cachedir argument")
+        if not self.__mkdir(salt_config['cachedir']):    raise ExecutionException("Missing cachedir argument")
 
-        self._salt_opts['cachedir'] = config['cachedir']
+        self._salt_opts['cachedir'] = salt_config['cachedir']
 
     def _init_state(self):
         """
