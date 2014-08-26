@@ -266,6 +266,21 @@ fi
 service opsagentd status
 if [ $? -ne 0 ]; then
     echo "agent not running, attempting to run ..."
+    # create service
+    cp ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_SCRIPTS_DIR}/daemon.sh /etc/init.d/opsagentd
+    # set service script rights
+    chown root:root /etc/init.d/opsagentd
+    chmod 755 /etc/init.d/opsagentd
+    # configure startup service
+    if [ $(which chkconfig 2>/dev/null) ]; then
+        echo "chkconfig based daemons platform"
+        chkconfig --add opsagentd
+        chkconfig --level 2345 opsagentd on
+    elif [ $(which update-rc.d) ]; then
+        echo "update-rc.d based daemons platform"
+        update-rc.d opsagentd defaults
+        update-rc.d opsagentd enable
+    fi
     service opsagentd start
     if [ $? -ne 0 ]; then
         echo "FATAL: can't run agent" >&2

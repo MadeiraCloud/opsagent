@@ -53,6 +53,7 @@ cp ${OA_BOOT_DIR}/${OA_AGENT}/${SRC_SCRIPTS_DIR}/daemon.sh /etc/init.d/opsagentd
 chown root:root /etc/init.d/opsagentd
 chmod 755 /etc/init.d/opsagentd
 
+# configure startup service
 if [ $(which chkconfig 2>/dev/null) ]; then
     echo "chkconfig based daemons platform"
     chkconfig --add opsagentd
