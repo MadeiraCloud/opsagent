@@ -32,18 +32,26 @@ class Checksum():
         else:
             utils.log("DEBUG", "checksum fetched from disk (file %s): %s"%(self.__cksumpath,self.__cksum),('__init__',self))
 
+    # calculates checksums by chunk
+    def __md5sum(self, f):
+        md5 = hashlib.md5()
+        for chunk in iter(lambda: f.read(128 * md5.block_size), b''):
+            md5.update(chunk)
+        return md5.hexdigest()
+
     # update checksum if changed, return change state
     # cksum:new checksum (if external)  persist:write on disk  tfirst:return true if no old cksum
     def update(self, cksum=None, persist=True, edit=True, tfirst=True):
         if not cksum:
             try:
-                with open(self.__filepath, 'r') as f:
-                    if not self.__uri:
-                        cksum = hashlib.md5(f.read()).hexdigest()
-                    else:
-                        req = urllib2.Request(self.__uri)
-                        f = urllib2.urlopen(req, timeout=URI_TIMEOUT)
-                        cksum = hashlib.md5(f.read()).hexdigest()
+                if self.__uri:
+                    f = urllib2.urlopen(self.__uri, timeout=URI_TIMEOUT)
+                else:
+                    f = open(self.__filepath, 'rb')
+                cksum = self.__md5sum(f)
+                try:
+                    f.close()
+                except Exception: pass
             except Exception as e:
                 utils.log("DEBUG", "Can't hash file %s: %s"%(self.__filepath,e),('__init__',self))
                 cksum = None
