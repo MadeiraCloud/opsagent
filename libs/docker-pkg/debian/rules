@@ -28,6 +28,8 @@ endef
 # Rules
 build:
 
+distclean:
+
 clean:
 	$(MAKE) distclean
 	-rm -rf debian/$(package)
