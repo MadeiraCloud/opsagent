@@ -37,31 +37,31 @@ clean:
 binary-indep: build
 
 binary-arch: build
-        $(checkroot)
+	$(checkroot)
 
-        # Install Program
+# Install Program
 	$(MAKE) install DESTDIR=$(DESTDIR) LIBTOOL=libtool
 	$(MAKE_DIR) $(BIN_DIR)
 	$(INST_PROG) $(package)-$(VERSION) $(BIN_DIR)/$(package)
 
-        # Install Service Script
+# Install Service Script
 	$(MAKE_DIR) $(ETC_DIR)/init.d
 	$(INST_SCRIPT) $(package).service $(ETC_DIR)/init.d/$(package)
 
-        # Strip the symbols from the executable
-        strip -R .comment $(BIN_DIR)/$(package)
+# Strip the symbols from the executable
+	strip -R .comment $(BIN_DIR)/$(package)
 
-        # Work out the shared library dependancies
-        dpkg-shlibdeps $(package)
+# Work out the shared library dependancies
+	dpkg-shlibdeps $(package)
 
-        # Generate the control file
-        dpkg-gencontrol -isp -P$(DESTDIR)
+# Generate the control file
+	dpkg-gencontrol -isp -P$(DESTDIR)
 
-        # Make DEBIAN/md5sums
-        cd $(DESTDIR) && find . -type f ! -regex '.*DEBIAN/.*' -printf '%P\0' | xargs -r0 md5sum > DEBIAN/md5sums
+# Make DEBIAN/md5sums
+	cd $(DESTDIR) && find . -type f ! -regex '.*DEBIAN/.*' -printf '%P\0' | xargs -r0 md5sum > DEBIAN/md5sums
 
-        # Create the .deb package
-        dpkg-deb -b $(DESTDIR) ../
+# Create the .deb package
+	dpkg-deb -b $(DESTDIR) ../
 
 
 # generic rules
