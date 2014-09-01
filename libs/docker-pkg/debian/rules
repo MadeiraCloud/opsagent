@@ -28,10 +28,10 @@ endef
 # Rules
 build:
 
-distclean:
+#distclean:
 
 clean:
-	$(MAKE) distclean
+#	$(MAKE) distclean
 	-rm -rf debian/$(package)
 	-rm -f debian/files
 	-rm -f debian/substvars
@@ -42,7 +42,7 @@ binary-arch: build
 	$(checkroot)
 
 # Install Program
-	$(MAKE) install DESTDIR=$(DESTDIR) LIBTOOL=libtool
+#	$(MAKE) install DESTDIR=$(DESTDIR) LIBTOOL=libtool
 	$(MAKE_DIR) $(BIN_DIR)
 	$(INST_PROG) $(package)-$(VERSION) $(BIN_DIR)/$(package)
 
