@@ -1,0 +1,12 @@
+Source: docker
+Maintainer: Thibault Bronchain <thibault@visualops.io>
+Section: misc
+Priority: optional
+Standards-Version: 1.2.0
+Build-Depends:
+
+Package: docker
+Architecture: all
+Depends: ${shlibs:Depends}
+Description: An open source project to pack, ship and run any application as a lightweight container
+ Docker is an open-source engine that automates the deployment of any application as a lightweight, portable, self-sufficient container that will run virtually anywhere.

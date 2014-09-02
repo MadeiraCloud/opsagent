@@ -1,0 +1,74 @@
+#!/usr/bin/make -f
+
+# Package name
+package		=	docker
+VERSION		=	1.2.0
+# Top directory of the source code
+SRCTOP		:=	$(shell if [ "$$PWD" != "" ]; then echo $$PWD; else pwd; fi)
+# Destination directory where files will be installed
+DESTDIR		=	$(SRCTOP)/debian/$(package)
+# Definition of directories
+BIN_DIR		=	$(DESTDIR)/usr/bin
+ETC_DIR		=	$(DESTDIR)/etc
+
+# Definitions for install
+INST_OWN	=	-o root -g root
+MAKE_DIR	=	install -p -d $(INST_OWN) -m 755
+INST_FILE	=	install -c    $(INST_OWN) -m 644
+INST_PROG	=	install -c    $(INST_OWN) -m 755 -s
+INST_SCRIPT	=	install -c    $(INST_OWN) -m 755
+
+
+# Function to check if we're root
+define checkroot
+	@test $$(id -u) = 0 || (echo need root priviledges; exit 1)
+endef
+
+
+# Rules
+build:
+
+#distclean:
+
+clean:
+#	$(MAKE) distclean
+	-rm -rf debian/$(package)
+	-rm -f debian/files
+	-rm -f debian/substvars
+
+binary-indep: build
+
+binary-arch: build
+	$(checkroot)
+
+# Install Program
+#	$(MAKE) install DESTDIR=$(DESTDIR) LIBTOOL=libtool
+	$(MAKE_DIR) $(BIN_DIR)
+	$(INST_PROG) $(package)-$(VERSION) $(BIN_DIR)/$(package)
+
+# Install Service Script
+	$(MAKE_DIR) $(ETC_DIR)/init.d
+	$(INST_SCRIPT) $(package).service $(ETC_DIR)/init.d/$(package)
+
+# Prepare debian dir
+	$(MAKE_DIR) $(DESTDIR)/DEBIAN
+
+# Strip the symbols from the executable
+	strip -R .comment $(BIN_DIR)/$(package)
+
+# Work out the shared library dependancies
+	dpkg-shlibdeps $(BIN_DIR)/$(package)
+
+# Generate the control file
+	dpkg-gencontrol -isp -P$(DESTDIR)
+
+# Make DEBIAN/md5sums
+	cd $(DESTDIR) && find . -type f ! -regex '.*DEBIAN/.*' -printf '%P\0' | xargs -r0 md5sum > DEBIAN/md5sums
+
+# Create the .deb package
+	dpkg-deb -b $(DESTDIR) ../
+
+
+# generic rules
+binary: binary-indep binary-arch
+.PHONY: binary binary-arch binary-indep clean build
