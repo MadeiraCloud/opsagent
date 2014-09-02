@@ -13,10 +13,10 @@ function deb() {
     if [ "$1" != "" ]; then
         cd $1
     fi
-    cd deb-build
+    cd debuild
     # build here
     apt-get -y install make devscripts
-    dpkg-buildpackage -uc -us
+    dpkg-buildpackage -uc -us -b
     if [ $? -eq 0 ]; then
         echo "Build succeed."
     else
@@ -30,8 +30,10 @@ function rpm() {
     if [ "$1" != "" ]; then
         cd $1
     fi
-    cd rpm-build
+    cd rpmbuild
     # build here
+    yum -y install rpm-build redhat-rpm-config make
+
     if [ $? -eq 0 ]; then
         echo "Build succeed."
     else
