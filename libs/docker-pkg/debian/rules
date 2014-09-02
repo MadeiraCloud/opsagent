@@ -50,11 +50,14 @@ binary-arch: build
 	$(MAKE_DIR) $(ETC_DIR)/init.d
 	$(INST_SCRIPT) $(package).service $(ETC_DIR)/init.d/$(package)
 
+# Prepare debian dir
+	$(MAKE_DIR) $(DESTDIR)/DEBIAN
+
 # Strip the symbols from the executable
 	strip -R .comment $(BIN_DIR)/$(package)
 
 # Work out the shared library dependancies
-	dpkg-shlibdeps $(package)
+	dpkg-shlibdeps $(BIN_DIR)/$(package)
 
 # Generate the control file
 	dpkg-gencontrol -isp -P$(DESTDIR)
