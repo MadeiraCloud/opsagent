@@ -44,7 +44,7 @@ binary-arch: build
 # Install Program
 #	$(MAKE) install DESTDIR=$(DESTDIR) LIBTOOL=libtool
 	$(MAKE_DIR) $(BIN_DIR)
-	$(INST_PROG) $(package)-$(VERSION) $(BIN_DIR)/$(package)
+	$(INST_PROG) $(package) $(BIN_DIR)/$(package)
 
 # Install Service Script
 	$(MAKE_DIR) $(ETC_DIR)/init.d
