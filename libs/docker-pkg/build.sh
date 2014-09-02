@@ -7,13 +7,14 @@
 ##
 
 USAGE="$0 deb|rpm [path]"
+VERSION="1.2.0"
 
 function deb() {
     PREV=$PWD
     if [ "$1" != "" ]; then
         cd $1
     fi
-    cd debuild
+    cd deb
     # build here
     apt-get -y install make devscripts
     dpkg-buildpackage -uc -us -b
@@ -30,9 +31,30 @@ function rpm() {
     if [ "$1" != "" ]; then
         cd $1
     fi
-    cd rpmbuild
+
     # build here
+    cd rpm
+    cp docker.service docker
     yum -y install rpm-build redhat-rpm-config make
+
+    mkdir -p ~/rpmbuild/{RPMS,SRPMS,BUILD,SOURCES,SPECS,tmp}
+    cat <<EOF
+EOF >~/.rpmmacros
+%_topdir   %(echo $HOME)/rpmbuild
+%_tmppath  %{_topdir}/tmp
+EOF
+    cd ~/rpmbuild
+
+    mkdir docker-$VERSION
+    mkdir -p docker-$VERSION/usr/bin
+    mkdir -p docker-$VERSION/etc/init.d
+    install -m 755 $PREV/docker-$VERSION docker-$VERSION/usr/bin
+    install -m 644 $PREV/rpm/docker docker-$VERSION/etc/init.d
+
+    tar -zcvf docker-$VERSION.tar.gz docker-$VERSION/
+    cp -fv docker-$VERSION.tar.gz SOURCES/
+
+    
 
     if [ $? -eq 0 ]; then
         echo "Build succeed."
