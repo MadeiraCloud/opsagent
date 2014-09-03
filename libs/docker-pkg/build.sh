@@ -39,6 +39,7 @@ function rpm() {
     cp docker.service docker
     yum -y install rpm-build redhat-rpm-config make
 
+    rm -rf ~/rpmbuild
     mkdir -p ~/rpmbuild/{RPMS,SRPMS,BUILD,SOURCES,SPECS,tmp}
     cat <<EOF >~/.rpmmacros
 %_topdir   %(echo $HOME)/rpmbuild
@@ -55,6 +56,7 @@ EOF
     tar -zcvf docker-$VERSION.tar.gz docker-$VERSION/
     cp -fv docker-$VERSION.tar.gz SOURCES/
 
+    rpmbuild -bb $PREV/rpm/docker.spec
     #
 
     if [ $? -eq 0 ]; then
