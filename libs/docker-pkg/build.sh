@@ -18,6 +18,7 @@ function deb() {
     # build here
     sudo apt-get -y install make devscripts
     dpkg-buildpackage -uc -us -b
+    mv $PREV/docker*{.deb,.changes} $PREV/deb/
     #
 
     if [ $? -eq 0 ]; then
