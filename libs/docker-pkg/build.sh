@@ -57,7 +57,7 @@ EOF
     cp -fv docker-$VERSION.tar.gz SOURCES/
 
     rpmbuild -bb $PREV/rpm/docker.spec
-    cp -fv ~/rpmbuild/RPMS/* $PREV/rpm/
+    cp -fv ~/rpmbuild/RPMS/`uname -m`/* $PREV/rpm/
     #
 
     if [ $? -eq 0 ]; then
