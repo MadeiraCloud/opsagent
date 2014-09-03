@@ -18,6 +18,8 @@ function deb() {
     # build here
     apt-get -y install make devscripts
     dpkg-buildpackage -uc -us -b
+    #
+
     if [ $? -eq 0 ]; then
         echo "Build succeed."
     else
@@ -38,8 +40,7 @@ function rpm() {
     yum -y install rpm-build redhat-rpm-config make
 
     mkdir -p ~/rpmbuild/{RPMS,SRPMS,BUILD,SOURCES,SPECS,tmp}
-    cat <<EOF
-EOF >~/.rpmmacros
+    cat <<EOF >~/.rpmmacros
 %_topdir   %(echo $HOME)/rpmbuild
 %_tmppath  %{_topdir}/tmp
 EOF
@@ -54,7 +55,7 @@ EOF
     tar -zcvf docker-$VERSION.tar.gz docker-$VERSION/
     cp -fv docker-$VERSION.tar.gz SOURCES/
 
-    
+    #
 
     if [ $? -eq 0 ]; then
         echo "Build succeed."
