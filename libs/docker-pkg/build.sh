@@ -49,8 +49,8 @@ EOF
     mkdir docker-$VERSION
     mkdir -p docker-$VERSION/usr/bin
     mkdir -p docker-$VERSION/etc/init.d
-    install -m 755 $PREV/docker-$VERSION docker-$VERSION/usr/bin
-    install -m 644 $PREV/rpm/docker docker-$VERSION/etc/init.d
+    install -m 755 $PREV/docker-$VERSION docker-$VERSION/usr/bin/docker
+    install -m 644 $PREV/rpm/docker.service docker-$VERSION/etc/init.d/docker
 
     tar -zcvf docker-$VERSION.tar.gz docker-$VERSION/
     cp -fv docker-$VERSION.tar.gz SOURCES/
