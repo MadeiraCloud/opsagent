@@ -16,7 +16,7 @@ function deb() {
     fi
     cd deb
     # build here
-    apt-get -y install make devscripts
+    sudo apt-get -y install make devscripts
     dpkg-buildpackage -uc -us -b
     #
 
@@ -37,7 +37,7 @@ function rpm() {
     # build here
     cd rpm
     cp docker.service docker
-    yum -y install rpm-build redhat-rpm-config make
+    sudo yum -y install rpm-build redhat-rpm-config make
 
     rm -rf ~/rpmbuild
     mkdir -p ~/rpmbuild/{RPMS,SRPMS,BUILD,SOURCES,SPECS,tmp}
@@ -57,6 +57,7 @@ EOF
     cp -fv docker-$VERSION.tar.gz SOURCES/
 
     rpmbuild -bb $PREV/rpm/docker.spec
+    cp -fv ~/rpmbuild/RPMS/* $PREV/rpm/
     #
 
     if [ $? -eq 0 ]; then
