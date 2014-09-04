@@ -527,7 +527,7 @@ class StateWorker(threading.Thread):
                 (result,comment,out_log) = (self.__builtins[state['module']](state['id'],
                                                                              state['module'],
                                                                              state['parameter'])
-                                            if self.__builtins[state['module']]
+                                            if self.__builtins.get(state['module'])
                                             else (SUCCESS,None,None))
             else:
                 # Shared memory
