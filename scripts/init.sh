@@ -137,6 +137,7 @@ fi
 # Generates config file
 cat <<EOF > ${OA_CONFIG_FILE}
 [global]
+platform=${PLATFORM}
 envroot=${OA_ENV_DIR}
 conf_path=${OA_CONF_DIR}
 log_path=${OA_LOG_DIR}
