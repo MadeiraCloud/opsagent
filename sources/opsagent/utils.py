@@ -241,6 +241,7 @@ def update_config_file(config, key, value):
         with open(config['runtime']['config_path'], 'r+') as f:
             content = re.sub(r"%s=(.*)\n"%(key),"%s=%s\n"%(key,value),f.read())
             f.seek(0)
+            f.truncate()
             f.write(content)
     except Exception as e:
         log("WARNING",
