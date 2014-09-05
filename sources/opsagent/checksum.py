@@ -53,7 +53,7 @@ class Checksum():
                     f.close()
                 except Exception: pass
             except Exception as e:
-                utils.log("DEBUG", "Can't hash file %s: %s"%(self.__filepath,e),('__init__',self))
+                utils.log("WARNING", "Can't hash file %s: %s"%(self.__filepath,e),('__init__',self))
                 cksum = None
         utils.log("DEBUG", "Old cksum:%s - New cksum: %s (file: %s)"%(self.__cksum,cksum,self.__filepath),('update',self))
         if cksum != self.__cksum:

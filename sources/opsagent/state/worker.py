@@ -55,6 +55,9 @@ WATCH = {
     "linux.supervisord": {
         "file_key": "watch"
     },
+    "linux.docker.running": {
+        "file_key": "watch"
+    },
     "linux.docker.built": {
         "file": "Dockerfile",
         "dir_key": "path"
@@ -493,7 +496,7 @@ class StateWorker(threading.Thread):
                     if cs.update(edit=True):
                         utils.log("INFO", "New checksum stored for file %s"%(cs.filepath()),('__exec_salt',self))
                     else:
-                        utils.log("WARNING", "Failed to store new checksum for file %s"%(cs.filepath()),('__exec_salt',self))
+                        utils.log("INFO", "Checksum for file %s unchanged"%(cs.filepath()),('__exec_salt',self))
                 except Exception as e:
                     utils.log("WARNING", "Failed to store new checksum for file %s: %s"%(cs.filepath(),e),('__exec_salt',self))
 
