@@ -50,17 +50,21 @@ WAIT_TIMEOUT=1
 # Default watch map
 WATCH = {
     "linux.service": {
-        "file_key": "watch"
+        "file_key": "watch",
+        "tfirst": True,
     },
     "linux.supervisord": {
-        "file_key": "watch"
+        "file_key": "watch",
+        "tfirst": True,
     },
     "linux.docker.running": {
-        "file_key": "watch"
+        "file_key": "watch",
+        "tfirst": False,
     },
     "linux.docker.built": {
         "file": "Dockerfile",
-        "dir_key": "path"
+        "dir_key": "path",
+        "tfirst": True,
     }
 }
 ##
@@ -457,7 +461,7 @@ class StateWorker(threading.Thread):
                     try:
                         utils.log("DEBUG", "Watched file '%s' found"%(watch),('__exec_salt',self))
                         cs = Checksum(watch,sid,self.__config['global']['watch'])
-                        if cs.update(edit=False):
+                        if cs.update(edit=False, tfirst=watch_map[module].get("tfirst",True)):
                             parameter["watch"] = True
                             utils.log("INFO","Watch event triggered, replacing standard action ...",('__exec_salt',self))
                     except Exception as e:
@@ -493,7 +497,7 @@ class StateWorker(threading.Thread):
                     watch = os.path.join(watch,watch_map[module]['file'])
                 try:
                     cs = Checksum(watch,sid,self.__config['global']['watch'])
-                    if cs.update(edit=True):
+                    if cs.update(edit=True,tfirst=watch_map[module].get("tfirst",True)) is not None:
                         utils.log("INFO", "New checksum stored for file %s"%(cs.filepath()),('__exec_salt',self))
                     else:
                         utils.log("INFO", "Checksum for file %s unchanged"%(cs.filepath()),('__exec_salt',self))
