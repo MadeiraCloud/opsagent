@@ -83,5 +83,11 @@ def token(config):
         with open(f, 'r') as f:
             t = f.read()
     except Exception as e:
-        utils.log("ERROR", "Can't get retreive token file (%s): %s"%(f,e),('token','aws'))
+        utils.log("WARNING", "Can't get token file (%s): %s, updating token"%(f,e),('token','aws'))
+        utils.reset_token(self.__config)
+        try:
+            with open(f, 'r') as f:
+                t = f.read()
+        except Exception as e:
+            utils.log("ERROR", "Can't get token file (%s): %s"%(f,e),('token','aws'))
     return t

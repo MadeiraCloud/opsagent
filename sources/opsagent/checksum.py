@@ -68,7 +68,7 @@ class Checksum():
             utils.log("DEBUG", "Return value: %s"%(ret),('update',self))
             return ret
         utils.log("DEBUG", "No change found in file: %s"%(self.__filepath),('update',self))
-        return False
+        return None
 
     # check if checksum has changed, return change state
     # cksum:new checksum (if external)  tfirst:return true if no old cksum
