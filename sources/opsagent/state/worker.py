@@ -449,13 +449,11 @@ class StateWorker(threading.Thread):
                 for watch in watchs:
                     if watch_map[module].get("file"):
                         watch = os.path.join(watch,watch_map[module]['file'])
-                        utils.log("DEBUG", "Watched file '%s' found"%(watch),('__enable_watch',self))
-                        cs = Checksum(watch,sid,self.__config['global']['watch'])
-                        if cs.update(edit=False, tfirst=watch_map[module].get("tfirst",True)):
-                            parameter["watch"] = True
-                            utils.log("INFO","Watch event triggered, replacing standard action ...",('__enable_watch',self))
-                    else:
-                        raise Exception("File not found")
+                    utils.log("DEBUG", "Watched file '%s' found"%(watch),('__enable_watch',self))
+                    cs = Checksum(watch,sid,self.__config['global']['watch'])
+                    if cs.update(edit=False, tfirst=watch_map[module].get("tfirst",True)):
+                        parameter["watch"] = True
+                        utils.log("INFO","Watch event triggered, replacing standard action ...",('__enable_watch',self))
         return parameter, watchs
 
     # Call salt library
