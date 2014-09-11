@@ -57,20 +57,6 @@ WATCH = {
         "file_key": "watch",
         "tfirst": True,
     },
-    "linux.docker.running": {
-        "file_key": "watch",
-        "tfirst": False,
-    },
-    "linux.docker.built": {
-        "file": "Dockerfile",
-        "dir_key": "path",
-        "tfirst": True,
-    },
-    "linux.docker.deploy": {
-        "file_key": "config_files",
-        "tfirst": False,
-        "rerun": True,
-    },
 }
 ##
 
@@ -439,7 +425,10 @@ class StateWorker(threading.Thread):
                          else watch_map[module].get("dir_key"))
 
         if parameter and type(parameter) is dict and watch_key and parameter.get(watch_key):
-            watchs = parameter.get(watch_key)
+            if hasattr(watch_key, '__call__'):
+                watchs = watch_key(self.config,parameter)
+            else:
+                watchs = parameter.get(watch_key)
             if type(watchs) is str or type(watchs) is unicode:
                 watchs = [watchs]
             if type(watchs) is list:
@@ -462,7 +451,7 @@ class StateWorker(threading.Thread):
 
         # init
         cs = None
-        result = False
+        result = FAIL
 
         # Watch prepare
         try:
@@ -503,9 +492,10 @@ class StateWorker(threading.Thread):
             res['comment'] += "Internal error on watched file."
             res['out_log'] += "%s"%err
             return
+        watch_valid = parameter.get("watch",False)
 
         # state exec
-        if not rerun or watchs:
+        if (not rerun) or (watchs and watch_valid):
             try:
                 # state convert
                 utils.log("INFO", "Begin to convert salt states...", ('__exec_salt', self))
