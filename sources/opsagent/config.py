@@ -50,8 +50,8 @@ class Config():
     defaultValues = {
         'global': {
             'user': 'root',
-#            'loglvl': 'INFO',
-            'loglvl': 'DEBUG', #switch to debug
+            'loglvl': 'INFO',
+#            'loglvl': 'DEBUG', #switch to debug
             'proc': '/proc',
             'pidfile': '/tmp/opsagentd.pid',
             'haltfile': '/tmp/opsagentd.halt',

@@ -419,14 +419,15 @@ class StateWorker(threading.Thread):
     def __enable_watch(self, parameter, watch_map, module, sid):
         watch_key = None
         watchs = None
+
         if watch_map.get(module):
             watch_key = (watch_map[module].get("file_key")
                          if watch_map[module].get("file_key")
                          else watch_map[module].get("dir_key"))
 
         if parameter and type(parameter) is dict and watch_key and parameter.get(watch_key):
-            if hasattr(watch_key, '__call__'):
-                watchs = watch_key(self.config,parameter)
+            if hasattr(watch_map[module].get("action"), '__call__'):
+                watchs = watch_map[module]["action"](self.__config,parameter)
             else:
                 watchs = parameter.get(watch_key)
             if type(watchs) is str or type(watchs) is unicode:
