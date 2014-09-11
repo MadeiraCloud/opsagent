@@ -57,15 +57,6 @@ WATCH = {
         "file_key": "watch",
         "tfirst": True,
     },
-    "linux.docker.running": {
-        "file_key": "watch",
-        "tfirst": False,
-    },
-    "linux.docker.built": {
-        "file": "Dockerfile",
-        "dir_key": "path",
-        "tfirst": True,
-    }
 }
 ##
 
@@ -424,73 +415,111 @@ class StateWorker(threading.Thread):
             utils.log("WARNING", "Waited state ABORTED.",('__exec_wait',self))
         return (value,None,None)
 
-    # Call salt library
-    def __exec_salt(self, sid, module, parameter, res):
-        utils.log("INFO", "Loading state ID '%s' from module '%s' ..."%(sid,module),('__exec_salt',self))
-
-        # init
-        cs = None
-        result = False
-
-        # Watch process
-        try:
-            watch_map = self.__state_adaptor.watch
-            utils.log("DEBUG", "StateAdaptor watch map loaded",('__exec_salt',self))
-        except Exception:
-            watch_map = WATCH
-            utils.log("DEBUG", "Default watch map loaded",('__exec_salt',self))
-
+    # Prepare watch for execution
+    def __enable_watch(self, parameter, watch_map, module, sid):
         watch_key = None
         watchs = None
+
         if watch_map.get(module):
             watch_key = (watch_map[module].get("file_key")
                          if watch_map[module].get("file_key")
                          else watch_map[module].get("dir_key"))
 
         if parameter and type(parameter) is dict and watch_key and parameter.get(watch_key):
-            watchs = parameter.get(watch_key)
+            if hasattr(watch_map[module].get("action"), '__call__'):
+                watchs = watch_map[module]["action"](self.__config,parameter)
+            else:
+                watchs = parameter.get(watch_key)
             if type(watchs) is str or type(watchs) is unicode:
                 watchs = [watchs]
             if type(watchs) is list:
-                utils.log("DEBUG", "Watched state detected",('__exec_salt',self))
+                utils.log("DEBUG", "Watched state detected",('__enable_watch',self))
                 if "watch" in parameter:
                     del parameter["watch"]
                 for watch in watchs:
                     if watch_map[module].get("file"):
                         watch = os.path.join(watch,watch_map[module]['file'])
-                    try:
-                        utils.log("DEBUG", "Watched file '%s' found"%(watch),('__exec_salt',self))
-                        cs = Checksum(watch,sid,self.__config['global']['watch'])
-                        if cs.update(edit=False, tfirst=watch_map[module].get("tfirst",True)):
-                            parameter["watch"] = True
-                            utils.log("INFO","Watch event triggered, replacing standard action ...",('__exec_salt',self))
-                    except Exception as e:
-                        err = "Internal error while watch process on file '%s': %s"%(watch,e)
-                        utils.log("ERROR", err,('__exec_salt',self))
-                        res['result'] = FAIL
-                        res['comment'] = err
-                        res['out_log'] = None
-                        return
+                    utils.log("DEBUG", "Watched file '%s' found"%(watch),('__enable_watch',self))
+                    cs = Checksum(watch,sid,self.__config['global']['watch'])
+                    if cs.update(edit=False, tfirst=watch_map[module].get("tfirst",True)):
+                        parameter["watch"] = True
+                        utils.log("INFO","Watch event triggered, replacing standard action ...",('__enable_watch',self))
+        return parameter, watchs
 
+    # Call salt library
+    def __exec_salt(self, sid, module, parameter, res):
+        utils.log("INFO", "Loading state ID '%s' from module '%s' ..."%(sid,module),('__exec_salt',self))
+
+        # init
+        cs = None
+        result = FAIL
+
+        # Watch prepare
         try:
-            # state convert
-            utils.log("INFO", "Begin to convert salt states...", ('__exec_salt', self))
-            if self.__config['module']['mod_tag'] == "v2014-04-15":
-                salt_states = self.__state_adaptor.convert(sid, module, parameter, self.__state_runner.os_type)
-            else:
+            watch_map = self.__state_adaptor.watch
+            utils.log("DEBUG", "StateAdaptor watch map loaded",('__exec_salt',self))
+        except Exception:
+            watch_map = WATCH
+            utils.log("DEBUG", "Default watch map loaded",('__exec_salt',self))
+        rerun = watch_map.get(module,{}).get("rerun",False)
+
+        # dry-run
+        if rerun is True:
+            try:
+                # state convert
+                utils.log("INFO", "Dry-run: Begin to convert salt states...", ('__exec_salt', self))
                 salt_states = self.__state_adaptor.convert(sid, module, parameter)
+                # exec salt state
+                utils.log("INFO", "Dry-run: Begin to execute salt states...", ('__exec_salt', self))
+                (result, comment, out_log) = self.__state_runner.exec_salt(salt_states)
+            except Exception as err:
+                utils.log("ERROR", str(err), ('__exec_salt',self))
+                res['result'] = FAIL
+                res['comment'] += "Internal error."
+                res['out_log'] += "Dry-run: %s"%err
+                return
+            else:
+                res['result'] = result
+                res['comment'] += comment
+                res['out_log'] += out_log
 
-            # exec salt state
-            utils.log("INFO", "Begin to execute salt states...", ('__exec_salt', self))
-            (result, comment, out_log) = self.__state_runner.exec_salt(salt_states)
-        except Exception as err:
-            utils.log("ERROR", str(err), ('__exec_salt',self))
+        # Enable watch
+        try:
+            parameter, watchs = self.__enable_watch(parameter, watch_map, module, sid)
+        except Exception as e:
+            err = "Internal error while watch process on watched file: %s"%(e)
+            utils.log("ERROR", err,('__exec_salt',self))
             res['result'] = FAIL
-            res['comment'] = "Internal error: %s"%(err)
-            res['out_log'] = None
+            res['comment'] += "Internal error on watched file."
+            res['out_log'] += "%s"%err
             return
+        watch_valid = parameter.get("watch",False)
 
+        # state exec
+        if (not rerun) or (watchs and watch_valid):
+            try:
+                # state convert
+                utils.log("INFO", "Begin to convert salt states...", ('__exec_salt', self))
+                if self.__config['module']['mod_tag'] == "v2014-04-15":
+                    salt_states = self.__state_adaptor.convert(sid, module, parameter, self.__state_runner.os_type)
+                else:
+                    salt_states = self.__state_adaptor.convert(sid, module, parameter)
 
+                # exec salt state
+                utils.log("INFO", "Begin to execute salt states...", ('__exec_salt', self))
+                (result, comment, out_log) = self.__state_runner.exec_salt(salt_states)
+            except Exception as err:
+                utils.log("ERROR", str(err), ('__exec_salt',self))
+                res['result'] = FAIL
+                res['comment'] += "Internal error."
+                res['out_log'] += "%s"%err
+                return
+            else:
+                res['result'] = result
+                res['comment'] += comment
+                res['out_log'] += out_log
+
+        # Persist watch
         if result and watchs:
             for watch in watchs:
                 if watch_map[module].get("file"):
@@ -504,14 +533,11 @@ class StateWorker(threading.Thread):
                 except Exception as e:
                     utils.log("WARNING", "Failed to store new checksum for file %s: %s"%(cs.filepath(),e),('__exec_salt',self))
 
-
-
+        # end log
         utils.log("INFO", "State ID '%s' from module '%s' done, result '%s'"%(sid,module,result),('__exec_salt',self))
         utils.log("DEBUG", "State out log='%s'"%(out_log),('__exec_salt',self))
         utils.log("DEBUG", "State comment='%s'"%(comment),('__exec_salt',self))
-        res['result'] = result
-        res['comment'] = comment
-        res['out_log'] = out_log
+
 
     # Delay at the end of the states
     def __recipe_delay(self):
@@ -541,8 +567,8 @@ class StateWorker(threading.Thread):
                 mem_manager = multiprocessing.Manager()
                 results = mem_manager.dict()
                 results['result'] = FAIL
-                results['comment'] = None
-                results['out_log'] = None
+                results['comment'] = ""
+                results['out_log'] = ""
 
                 # Run state
                 utils.log("DEBUG", "Creating state exec process ...",('__run_state',self))

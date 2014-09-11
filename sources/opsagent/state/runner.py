@@ -20,6 +20,7 @@ class StateRunner(object):
     def __init__(self, config):
 
         self.state = None
+        self.config = config
 
         # init salt opts
         self._init_opts(config)
