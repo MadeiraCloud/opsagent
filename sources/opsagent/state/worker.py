@@ -468,7 +468,7 @@ class StateWorker(threading.Thread):
             try:
                 # state convert
                 utils.log("INFO", "Dry-run: Begin to convert salt states...", ('__exec_salt', self))
-                salt_states = self.__state_adaptor.convert(sid, module, parameter)
+                salt_states = self.__state_adaptor.convert(sid, module, copy.deepcopy(parameter))
                 # exec salt state
                 utils.log("INFO", "Dry-run: Begin to execute salt states...", ('__exec_salt', self))
                 (result, comment, out_log) = self.__state_runner.exec_salt(salt_states)
