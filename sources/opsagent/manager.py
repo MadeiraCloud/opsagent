@@ -425,6 +425,7 @@ class Manager(WebSocketClient):
         utils.log("DEBUG", "Handshake init message send",('opened',self))
 
     # On message received
+    # TODO: ensure set on exit
     def received_message(self, raw_data):
         # don't init while receiving
         self.__recv_event.clear()
@@ -441,7 +442,7 @@ class Manager(WebSocketClient):
                          code=codes.C_INVALID_JSON_RECV,
                          reason=codes.M_INVALID_JSON_RECV)
         else:
-            if data.get('code') in self.__actions:
+            if data and (data.get('code') in self.__actions):
                 utils.log("DEBUG", "Action found",('received_message',self))
                 try:
                     self.__actions[data['code']](data)
