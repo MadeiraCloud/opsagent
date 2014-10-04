@@ -337,6 +337,7 @@ class StateWorker(threading.Thread):
         if self.__state_runner:
             utils.log("DEBUG", "Deleting runner...",('load_modules',self))
             del self.__state_runner
+            self.__state_runner = None
         utils.log("DEBUG", "Loading runner...",('load_modules',self))
         import opsagent.state.runner
         reload(opsagent.state.runner)
@@ -347,6 +348,7 @@ class StateWorker(threading.Thread):
         if self.__state_adaptor:
             utils.log("DEBUG", "Deleting adaptor...",('load_modules',self))
             del self.__state_adaptor
+            self.__state_adaptor = None
         utils.log("DEBUG", "Loading adaptor...",('load_modules',self))
         import opsagent.state.adaptor
         reload(opsagent.state.adaptor)
