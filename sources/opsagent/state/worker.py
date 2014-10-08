@@ -114,17 +114,19 @@ class StateWorker(threading.Thread):
             utils.log("DEBUG", "Aquire conditional lock ...",(func,args[0]))
             args[0].cv_e.acquire()
             utils.log("DEBUG", "Conditional lock acquired",(func,args[0]))
-            e = True
             try:
                 r = func(*args, **kwargs)
             except:
-                e = True
-            utils.log("DEBUG", "Notify execution thread",(func,args[0]))
-            args[0].cv_e.notify()
-            utils.log("DEBUG", "Release conditional lock",(func,args[0]))
-            args[0].cv_e.release()
-            if e:
+                utils.log("DEBUG", "Notify execution thread",(func,args[0]))
+                args[0].cv_e.notify()
+                utils.log("DEBUG", "Release conditional lock",(func,args[0]))
+                args[0].cv_e.release()
                 raise
+            else:
+                utils.log("DEBUG", "Notify execution thread",(func,args[0]))
+                args[0].cv_e.notify()
+                utils.log("DEBUG", "Release conditional lock",(func,args[0]))
+                args[0].cv_e.release()
             return r
         return action
     ##

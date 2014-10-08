@@ -79,15 +79,14 @@ class Manager(WebSocketClient):
         def action(*args, **kwargs):
             # don't init while receiving
             args[0].recv_event_e.clear()
-            e = True
             try:
                 r = func(*args, **kwargs)
             except:
-                e = True
-            # free condition
-            args[0].recv_event_e.set()
-            if e:
+                # free condition
+                args[0].recv_event_e.set()
                 raise
+            else:
+                args[0].recv_event_e.set()
             return r
         return action
     ##
@@ -428,6 +427,37 @@ class Manager(WebSocketClient):
     # Connection status
     def connected(self):
         return self.__connected
+
+    # on message received
+    @recv_event
+    def received_m(self, raw_data):
+        utils.log("DEBUG", "Data: '%s'"%(raw_data),('received_m',self))
+        try:
+            utils.log("DEBUG", "Converting received json data to dict",('received_m',self))
+            data = json.loads(u'%s'%(raw_data))
+            utils.log("INFO", "Message converted from json",('received_m',self))
+        except Exception as e:
+            utils.log("CRITICAL", "Can't convert received json data to dict '%s'. FATAL"%(e),('received_m',self))
+            self.__close(reset=True,
+                         code=codes.C_INVALID_JSON_RECV,
+                         reason=codes.M_INVALID_JSON_RECV)
+        else:
+            if data and (data.get('code') in self.__actions):
+                utils.log("DEBUG", "Action found",('received_m',self))
+                try:
+                    self.__actions[data['code']](data)
+                except ManagerInvalidStateFormatException:
+                    utils.log("ERROR", "Invalid states format",('received_m',self))
+                except ManagerInvalidUpdateFormatException:
+                    utils.log("ERROR", "Invalid update format",('received_m',self))
+                except ManagerInvalidWaitFormatException:
+                    utils.log("ERROR", "Invalid wait format",('received_m',self))
+                except Exception as e:
+                    utils.log("ERROR", "Unknown exception cought '%s'"%(e),('received_m',self))
+                else:
+                    utils.log("INFO", "Action on code '%s' succeed"%((data.get('code') if data else None)),('received_m',self))
+            else:
+                utils.log("WARNING", "No action binded to received data",('received_m',self))
     ##
 
 
@@ -447,38 +477,9 @@ class Manager(WebSocketClient):
         utils.log("DEBUG", "Handshake init message send",('opened',self))
 
     # On message received
-    @recv_event
     def received_message(self, raw_data):
         utils.log("INFO", "New message received from backend",('received_message',self))
-        utils.log("DEBUG", "Data: '%s'"%(raw_data),('received_message',self))
-        try:
-            utils.log("DEBUG", "Converting received json data to dict",('received_message',self))
-            data = json.loads(u'%s'%(raw_data))
-            utils.log("INFO", "Message converted from json",('received_message',self))
-        except Exception as e:
-            utils.log("CRITICAL", "Can't convert received json data to dict '%s'. FATAL"%(e),('received_message',self))
-            self.__close(reset=True,
-                         code=codes.C_INVALID_JSON_RECV,
-                         reason=codes.M_INVALID_JSON_RECV)
-        else:
-            if data and (data.get('code') in self.__actions):
-                utils.log("DEBUG", "Action found",('received_message',self))
-                try:
-                    self.__actions[data['code']](data)
-                except ManagerInvalidStateFormatException:
-                    utils.log("ERROR", "Invalid states format",('received_message',self))
-                except ManagerInvalidUpdateFormatException:
-                    utils.log("ERROR", "Invalid update format",('received_message',self))
-                except ManagerInvalidWaitFormatException:
-                    utils.log("ERROR", "Invalid wait format",('received_message',self))
-#                except ManagerInvalidStatesRepoException:
-#                    utils.log("ERROR", "Invalid states repository",('received_message',self))
-                except Exception as e:
-                    utils.log("ERROR", "Unknown exception cought '%s'"%(e),('received_message',self))
-                else:
-                    utils.log("INFO", "Action on code '%s' succeed"%((data.get('code') if data else None)),('received_message',self))
-            else:
-                utils.log("WARNING", "No action binded to received data",('received_message',self))
-
+        self.received_m(raw_data)
+        utils.log("INFO", "Message treated",('received_message',self))
     ##
 ## ENF OF OBJECT
