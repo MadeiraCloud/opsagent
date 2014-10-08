@@ -36,6 +36,9 @@ WAIT_CONNECT=30
 ## MANAGER OBJECT
 # Manages the WebSocket
 class Manager(WebSocketClient):
+    # recv sync
+    recv_event_e = threading.Event()
+
     def __init__(self, url, config, statesworker):
         # init WS
         WebSocketClient.__init__(self, url)
@@ -46,8 +49,7 @@ class Manager(WebSocketClient):
         self.__run = True
 
         # recv sync
-        self.__recv_event = threading.Event()
-        self.__recv_event.set()
+        self.recv_event_e.set()
 
         # actions map
         self.__actions = {
@@ -66,10 +68,30 @@ class Manager(WebSocketClient):
         # states worker
         self.__states_worker = statesworker
 
-    # exit condition
-    def __exit__(self, type, value, traceback):
-        # avoid deadlock
-        self.__recv_event.set()
+#    # exit condition
+#    def __exit__(self, type, value, traceback):
+#        # avoid deadlock
+#        self.__recv_event.set()
+
+    ## DECORATORS
+    # recv condition
+    def recv_event(func):
+        def action(*args, **kwargs):
+            # don't init while receiving
+            args[0].recv_event_e.clear()
+            e = True
+            try:
+                r = func(*args, **kwargs)
+            except:
+                e = True
+            # free condition
+            args[0].recv_event_e.set()
+            if e:
+                raise
+            return r
+        return action
+    ##
+
 
     ## HELPERS
     # running status
@@ -78,7 +100,7 @@ class Manager(WebSocketClient):
 
     # wait while receiving data
     def wait_recv(self):
-        self.__recv_event.wait()
+        self.recv_event_e.wait()
     ##
 
 
@@ -425,11 +447,8 @@ class Manager(WebSocketClient):
         utils.log("DEBUG", "Handshake init message send",('opened',self))
 
     # On message received
-    # TODO: ensure set on exit
+    @recv_event
     def received_message(self, raw_data):
-        # don't init while receiving
-        self.__recv_event.clear()
-
         utils.log("INFO", "New message received from backend",('received_message',self))
         utils.log("DEBUG", "Data: '%s'"%(raw_data),('received_message',self))
         try:
@@ -460,9 +479,6 @@ class Manager(WebSocketClient):
                     utils.log("INFO", "Action on code '%s' succeed"%((data.get('code') if data else None)),('received_message',self))
             else:
                 utils.log("WARNING", "No action binded to received data",('received_message',self))
-
-        # free condition
-        self.__recv_event.set()
 
     ##
 ## ENF OF OBJECT
