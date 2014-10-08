@@ -64,6 +64,11 @@ WATCH = {
 ## STATES WORKER OBJECT
 # Manages the states execution
 class StateWorker(threading.Thread):
+    # running condition
+    cv_e = threading.Condition()
+    # wait event
+    wait_event_e = threading.Event()
+
     def __init__(self, config):
         # init thread and object
         threading.Thread.__init__(self)
@@ -75,10 +80,8 @@ class StateWorker(threading.Thread):
         # state runner
         self.__state_runner = None
 
-        # events
-        self.__cv = threading.Condition()
-        self.__wait_event = threading.Event()
-        self.__wait_event.set()
+        # events init
+        self.wait_event_e.set()
 
         # states variables
         self.__version = None
@@ -102,6 +105,29 @@ class StateWorker(threading.Thread):
 
         # delay pid
         self.__delaypid = None
+
+
+    ## DECORATORS
+    # recv condition
+    def cv(func):
+        def action(*args, **kwargs):
+            utils.log("DEBUG", "Aquire conditional lock ...",(func,args[0]))
+            args[0].cv_e.acquire()
+            utils.log("DEBUG", "Conditional lock acquired",(func,args[0]))
+            e = True
+            try:
+                r = func(*args, **kwargs)
+            except:
+                e = True
+            utils.log("DEBUG", "Notify execution thread",(func,args[0]))
+            args[0].cv_e.notify()
+            utils.log("DEBUG", "Release conditional lock",(func,args[0]))
+            args[0].cv_e.release()
+            if e:
+                raise
+            return r
+        return action
+    ##
 
 
     ## NETWORK RELAY
@@ -139,8 +165,8 @@ class StateWorker(threading.Thread):
 
     # Return waiting state
     def is_waiting(self):
-        utils.log("DEBUG", "Wait status: %s"%(self.__wait_event.is_set()),('is_waiting',self))
-        return (False if not self.__wait_event.is_set() else True)
+        utils.log("DEBUG", "Wait status: %s"%(self.wait_event_e.is_set()),('is_waiting',self))
+        return (False if not self.wait_event_e.is_set() else True)
 
     # Return version ID
     def get_version(self):
@@ -174,12 +200,12 @@ class StateWorker(threading.Thread):
 
         if self.__cv_wait:
             utils.log("DEBUG", "Aquire conditional lock ...",('abort',self))
-            self.__cv.acquire()
+            self.cv_e.acquire()
             utils.log("DEBUG", "Conditional lock acquired",('abort',self))
             utils.log("DEBUG", "Notify execution thread",('abort',self))
-            self.__cv.notify()
+            self.cv_e.notify()
             utils.log("DEBUG", "Release conditional lock",('abort',self))
-            self.__cv.release()
+            self.cv_e.release()
 
 
     # Program status
@@ -270,7 +296,7 @@ class StateWorker(threading.Thread):
     def __kill_wait(self):
         if self.is_waiting():
             utils.log("DEBUG", "killing wait status",('kill_wait',self))
-            self.__wait_event.set()
+            self.wait_event_e.set()
         else:
             utils.log("DEBUG", "worker not waiting",('kill_wait',self))
 
@@ -361,12 +387,9 @@ class StateWorker(threading.Thread):
         utils.log("DEBUG", "Modules loaded",('load_modules',self))
 
     # Load new recipe
+    @cv
     def load(self, version=None, states=None):
-        utils.log("DEBUG", "Aquire conditional lock ...",('load',self))
-        self.__cv.acquire()
-        utils.log("DEBUG", "Conditional lock acquired",('load',self))
         self.__version = version
-
         self.__recipe_count = (self.__recipe_count+1 if self.__recipe_count < RECIPE_COUNT_RESET else 0)
         exp = None
         try:
@@ -379,14 +402,7 @@ class StateWorker(threading.Thread):
             utils.log("DEBUG", "Allow to run",('load',self))
             self.__run = True
         except Exception as e:
-            exp = e
-
-        utils.log("DEBUG", "Notify execution thread",('load',self))
-        self.__cv.notify()
-        utils.log("DEBUG", "Release conditional lock",('load',self))
-        self.__cv.release()
-
-        if exp: raise OpsAgentException(exp)
+            raise OpsAgentException(e)
     ##
 
 
@@ -395,7 +411,7 @@ class StateWorker(threading.Thread):
     def state_done(self, sid):
         utils.log("DEBUG", "Adding id '%s' to done states list"%(sid),('state_done',self))
         self.__done.append(sid)
-        self.__wait_event.set()
+        self.wait_event_e.set()
     ##
 
 
@@ -406,8 +422,8 @@ class StateWorker(threading.Thread):
         while (sid not in self.__done) and (self.__run):
             utils.log("DEBUG", "Waiting for external states ...",('__exec_wait',self))
             utils.log("DEBUG", "Curent state:%s - Done states:%s"%(sid,self.__done),('__exec_wait',self))
-            self.__wait_event.clear()
-            self.__wait_event.wait(WAIT_TIMEOUT)
+            self.wait_event_e.clear()
+            self.wait_event_e.wait(WAIT_TIMEOUT)
             utils.log("DEBUG", "New state status received, analysing ...",('__exec_wait',self))
         if sid in self.__done:
             value = SUCCESS
@@ -647,7 +663,7 @@ class StateWorker(threading.Thread):
 
             # Execute state
             (result,comment,out_log) = self.__run_state()
-            self.__wait_event.set()
+            self.wait_event_e.set()
 
             # Transmit results
             if self.__run:
@@ -691,19 +707,19 @@ class StateWorker(threading.Thread):
     # Callback on start
     def run(self):
         while not self.__abort:
-            self.__cv.acquire()
+            self.cv_e.acquire()
             try:
                 if not self.__run and not self.__abort:
                     utils.log("INFO", "Waiting for recipes ...",('run',self))
                     self.__cv_wait = True
-                    self.__cv.wait()
+                    self.cv_e.wait()
                     self.__cv_wait = False
                 utils.log("DEBUG", "Ready to go ...",('run',self))
                 self.__runner()
             except Exception as e:
                 utils.log("ERROR", "Unexpected error: %s"%(e),('run',self))
             self.__reset()
-            self.__cv.release()
+            self.cv_e.release()
         self.dead = True
         utils.log("WARNING", "Exiting...",('run',self))
         if self.__manager:
