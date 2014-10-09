@@ -364,8 +364,9 @@ class StateWorker(threading.Thread):
         # state runner
         if self.__state_runner:
             utils.log("DEBUG", "Deleting runner...",('load_modules',self))
-            del self.__state_runner
+            tmp_sr = self.__state_runner
             self.__state_runner = None
+            del tmp_sr
         utils.log("DEBUG", "Loading runner...",('load_modules',self))
         import opsagent.state.runner
         reload(opsagent.state.runner)
@@ -375,8 +376,9 @@ class StateWorker(threading.Thread):
         # state adaptor
         if self.__state_adaptor:
             utils.log("DEBUG", "Deleting adaptor...",('load_modules',self))
-            del self.__state_adaptor
+            tmp_sa = self.__state_adaptor
             self.__state_adaptor = None
+            del tmp_sa
         utils.log("DEBUG", "Loading adaptor...",('load_modules',self))
         import opsagent.state.adaptor
         reload(opsagent.state.adaptor)
@@ -397,8 +399,9 @@ class StateWorker(threading.Thread):
         try:
             if states:
                 utils.log("INFO", "Loading new states",('load',self))
-                del self.__states
+                tmp_s = self.__states
                 self.__states = copy.deepcopy(states)
+                del tmp_s
             else:
                 utils.log("INFO", "No change in states",('load',self))
             utils.log("DEBUG", "Allow to run",('load',self))
@@ -592,7 +595,7 @@ class StateWorker(threading.Thread):
 
                 # Run state
                 utils.log("DEBUG", "Creating state exec process ...",('__run_state',self))
-                self.__executing = True
+#                self.__executing = True
                 if self.__run:
                     self.__executing = multiprocessing.Process(target=self.__exec_salt, args=(state['id'],
                                                                                               state['module'],
@@ -609,8 +612,9 @@ class StateWorker(threading.Thread):
                 (result,comment,out_log)=(results['result'],results['comment'],results['out_log'])
 
                 # Reset running values
-                del self.__executing
+                tmp_e = self.__executing
                 self.__executing = None
+                del tmp_e
                 del mem_manager
                 del results
 
