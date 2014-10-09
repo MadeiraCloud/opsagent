@@ -15,7 +15,7 @@ if [ ! -f ${OA_ENV_DIR}/bin/${PYTHON} ]; then
         apt-get -y install python2.6-dev 2> /dev/null
         ${OA_ENV_DIR}/bin/pip install python-apt
     elif [ $(which yum 2>/dev/null) ]; then
-        yum -y install yum-utils
+        yum -y install yum-utils 2> /dev/null
     fi
     ${OA_ENV_DIR}/bin/pip install crypt
 fi
