@@ -660,7 +660,10 @@ class StateWorker(threading.Thread):
         utils.log("INFO", "Running StatesWorker ...",('__runner',self))
         while self.__run:
             # Init
-            if not self.__runner_init(): continue
+            if not self.__runner_init():
+                utils.log("WARNING", "Init failed, retrying current state in %s seconds"%(WAIT_STATE_RETRY),('__runner',self))
+                time.sleep(WAIT_STATE_RETRY)
+                continue
 
             # Execute state
             (result,comment,out_log) = self.__run_state()
