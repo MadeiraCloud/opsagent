@@ -116,13 +116,7 @@ class StateWorker(threading.Thread):
             utils.log("DEBUG", "Conditional lock acquired",(func,args[0]))
             try:
                 r = func(*args, **kwargs)
-            except:
-                utils.log("DEBUG", "Notify execution thread",(func,args[0]))
-                args[0].cv_e.notify()
-                utils.log("DEBUG", "Release conditional lock",(func,args[0]))
-                args[0].cv_e.release()
-                raise
-            else:
+            finally:
                 utils.log("DEBUG", "Notify execution thread",(func,args[0]))
                 args[0].cv_e.notify()
                 utils.log("DEBUG", "Release conditional lock",(func,args[0]))
@@ -317,6 +311,7 @@ class StateWorker(threading.Thread):
         utils.log("INFO", "Execution killed",('kill',self))
         while not self.__cv_wait and not self.dead:
             time.sleep(0.1)
+        utils.log("INFO", "Worker stopped.",('kill',self))
     ##
 
 
@@ -656,7 +651,7 @@ class StateWorker(threading.Thread):
                                       result=FAIL,
                                       comment=err,
                                       out_log=None))
-            self.__run = False
+#            self.__run = False
             return False
         return True
 

@@ -106,12 +106,13 @@ def bootstrap_mod(config):
 # clone a git repository
 def clone_repo(config, path, name, uri):
     try:
+        r = subprocess.check_call(["git","clone",uri,"%s_tmp"%name],cwd=path)
+        log("INFO", "repo %s from %s successfully cloned in %s: %s"%(name,uri,path,r),('clone_repo','utils'))
         try:
             shutil.rmtree(os.path.join(path,name))
+            shutil.move(os.path.join(path,"%s_tmp"%name),os.path.join(path,name))
         except Exception as e:
             log("DEBUG", "Exception while removing directory %s: %s"%(os.path.normpath(path+'/'+name),e),('clone_repo','utils'))
-        r = subprocess.check_call(["git","clone",uri,name],cwd=path)
-        log("INFO", "repo %s from %s successfully cloned in %s: %s"%(name,uri,path,r),('clone_repo','utils'))
         try:
             os.unlink(os.path.join(config['global']['package_path'],config['module']['name']))
         except Exception as e:

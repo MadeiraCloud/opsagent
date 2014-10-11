@@ -68,24 +68,18 @@ class Manager(WebSocketClient):
         # states worker
         self.__states_worker = statesworker
 
-#    # exit condition
-#    def __exit__(self, type, value, traceback):
-#        # avoid deadlock
-#        self.__recv_event.set()
 
     ## DECORATORS
     # recv condition
     def recv_event(func):
         def action(*args, **kwargs):
             # don't init while receiving
+            args[0].recv_event_e.wait()
             args[0].recv_event_e.clear()
             try:
                 r = func(*args, **kwargs)
-            except:
+            finally:
                 # free condition
-                args[0].recv_event_e.set()
-                raise
-            else:
                 args[0].recv_event_e.set()
             return r
         return action
@@ -151,44 +145,6 @@ class Manager(WebSocketClient):
             self.__config['module']['mod_tag'] = module_tag
             utils.update_config_file(self.__config, "mod_tag", module_tag)
 
-
-#    # update states repo
-#    def __update_repo(self, module_repo, module_tag):
-#        clone = False
-#        ret = False
-#        self.__config['runtime']['tag'] = True
-#        self.__config['runtime']['clone'] = True
-#        if module_repo != self.__config['module']['mod_repo']:
-#            utils.log("DEBUG", "Cloning repo...",('__act_recipe',self))
-#            try:
-#                clone = utils.clone_repo(self.__config,
-#                                         self.__config['module']['root'],
-#                                         self.__config['module']['name'],
-#                                         module_repo)
-#            except ManagerInvalidStatesRepoException:
-#                self.__config['runtime']['clone'] = False
-##                return ret
-#            else:
-#                ret = True
-#                self.__config['module']['mod_repo'] = module_repo
-#                utils.update_config_file(self.__config, "mod_repo", module_repo)
-#        if clone or module_tag != self.__config['module']['mod_tag']:
-#            try:
-#                utils.checkout_repo(self.__config,
-#                                    self.__config['module']['root'],
-#                                    self.__config['module']['name'],
-#                                    module_tag,
-#                                    module_repo)
-#            except ManagerInvalidStatesRepoException:
-#                self.__config['runtime']['tag'] = False
-#            else:
-#                ret = True
-#                self.__config['module']['mod_tag'] = module_tag
-#                utils.update_config_file(self.__config, "mod_tag", module_tag)
-#        if ret:
-#            utils.bootstrap_mod(self.__config)
-#        return ret
-
     # Recipe object received
     def __act_recipe(self, data):
         utils.log("INFO", "New recipe received",('__act_recipe',self))
@@ -235,21 +191,6 @@ class Manager(WebSocketClient):
 
         # update repo
         self.__update_repo(module_repo, module_tag)
-
-#        # update repo
-#        if self.__update_repo(module_repo, module_tag) is None:
-#            utils.log("ERROR", "Can't clone states repo, disconnecting ...",('__act_recipe',self))
-#            self.__close(code=codes.C_CLONE,reason=codes.M_CLONE)
-#            return
-
-#        # update repo
-#        update_status = False
-#        while not update_status:
-#            update_status = self.__update_repo(module_repo, module_tag)
-#            if not update_status:
-#                utils.log("WARNING", "Retrying clone repo",('__act_recipe',self))
-#                time.sleep(0.1)
-
 
         # load recipes
         curent_version = self.__states_worker.get_version()
@@ -385,12 +326,12 @@ class Manager(WebSocketClient):
         self.__close(code=codes.C_STOP,reason=codes.M_STOP)
 
     # Close socket
-    def __close(self, code=1000, reason='', reset=False):
+    def __close(self, code=1000, reason='', reset=False, wait=True):
         utils.log("INFO", "Closing connection ... (code='%s', reason='%s')"%(code,reason),('__close',self))
         self.__run = False
         if reset:
             utils.log("INFO", "Reset flag set, reseting states execution ...",('__close',self))
-            self.__states_worker.kill()
+            self.__states_worker.kill(wait)
             utils.log("DEBUG", "Reset succeed",('__close',self))
         utils.log("DEBUG", "Closing socket ...",('__close',self))
         self.close(code, reason)
