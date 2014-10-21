@@ -259,8 +259,11 @@ fi
 
 # load agent
 if [ ${UPDATE_AGENT} -ne 0 ]; then
-    echo "load agent after update"
-    service opsagentd start
+    service opsagentd status
+    if [ $? -eq 0 ]; then
+        echo "kill agent after update"
+        service opsagentd force-stop
+    fi
 fi
 
 # run check
