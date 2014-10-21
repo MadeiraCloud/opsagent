@@ -239,7 +239,7 @@ fi
 # shudown agent
 if [ ${UPDATE_AGENT} -ne 0 ] && [ -d ${OA_ENV_DIR} ]; then
     echo "shutdown agent"
-    service opsagentd stop-end
+    service opsagentd force-stop
     if [ "$1" == "update" ]; then
         rm -rf ${OA_ENV_DIR}
     else
