@@ -239,7 +239,7 @@ fi
 # shudown agent
 if [ ${UPDATE_AGENT} -ne 0 ] && [ -d ${OA_ENV_DIR} ]; then
     echo "shutdown agent"
-    service opsagentd stop-end
+    service opsagentd force-stop
     if [ "$1" == "update" ]; then
         rm -rf ${OA_ENV_DIR}
     else
@@ -259,8 +259,11 @@ fi
 
 # load agent
 if [ ${UPDATE_AGENT} -ne 0 ]; then
-    echo "load agent after update"
-    service opsagentd start
+    service opsagentd status
+    if [ $? -eq 0 ]; then
+        echo "kill agent after update"
+        service opsagentd force-stop
+    fi
 fi
 
 # run check
