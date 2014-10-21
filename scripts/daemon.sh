@@ -16,6 +16,7 @@
 ### END INIT INFO
 
 OA_ROOT="/opt/visualops"
+PID_FILE="/tmp/opsagentd.pid"
 
 case "$1" in
     start)
@@ -31,6 +32,7 @@ case "$1" in
         for id in `ps aux | grep "${OA_ROOT}/env/bin/opsagent" | sed -e 's/  */ /g' | cut -d ' ' -f 2`; do
             kill -9 $id
         done
+        rm -f $PID_FILE
         ;;
     restart)
         echo "Restarting opsagent"
@@ -41,6 +43,7 @@ case "$1" in
         for id in `ps aux | grep "${OA_ROOT}/env/bin/opsagent" | sed -e 's/  */ /g' | cut -d ' ' -f 2`; do
             kill -9 $id
         done
+        rm -f $PID_FILE
         sleep 1
         ${OA_ROOT}/env/bin/opsagent -c /etc/opsagent.conf start
         ;;

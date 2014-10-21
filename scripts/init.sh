@@ -239,7 +239,7 @@ fi
 # shudown agent
 if [ ${UPDATE_AGENT} -ne 0 ] && [ -d ${OA_ENV_DIR} ]; then
     echo "shutdown agent"
-    service opsagentd force-stop
+    service opsagentd stop
     if [ "$1" == "update" ]; then
         rm -rf ${OA_ENV_DIR}
     else
@@ -259,10 +259,12 @@ fi
 
 # load agent
 if [ ${UPDATE_AGENT} -ne 0 ]; then
+    IDS=`ps aux | grep "${OA_ROOT}/env/bin/opsagent" | sed -e 's/  */ /g' | cut -d ' ' -f 2`
     service opsagentd status
-    if [ $? -eq 0 ]; then
-        echo "kill agent after update"
+    if [ $? -eq 0 ] || [ "$IDS" != "" ]; then
+        echo "force kill agent after update"
         service opsagentd force-stop
+        rm -f /tmp/opsagentd.pid
     fi
 fi
 
