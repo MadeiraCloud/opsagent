@@ -9,6 +9,7 @@ VisualOps agent CLOUD requests
 # System imports
 import urllib2
 import re
+import json
 import time
 
 # Internal imports
@@ -74,24 +75,22 @@ def instance_id(config, manager):
             utils.log("WARNING", "Execution aborting, exiting ...",('instance_id','cloud'))
             return None
         utils.log("DEBUG", "Getting instance id ...",('instance_id','cloud'))
+
+        error = False
         try:
-            iid = get_cloud_data(config['network']['instance_id'])
-        except CLOUDNotFoundException:
-            try:
-                iid = get_os_iid()
-                continue
-            except:
-                pass
-            utils.log("ERROR", "Instance ID not found, retrying in '%s' seconds"%(WAIT_RETRY),('instance_id','cloud'))
-            time.sleep(WAIT_RETRY)
+            iid = get_os_iid()
         except Exception as e:
+            error = True
+            utils.log("DEBUG", "Couldn't get OpenStack ID (%s), trying regular AWS way..."%e,('instance_id','cloud'))
+        if error or (not iid):
             try:
-                iid = get_os_iid()
-                continue
-            except:
-                pass
-            utils.log("ERROR", "Instance ID failure, unknown error: '%s', retrying in '%s' seconds"%(e,WAIT_RETRY),('instance_id','cloud'))
-            time.sleep(WAIT_RETRY)
+                iid = get_cloud_data(config['network']['instance_id'])
+            except CLOUDNotFoundException:
+                utils.log("ERROR", "Instance ID not found, retrying in '%s' seconds"%(WAIT_RETRY),('instance_id','cloud'))
+                time.sleep(WAIT_RETRY)
+            except Exception as e:
+                utils.log("ERROR", "Instance ID failure, unknown error: '%s', retrying in '%s' seconds"%(e,WAIT_RETRY),('instance_id','cloud'))
+                time.sleep(WAIT_RETRY)
     return iid
 
 # Get token from disk
