@@ -18,7 +18,7 @@ from ws4py.client.threadedclient import WebSocketClient
 # Custom import
 from opsagent.objects import codes
 from opsagent.objects import send
-from opsagent.objects import aws
+from opsagent.objects import cloud
 from opsagent.exception import \
     ManagerInvalidStateFormatException, \
     ManagerInvalidUpdateFormatException, \
@@ -288,14 +288,14 @@ class Manager(WebSocketClient):
         self.__config['runtime']['proc'] = True
         return []
 
-    # Get instance id and user data from AWS
+    # Get instance id and user data from CLOUD
     def __get_id(self):
-        utils.log("INFO", "Fetching instance data from AWS ...",('__get_id',self))
-        instance_id = aws.instance_id(self.__config, self)
+        utils.log("INFO", "Fetching instance data from CLOUD ...",('__get_id',self))
+        instance_id = cloud.instance_id(self.__config, self)
         utils.log("INFO", "Instance ID: '%s'"%(instance_id),('__get_id',self))
         app_id = self.__config['userdata']['app_id']
         utils.log("INFO", "App ID: '%s'"%(app_id),('__get_id',self))
-        token = aws.token(self.__config)
+        token = cloud.token(self.__config)
         utils.log("DEBUG", "Token: '%s'"%(token),('__get_id',self))
         return ({
                 'instance_id':instance_id,
@@ -306,7 +306,7 @@ class Manager(WebSocketClient):
     # update userdata variables
     def __update_ud(self):
         utils.log("DEBUG", "Updating userdata variables ...",('__update_ud',self))
-        ud = aws.userdata(self.__config, self)
+        ud = cloud.userdata(self.__config, self)
         for key in ud:
             if self.__config['userdata'].get(key) != ud[key]:
                 if utils.update_config_file(self.__config, key, ud[key]):

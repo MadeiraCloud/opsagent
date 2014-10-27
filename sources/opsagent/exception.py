@@ -13,8 +13,8 @@ class ConfigFileException(Exception): pass
 # Network exceptions
 class NetworkConnectionException(Exception): pass
 
-# AWS exception
-class AWSNotFoundException(Exception): pass
+# CLOUD exception
+class CLOUDNotFoundException(Exception): pass
 
 # Manager exceptions
 class ManagerInvalidStateFormatException(Exception): pass
