@@ -93,7 +93,9 @@ class Manager(WebSocketClient):
 
     # wait while receiving data
     def wait_recv(self):
+        utils.log("INFO", "Waiting to end receive ...",('wait_recv',self))
         self.recv_event_e.wait()
+        utils.log("INFO", "Reception done.",('wait_recv',self))
     ##
 
 
