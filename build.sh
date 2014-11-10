@@ -37,7 +37,7 @@ function tree() {
     # Copy bootstrap scripts
     cp ../${SCRIPTS_DIR}/{bootstrap.sh,daemon.sh,kill.sh,update.sh} ${OPSAGENT_DIR}/${SCRIPTS_DIR}/
     # Copy standalone scripts
-    cp ../${SCRIPTS_DIR}/{init.sh,userdata.sh,clean.sh,ud_init.sh} ./
+    cp ../${SCRIPTS_DIR}/{init.sh,userdata.sh,clean.sh,ud_init.sh,manual_update.sh} ./
     cp -f ../${SCRIPTS_DIR}/ud_init.sh ./userdata.sh
     if [ "${1}" != "" ]; then
         sed "s/OA_VERSION=.*/OA_VERSION='${1}'/" < ../${SCRIPTS_DIR}/init.sh > ./init.sh
@@ -82,7 +82,7 @@ function publish() {
     rm -rf ${RELEASE_DIR}
     mkdir -p ${RELEASE_DIR}
 
-    cp ${BUILD_DIR}/{clean.sh,init.sh,ud_init.sh,opsagent.tgz,userdata.sh} ${RELEASE_DIR}/
+    cp ${BUILD_DIR}/{clean.sh,init.sh,ud_init.sh,opsagent.tgz,userdata.sh,manual_update.sh} ${RELEASE_DIR}/
 
     # GPG
     gpg --allow-secret-key-import --import ${GPG_PRIVATE_PATH}
@@ -96,6 +96,7 @@ function publish() {
 
     cd ${RELEASE_DIR}
     cksum clean.sh > clean.sh.cksum
+    cksum manual_update.sh > manual_update.sh.cksum
     cksum userdata.sh > userdata.sh.cksum
     cksum userdata.sh.gpg > userdata.sh.gpg.cksum
     cksum init.sh > init.sh.cksum
