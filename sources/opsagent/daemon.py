@@ -83,7 +83,8 @@ class Daemon():
             fd = file(self.pidfile,'r')
             pid = int(fd.read().strip())
             fd.close()
-        except IOError:
+            os.kill(pid,0)
+        except Exception:
             pid = None
 
         # if pid exists, daemon running, don't do anything
@@ -106,7 +107,8 @@ class Daemon():
             pf = file(self.pidfile,'r')
             pid = int(pf.read().strip())
             pf.close()
-        except IOError:
+            os.kill(pid,0)
+        except Exception:
             pid = None
 
         # no file
@@ -151,7 +153,8 @@ class Daemon():
             pf = file(self.pidfile,'r')
             pid = int(pf.read().strip())
             pf.close()
-        except IOError:
+            os.kill(pid,0)
+        except Exception:
             pid = None
 
         if not pid:

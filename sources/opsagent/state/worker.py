@@ -231,7 +231,7 @@ class StateWorker(threading.Thread):
                     else:
                         utils.log("WARNING", "Error killing delay: %s"%(e),('__kill_delay',self))
                 except Exception as e:
-                    utils.log("WARNING", "Error killing delay (probably not a problem): %s"%(e),('__kill_delay',self))
+                    utils.log("DEBUG", "Error killing delay (probably not a problem): %s"%(e),('__kill_delay',self))
                     self.__delaypid = None
                     break
         else:
