@@ -104,8 +104,11 @@ def bootstrap_mod(config):
         log("WARNING", "Can't bootstrap modules (%s): %s"%(bootstrap,e),('bootstrap_mod','utils'))
 
 # clone a git repository
-def clone_repo(config, path, name, uri):
+def clone_repo(config, path, name, uri, force=False):
     try:
+        if os.path.isdir(os.path.join(path,".git")) and (not force):
+            log("INFO","Repository already existing",('clone_repo','utils'))
+            return True
         try:
             shutil.rmtree(os.path.join(path,"%s_tmp"%name))
         except Exception as e:
@@ -137,6 +140,7 @@ def checkout_repo(config, path, name, tag, uri, n=0):
     commands = [
         ["git","checkout","master"],
         ["git","pull"],
+        ["git","fetch","--tags"],
         ["git","checkout",tag],
         ]
     spath = os.path.join(path,name)
@@ -146,15 +150,15 @@ def checkout_repo(config, path, name, tag, uri, n=0):
             log("INFO", "Command succeed %s: %s"%(" ".join(cmd),r),('checkout_repo','utils'))
         except Exception as e:
             log("WARNING", "Can't update %s repo on %s tag: %s"%(name,tag,e),('checkout_repo','utils'))
-            clone_repo(config, path, name, uri)
-            if n == 0:
-                checkout_repo(config, path, name, tag, uri, n+1)
-            else:
-                log("ERROR", "Can't switch to requested tag after cloning clean repo, aborting",('checkout_repo','utils'))
-                raise ManagerInvalidStatesRepoException
-            break
-    if n == 0:
-        log("INFO", "Repo %s in %s successfully checkout at %s tag"%(name,spath,tag),('checkout_repo','utils'))
+            raise ManagerInvalidStatesRepoException
+#            clone_repo(config, path, name, uri)
+#            if n == 0:
+#                checkout_repo(config, path, name, tag, uri, n+1)
+#            else:
+#                log("ERROR", "Can't switch to requested tag after cloning clean repo, aborting",('checkout_repo','utils'))
+#            break
+#    if n == 0:
+    log("INFO", "Repo %s in %s successfully checkout at %s tag"%(name,spath,tag),('checkout_repo','utils'))
     return True
 
 
