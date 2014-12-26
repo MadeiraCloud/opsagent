@@ -106,13 +106,13 @@ def bootstrap_mod(config):
 # clone a git repository
 def clone_repo(config, path, name, uri, force=False):
     try:
-        if os.path.isdir(os.path.join(path,".git")) and (not force):
+        if os.path.isdir(os.path.join(path,name,".git")) and (not force):
             log("INFO","Repository already existing",('clone_repo','utils'))
             return True
         try:
             shutil.rmtree(os.path.join(path,"%s_tmp"%name))
         except Exception as e:
-            log("DEBUG", "Exception while removing tmp directory %s: %s"%(os.path.normpath(path+'/'+name),e),('clone_repo','utils'))
+            log("DEBUG", "Exception while removing tmp directory %s: %s"%(os.path.normpath(path+'/'+name+"_tmp"),e),('clone_repo','utils'))
         r = subprocess.check_call(["git","clone",uri,"%s_tmp"%name],cwd=path)
         log("INFO", "repo %s from %s successfully cloned in %s: %s"%(name,uri,path,r),('clone_repo','utils'))
         try:
