@@ -316,19 +316,16 @@ class StateWorker(threading.Thread):
 
 
     ## LOAD PROCESS
-    # Load states modules
-    def __load_modules(self):
-        # avoid race
-        if self.__manager:
-            self.__manager.wait_recv()
-
+    # Update states
+    def __update_states(self, force=False):
         # clone states
         try:
             utils.clone_repo(
                 self.__config,
                 self.__config['module']['root'],
                 self.__config['module']['name'],
-                self.__config['module']['mod_repo'])
+                self.__config['module']['mod_repo'],
+                force=force)
         except ManagerInvalidStatesRepoException:
             self.__config['runtime']['clone'] = False
         else:
@@ -344,9 +341,22 @@ class StateWorker(threading.Thread):
             self.__config['runtime']['tag'] = False
         else:
             self.__config['runtime']['tag'] = True
-
         if self.__config['runtime']['clone'] or self.__config['runtime']['tag']:
+            utils.log("INFO", "Update repo succeed.",('update_states',self))
             utils.bootstrap_mod(self.__config)
+            return True
+        return False
+
+    # Load states modules
+    def __load_modules(self):
+        # avoid race
+        if self.__manager:
+            self.__manager.wait_recv()
+
+        if not self.__update_states():
+            utils.log("WARNING", "Update repo failed, forcing new download...",('load_modules',self))
+            if not self.__update_states(force=True):
+                utils.log("ERROR", "Update repo failed.",('load_modules',self))
 
         # ensure states are compatible
         self.__config['runtime']['compat'] = (True
