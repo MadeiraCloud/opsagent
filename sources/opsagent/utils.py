@@ -142,6 +142,7 @@ def checkout_repo(config, path, name, tag, uri, n=0):
         ["git","pull"],
         ["git","fetch","--tags"],
         ["git","checkout",tag],
+        ["git","fetch"],
         ]
     spath = os.path.join(path,name)
     for cmd in commands:
