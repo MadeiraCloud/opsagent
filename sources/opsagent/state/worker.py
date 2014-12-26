@@ -318,7 +318,7 @@ class StateWorker(threading.Thread):
     ## LOAD PROCESS
     # Update states
     def __update_states(self, force=False):
-        if self.__config['module']['mod_repo'] == "develop":
+        if self.__config['module']['mod_tag'] == "develop":
             force = True
 
         # clone states
