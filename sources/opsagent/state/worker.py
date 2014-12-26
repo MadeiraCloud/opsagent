@@ -318,6 +318,9 @@ class StateWorker(threading.Thread):
     ## LOAD PROCESS
     # Update states
     def __update_states(self, force=False):
+        if self.__config['module']['mod_repo'] == "develop":
+            force = True
+
         # clone states
         try:
             utils.clone_repo(
