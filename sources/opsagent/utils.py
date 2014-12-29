@@ -127,6 +127,7 @@ def clone_repo(config, path, name, uri, force=False):
 
 # link modules
 def link_repo(config, path, name):
+    try:
         try:
             os.unlink(os.path.join(config['global']['package_path'],config['module']['name']))
         except Exception as e:
