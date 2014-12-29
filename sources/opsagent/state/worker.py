@@ -329,6 +329,10 @@ class StateWorker(threading.Thread):
                 self.__config['module']['name'],
                 self.__config['module']['mod_repo'],
                 force=force)
+            utils.link_repo(
+                self.__config,
+                self.__config['module']['root'],
+                self.__config['module']['name'])
         except ManagerInvalidStatesRepoException:
             self.__config['runtime']['clone'] = False
         else:

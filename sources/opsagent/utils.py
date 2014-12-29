@@ -120,18 +120,25 @@ def clone_repo(config, path, name, uri, force=False):
         except Exception as e:
             log("DEBUG", "Exception while removing directory %s: %s"%(os.path.normpath(path+'/'+name),e),('clone_repo','utils'))
         shutil.move(os.path.join(path,"%s_tmp"%name),os.path.join(path,name))
+    except Exception as e:
+        log("ERROR", "Can't clone %s repo from %s: %s"%(name,uri,e),('clone_repo','utils'))
+        raise ManagerInvalidStatesRepoException
+    return True
+
+# link modules
+def link_repo(config, path, name):
         try:
             os.unlink(os.path.join(config['global']['package_path'],config['module']['name']))
         except Exception as e:
-            log("DEBUG", "Exception while unlinking %s: %s"%(os.path.join(config['global']['package_path'],config['module']['name']),e),('clone_repo','utils'))
+            log("DEBUG", "Exception while unlinking %s: %s"%(os.path.join(config['global']['package_path'],config['module']['name']),e),('link_repo','utils'))
         os.symlink(os.path.join(path,name,config['module']['src_salt']),os.path.join(config['global']['package_path'],config['module']['name']))
         try:
             os.unlink(os.path.join(config['global']['package_path'],config['module']['dst_adaptor']))
         except Exception as e:
-            log("DEBUG", "Exception while unlinking %s: %s"%(os.path.join(config['global']['package_path'],config['module']['dst_adaptor']),e),('clone_repo','utils'))
+            log("DEBUG", "Exception while unlinking %s: %s"%(os.path.join(config['global']['package_path'],config['module']['dst_adaptor']),e),('link_repo','utils'))
         os.symlink(os.path.join(path,name,config['module']['src_adaptor']),os.path.join(config['global']['package_path'],config['module']['dst_adaptor']))
     except Exception as e:
-        log("ERROR", "Can't clone %s repo from %s: %s"%(name,uri,e),('clone_repo','utils'))
+        log("ERROR", "Can't link modules: %s"%(e),('link_repo','utils'))
         raise ManagerInvalidStatesRepoException
     return True
 
