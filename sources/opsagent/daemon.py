@@ -48,7 +48,7 @@ class Daemon():
         # ensure file creation
         os.umask(0022)
 
-        # second fork (linux daemon trick)
+        # second fork (linux daemon 'no zombie' trick)
         try:
             pid = os.fork()
             if pid > 0:
@@ -119,12 +119,15 @@ class Daemon():
         # kill daemon
         try:
             if end:
+                # shutdown agent at the end of the current round
                 file(self.haltfile,'w+').write("end")
                 os.chmod(self.haltfile, 0640)
             elif wait:
+                # shutdown agent at the end of the current state
                 file(self.haltfile,'w+').write("wait")
                 os.chmod(self.haltfile, 0640)
             else:
+                # shutdown agent as soon as possible (kill execution)
                 file(self.haltfile,'w+').write("kill")
                 os.chmod(self.haltfile, 0640)
             while True:

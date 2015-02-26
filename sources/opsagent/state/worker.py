@@ -504,7 +504,8 @@ class StateWorker(threading.Thread):
                 # state convert
                 utils.log("INFO", "Dry-run: Begin to convert salt states...", ('__exec_salt', self))
                 salt_states = self.__state_adaptor.convert(sid, module, copy.deepcopy(parameter))
-                # exec salt state
+
+                # exec salt states
                 utils.log("INFO", "Dry-run: Begin to execute salt states...", ('__exec_salt', self))
                 (result, comment, out_log) = self.__state_runner.exec_salt(salt_states)
             except Exception as err:
@@ -607,7 +608,6 @@ class StateWorker(threading.Thread):
 
                 # Run state
                 utils.log("DEBUG", "Creating state exec process ...",('__run_state',self))
-#                self.__executing = True
                 if self.__run:
                     self.__executing = multiprocessing.Process(target=self.__exec_salt, args=(state['id'],
                                                                                               state['module'],
@@ -626,6 +626,7 @@ class StateWorker(threading.Thread):
                 # Reset running values
                 tmp_e = self.__executing
                 self.__executing = None
+                # references counter may be wrong/slow and memory takes time to free
                 del tmp_e
                 del mem_manager
                 del results
@@ -668,7 +669,6 @@ class StateWorker(threading.Thread):
                                       result=FAIL,
                                       comment=err,
                                       out_log=None))
-#            self.__run = False
             return False
         return True
 
@@ -720,8 +720,7 @@ class StateWorker(threading.Thread):
                     else:
                         utils.log("WARNING", "Something went wrong, retrying current state in %s seconds"%(WAIT_STATE_RETRY),('__runner',self))
                         time.sleep(WAIT_STATE_RETRY)
-#            else:
-#                utils.log("WARNING", "Execution aborted",('__runner',self))
+
         utils.log("WARNING", "Execution aborted",('__runner',self))
 
 
