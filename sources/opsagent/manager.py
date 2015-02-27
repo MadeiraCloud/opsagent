@@ -57,7 +57,7 @@ class Manager(WebSocketClient):
             codes.AGENT_UPDATE  : self.__act_update,
             codes.RECIPE_DATA   : self.__act_recipe,
             codes.WAIT_DATA     : self.__act_wait,
-            }
+        }
 
         # init
         self.__error_dir = self.__init_dir()
@@ -128,9 +128,9 @@ class Manager(WebSocketClient):
         utils.my_subprocess([[
             "echo","*/1 * * * * %s %s %s %s %s %s >> %s 2>&1"%(
                 os.path.join(self.__config['global']['scripts_path'],'update.sh'),
-                self.__config['userdata']['ws_uri'],
+                url,
                 self.__config['userdata']['app_id'],
-                self.__config['userdata']['version'],
+                version,
                 self.__config['userdata']['base_remote'],
                 self.__config['userdata']['gpg_key_uri'],
                 os.path.join(self.__config['global']['log_path'],'bootstrap.log')),

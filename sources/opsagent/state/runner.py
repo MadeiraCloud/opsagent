@@ -292,11 +292,11 @@ class StateRunner(object):
 
             import subprocess
             if self.os_type in ['centos', 'redhat']:    # install with rpm on centos|redhat
-                cmd = 'rpm -ivh ' + epel_rpm
+                cmd = 'rpm -ivh ' + epel_rpm + '; yum upgrade -y ca-certificates --disablerepo=epel;'
             else:   # install with yum on amazon ami
-                cmd = 'yum -y install epel-release'
+                cmd = 'yum -y install epel-release;'
 
-            cmd += '; yum-config-manager --enable epel'
+            cmd += 'yum-config-manager --enable epel'
 
             devnull = open('/dev/null', 'w')
             subprocess.Popen(
