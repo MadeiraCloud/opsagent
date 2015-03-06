@@ -5,6 +5,10 @@ echo
 echo "**** TESTS BEGIN ****"
 echo
 
+echo
+echo "Requirements: ws4py, cherrypy"
+echo
+
 TEST_DIR="/tmp/visualops"
 
 #rm -rf $TEST_DIR
@@ -35,13 +39,13 @@ echo
 echo
 echo "-----> Start Test Web Server <-----"
 python ws_server.py &
-#sleep 6
+sleep 6
 echo "-----> Test Web Server Started <-----"
 echo
 
 echo
 echo "-----> Manager Unit Tests Begin <-----"
-#python manager.py
+python manager.py
 echo "-----> Manager Unit Tests End <-----"
 echo
 
