@@ -1,0 +1,87 @@
+{
+  "component": {
+    "init": {
+      "state": [
+        {
+          "id": "state-7E596E8A-28CD-4578-8E85-15D020632A00",
+          "module": "linux.cmd",
+          "_": "1 [prepare] Set run number - True",
+          "parameter": {
+            "cmd": "if [ ! -f /tmp/run ]; then echo 0 > /tmp/run; elif [ $(cat /tmp/run) -eq 5 ]; then echo 0 > /tmp/run; fi; RUN=$(cat /tmp/run); RUN=$((RUN+1)); echo $RUN>/tmp/run"
+          }
+        },
+        {
+          "id": "state-7B5E6E8A-17CD-4578-8E85-15D020632F1F",
+          "module": "linux.file",
+          "_": "2 [prepare] set service file - True",
+          "parameter": {
+            "path": "/etc/init.d/food",
+            "mode": "0755",
+            "content": "#!/bin/bash\n# Provides: food\n# Required-Start:\n# Should-Start:\n# Required-Stop:\n# Should-Stop:\n# Default-Start:  3 4 5\n# Default-Stop:   0 6\n# Short-Description: Foo Daemon\n# Description: Runs foo\n\nRUN=$(cat /tmp/run)\n\nif [ $RUN -eq 1 ]; then\n    echo -n > /tmp/food\nfi\n\ncase \"$1\" in\n    start)\n        echo \"start ${RUN}\" >> /tmp/food\n        touch /tmp/food.status\n        ;;\n    stop)\n        echo \"stop ${RUN}\" >> /tmp/food\n        rm -f /tmp/food.status\n        ;;\n    restart)\n        echo \"restart ${RUN}\" >> /tmp/food\n        ;;\n    status)\n        echo \"status ${RUN}\" >> /tmp/food\n        if [ -f /tmp/food.status ]; then\n            exit 0\n        else\n            exit 1\n        fi\n        ;;\n\n    *)\n        echo \"Usage: $0 {start|stop|restart|status}\"\n        exit 1\n        ;;\nesac\n\nexit 0"
+          }
+        },
+
+
+        {
+          "id": "state-7E596E8A-28CD-4578-8E85-15D020632A01",
+          "_": "3 [test1] stop sshd service - True",
+          "module": "linux.cmd",
+          "parameter": {
+            "cmd": "service sshd stop ; service crond stop"
+          }
+        },
+        {
+          "id": "state-7E596E8A-28CD-4578-8E85-15D020632A03",
+          "_": "6 [test1] set sshd as running - True",
+          "module": "linux.service",
+          "parameter": {
+            "name": ["sshd","crond"]
+          }
+        },
+        {
+          "id": "state-7E596E8A-28CD-4578-8E85-15D020632A04",
+          "_": "7 [test1] check sshd running - True",
+          "module": "linux.cmd",
+          "parameter": {
+            "cmd": "service sshd status | grep 'is running'"
+          }
+        },
+        {
+          "id": "state-7E596E8A-28CD-4578-8E85-15D020632A05",
+          "_": "8 [test1] check crond running - True",
+          "module": "linux.cmd",
+          "parameter": {
+            "cmd": "service crond status | grep 'is running'"
+          }
+        },
+
+
+        {
+          "id": "state-7E596E8A-28CD-4578-8E85-15D020632A33",
+          "module": "linux.cmd",
+          "_": "9 [test2] check ssh status - True",
+          "parameter": {
+            "cmd": "echo -n /tmp/food"
+          }
+        },
+        {
+          "id": "state-0D5969B2-5786-46FD-A997-A13DC711CD34",
+          "module": "linux.service",
+          "_": "10 [test2] set food as watched - True",
+          "parameter": {
+            "watch": true,
+            "name": ["food"]
+          }
+        },
+        {
+          "id": "state-7E596E8A-28CD-4578-8E85-15D020632A65",
+          "module": "linux.cmd",
+          "_": "11 [test2] Set run number - True",
+          "parameter": {
+            "cmd": "cat /tmp/food | grep restart"
+          }
+        }
+      ]
+    }
+  }
+}

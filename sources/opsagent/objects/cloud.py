@@ -18,7 +18,8 @@ from opsagent import utils
 
 # Defines
 WAIT_RETRY=5
-TIMEOUT=30
+TIMEOUT=2
+MAX_RETRY=10
 
 # Temporary openstack IP define
 OPENSTACK_UID_URI="http://169.254.169.254/openstack/latest/meta_data.json"
@@ -34,7 +35,7 @@ def get_cloud_data(url):
 
 # Get OpenStack instance ID
 def get_os_iid():
-    res = urllib2.urlopen(OPENSTACK_UID_URI)
+    res = urllib2.urlopen(OPENSTACK_UID_URI, timeout=TIMEOUT)
     meta = json.load(res)
     iid = meta['uuid']
     utils.log("INFO", "Instance ID from openstack meta: %s."%iid,('get_os_data','cloud'))
@@ -52,7 +53,9 @@ def parse_ud(ud, keys):
 # Get userdata
 def userdata(config, manager):
     ud = None
-    while not ud:
+    i = 0
+    max_retry = int(config["network"].get('get_retry',0))
+    while ud is None:
         if not manager.running():
             utils.log("WARNING", "Execution aborting, exiting ...",('userdata','cloud'))
             return None
@@ -60,17 +63,23 @@ def userdata(config, manager):
         try:
             ud = get_cloud_data(config['network']['userdata'])
         except CLOUDNotFoundException:
+            i += 1
             utils.log("WARNING", "Userdata not found. Retrying in %s seconds"%(WAIT_RETRY),('userdata','cloud'))
             time.sleep(WAIT_RETRY)
         except Exception as e:
+            i += 1
             utils.log("WARNING", "User data failure, error: '%s'. Retrying in %s seconds"%(e,WAIT_RETRY),('userdata','cloud'))
             time.sleep(WAIT_RETRY)
+        if (i > max_retry) and max_retry:
+            ud=""
     return parse_ud(ud, ["APP_ID","WS_URI","VERSION","BASE_REMOTE","GPG_KEY_URI"])
 
 # Get instance ID from CLOUD
 def instance_id(config, manager):
     iid = None
-    while not iid:
+    i = 0
+    max_retry = int(config["network"].get('get_retry',0))
+    while iid is None:
         if not manager.running():
             utils.log("WARNING", "Execution aborting, exiting ...",('instance_id','cloud'))
             return None
@@ -88,9 +97,13 @@ def instance_id(config, manager):
             except CLOUDNotFoundException:
                 utils.log("ERROR", "Instance ID not found, retrying in '%s' seconds"%(WAIT_RETRY),('instance_id','cloud'))
                 time.sleep(WAIT_RETRY)
+                i += 1
             except Exception as e:
                 utils.log("ERROR", "Instance ID failure, unknown error: '%s', retrying in '%s' seconds"%(e,WAIT_RETRY),('instance_id','cloud'))
                 time.sleep(WAIT_RETRY)
+                i += 1
+        if (i > max_retry) and max_retry:
+            iid=""
     return iid
 
 # Get token from disk
