@@ -51,7 +51,7 @@ echo
 
 echo
 echo "-----> Stop Test Web Server <-----"
-kill -9 $(ps | grep -i "python ws_server.py" | grep -v grep | cut -d ' ' -f 1)
+kill -9 $(ps x | sed -e 's/^[[:space:]]*//' | grep -i "python ws_server.py" | grep -v grep | cut -d ' ' -f 1)
 sleep 1
 echo "-----> Test Web Server Stopped <-----"
 echo
