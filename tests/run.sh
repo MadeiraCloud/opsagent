@@ -32,7 +32,9 @@ export PYTHONPATH=${PYTHONPATH}:$PWD/../sources:$TEST_DIR/env/site-packages
 echo
 echo "-----> Basic Unit Tests Begin <-----"
 python checksum.py
+CHECKSUM_RES=$?
 python config.py
+CONFIG_RES=$?
 echo "-----> Basic Unit Tests End <-----"
 echo
 
@@ -46,6 +48,7 @@ echo
 echo
 echo "-----> Manager Unit Tests Begin <-----"
 python manager.py
+MANAGER_RES=$?
 echo "-----> Manager Unit Tests End <-----"
 echo
 
@@ -58,16 +61,48 @@ echo
 
 echo "Run Worker Tests? [y/N]"
 read RUN
+WORKER_RES=-1
 if [ "$RUN" = "y" ]; then
     echo
     echo "-----> Worker Unit Tests Begin <-----"
     python worker.py
+    WORKER_RES=$?
     echo "-----> Worker Unit Tests End <-----"
     echo
 else
     echo "-- Not running Worker tests --"
 fi
 
+
 echo
 echo "**** TESTS END ****"
+echo
+
+echo
+echo "**** RESULTS ****"
+echo
+if [ "$CHECKSUM_RES" -eq 0 ]; then
+    echo "Checksum test succeed!"
+else
+    echo "Checksum test failed!"
+fi
+if [ "$CONIFG_RES" -eq 0 ]; then
+    echo "Config test succeed!"
+else
+    echo "Config test failed!"
+fi
+if [ "$MANAGER_RES" -eq 0 ]; then
+    echo "Manager test succeed!"
+else
+    echo "Manager test failed!"
+fi
+if [ "$WORKER_RES" -eq 0 ]; then
+    echo "Worker test succeed!"
+elif [ "$WORKER_RES" -eq -1 ]; then
+    echo "Worker test untested."
+else
+    echo "Worker test failed!"
+fi
+echo
+echo "**** RESULTS END ****"
 echo
