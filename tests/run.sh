@@ -86,7 +86,7 @@ if [ $CHECKSUM_RES -eq 0 ]; then
 else
     echo "Checksum test failed!"
 fi
-if [ $CONIFG_RES -eq 0 ]; then
+if [ $CONFIG_RES -eq 0 ]; then
     echo "Config test succeed!"
 else
     echo "Config test failed!"
