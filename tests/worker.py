@@ -18,9 +18,10 @@ from opsagent.state.worker import StateWorker
 def run():
     scenarios = os.listdir("scenarios")
 
-    c = Config("opsagent.conf")
+    c = Config(os.path.dirname(os.path.realpath("opsagent.conf")))
     c.parse_file()
     config = c.getConfig()
+    config['runtime']['config_path'] = os.path.dirname(os.path.realpath("opsagent.conf"))
     sw = StateWorker(config=config)
 
     for sf in scenarios:
