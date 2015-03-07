@@ -65,7 +65,7 @@ WORKER_RES=-1
 if [ "$RUN" = "y" ]; then
     echo
     echo "-----> Worker Unit Tests Begin <-----"
-    sudo -E python worker.py
+    sudo PYTHONPATH=${PYTHONPATH}:$PWD/../sources:$TEST_DIR/env/site-packages python worker.py
     WORKER_RES=$?
     echo "-----> Worker Unit Tests End <-----"
     echo
