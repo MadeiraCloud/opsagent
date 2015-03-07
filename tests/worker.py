@@ -60,6 +60,7 @@ def run():
                     return -1
                 else:
                     print "State #%s succeed"%(sw.get_status())
+                sw.incr_status()
         except Exception as e:
             print "Error executing state, file %s: %s"%(os.path.join("scenarios",sf),e)
             return -1

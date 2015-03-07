@@ -409,7 +409,10 @@ class StateWorker(threading.Thread):
         return self.__status
     def get_states(self):
         return self.__states
-    
+    def inc_states(self):
+        self.__status += 1
+
+
     # Load new recipe
     @cv
     def load(self, version=None, states=None):
