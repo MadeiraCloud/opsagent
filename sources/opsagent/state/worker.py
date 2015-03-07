@@ -409,7 +409,7 @@ class StateWorker(threading.Thread):
         return self.__status
     def get_states(self):
         return self.__states
-    def inc_states(self):
+    def inc_status(self):
         self.__status += 1
 
 
