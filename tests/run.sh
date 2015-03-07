@@ -6,7 +6,7 @@ echo "**** TESTS BEGIN ****"
 echo
 
 echo
-echo "Requirements: ws4py, cherrypy"
+echo "Requirements: ws4py, cherrypy, msgpack_pure, jinja2"
 echo
 
 TEST_DIR="/tmp/visualops"
@@ -22,12 +22,14 @@ mkdir -p $TEST_DIR \
       $TEST_DIR/log \
       $TEST_DIR/watch
 
+cp -r $PWD/../sources/opsagent $TEST_DIR/env/site-packages/
+
 echo -n "testtoken" > $TEST_DIR/opsagent.token
 
 echo "Enter sudo password to create conf directory"
 sudo mkdir -p /var/lib/visualops/opsagent
 
-export PYTHONPATH=${PYTHONPATH}:$PWD/../sources:$TEST_DIR/env/site-packages
+export PYTHONPATH=${PYTHONPATH}:$TEST_DIR/env/site-packages
 
 echo
 echo "-----> Basic Unit Tests Begin <-----"
@@ -65,7 +67,7 @@ WORKER_RES=-1
 if [ "$RUN" = "y" ]; then
     echo
     echo "-----> Worker Unit Tests Begin <-----"
-    sudo PYTHONPATH=${PYTHONPATH}:$PWD/../sources:$TEST_DIR/env/site-packages python worker.py
+    sudo PYTHONPATH=${PYTHONPATH}:$TEST_DIR/env/site-packages python worker.py
     WORKER_RES=$?
     echo "-----> Worker Unit Tests End <-----"
     echo
