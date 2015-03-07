@@ -11,7 +11,9 @@ echo
 
 TEST_DIR="/tmp/visualops"
 
-rm -rf $TEST_DIR
+echo "Enter sudo password to remove test directory"
+sudo rm -rf $TEST_DIR
+
 mkdir -p $TEST_DIR \
       $TEST_DIR/env/site-packages \
       $TEST_DIR/bootstrap/opsagent/scripts \
