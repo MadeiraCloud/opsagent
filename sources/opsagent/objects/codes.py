@@ -21,6 +21,10 @@ AGENT_UPDATE="AgentUpdate"
 RECIPE_DATA="RecipeMetadata"
 # Wait Server Push
 WAIT_DATA="State"
+# Test message
+TEST="Test"
+# Test result message
+TEST_ANS="TestAns"
 # Agent Log Report
 STATELOG="StateLog"
 

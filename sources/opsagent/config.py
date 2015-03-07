@@ -67,6 +67,7 @@ class Config():
         'network': {
             'instance_id': "http://169.254.169.254/latest/meta-data/instance-id",
             'userdata': "http://169.254.169.254/latest/user-data",
+            'get_retry': '0',
             },
         'salt': {
             'pkg_cache': '/var/cache/pkg',

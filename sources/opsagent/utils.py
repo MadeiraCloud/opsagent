@@ -263,7 +263,7 @@ def update_config_file(config, key, value):
             f.write(content)
     except Exception as e:
         log("WARNING",
-            "Can't save %s in config file '%s': %e"%(key,config['runtime']['config_path'],e),('update_config_file','utils'))
+            "Can't save %s in config file '%s': %s"%(key,config['runtime']['config_path'],e),('update_config_file','utils'))
         return False
     return True
 

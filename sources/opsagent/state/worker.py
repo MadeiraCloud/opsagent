@@ -402,6 +402,17 @@ class StateWorker(threading.Thread):
 
         utils.log("DEBUG", "Modules loaded",('load_modules',self))
 
+    # External access
+    def load_modules(self):
+        return self.__load_modules()
+    def get_status(self):
+        return self.__status
+    def get_states(self):
+        return self.__states
+    def inc_status(self):
+        self.__status += 1
+
+
     # Load new recipe
     @cv
     def load(self, version=None, states=None):
@@ -639,6 +650,10 @@ class StateWorker(threading.Thread):
             utils.log("ERROR", "Unknown exception: '%s'"%(e),('__run_state',self))
             (result,comment,out_log) = (FAIL,"Internal error: '%s'"%(e),None)
         return (result,comment,out_log)
+
+    # External access
+    def run_state(self):
+        return self.__run_state()
 
     # Runner init phase
     def __runner_init(self):

@@ -42,7 +42,6 @@ class OpsAgentException(Exception): pass
 # Custom imports
 from opsagent.utils import log
 
-
 # Decorators
 def GeneralException(func):
     def __action_with_decorator(self, *args, **kwargs):

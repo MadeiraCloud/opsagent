@@ -57,6 +57,8 @@ class Manager(WebSocketClient):
             codes.AGENT_UPDATE  : self.__act_update,
             codes.RECIPE_DATA   : self.__act_recipe,
             codes.WAIT_DATA     : self.__act_wait,
+            codes.TEST          : self.__act_test,
+            codes.TEST_ANS      : self.__act_test_ans,
         }
 
         # init
@@ -228,6 +230,18 @@ class Manager(WebSocketClient):
             utils.log("DEBUG", "State '%s' added to done list"%(state_id),('__act_wait',self))
         else:
             utils.log("WARNING", "Wrong version number, curent='%s', received='%s'"%(curent_version,version),('__act_wait',self))
+
+    # Perform Unit Test
+    def __act_test(self, data):
+        utils.log("INFO", "Test action",('__act_test',self))
+        self.__config['init'] = self.__get_id()
+        self.send_json(send.test(self.__config, self.__error_proc+self.__error_dir))
+    # Check Unit Test
+    def __act_test_ans(self, data):
+        utils.log("INFO", "Test result",('__act_test_ans',self))
+        print "Manager Test %s"%("SUCCESS" if data.get("result") else "FAIL: %s"%(data.get("error")))
+        self.__config["runtime"]["test"] = data.get("result")
+        self.stop()
     ##
 
 
@@ -279,9 +293,9 @@ class Manager(WebSocketClient):
         proc = self.__config['global']['proc']
         try:
             if not os.path.isdir(proc):
-                return self.__mount_proc_try(proc, directory=False)
+                return [self.__mount_proc_try(proc, directory=False)]
             elif not os.path.isfile(os.path.join(proc, 'stat')):
-                return self.__mount_proc_try(proc, directory=True)
+                return [self.__mount_proc_try(proc, directory=True)]
             self.__config['runtime']['proc'] = True
         except Exception as e:
             err = "Unknown error: can't mount procfs on %s: '%s'. FATAL"%(e,proc)
@@ -407,6 +421,7 @@ class Manager(WebSocketClient):
     ## WEBSOCKET ABSTRACT METHOD IMPLEMENTATION
     # On socket closing
     def closed(self, code, reason=None):
+        print "Socket closed"
         utils.log("INFO", "Socket closed: %s, code '%s'"%(reason,code),('closed',self))
         self.__connected = False
         self.__run = False
@@ -414,6 +429,7 @@ class Manager(WebSocketClient):
 
     # On socket opening
     def opened(self):
+        print "Socket opened"
         utils.log("INFO", "Socket opened, initiating handshake ...",('opened',self))
         self.__connected = True
         self.send_json(send.handshake(self.__config, self.__error_proc+self.__error_dir))
@@ -421,6 +437,7 @@ class Manager(WebSocketClient):
 
     # On message received
     def received_message(self, raw_data):
+        print "Message received"
         utils.log("INFO", "New message received from backend",('received_message',self))
         self.received_m(raw_data)
         utils.log("INFO", "Message treated",('received_message',self))
