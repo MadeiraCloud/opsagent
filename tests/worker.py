@@ -67,4 +67,4 @@ def run():
     return 0
 
 if __name__ == '__main__':
-    ut.ut(run,__file__)
+    exit(ut.ut(run,__file__))
