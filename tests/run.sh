@@ -65,7 +65,7 @@ WORKER_RES=-1
 if [ "$RUN" = "y" ]; then
     echo
     echo "-----> Worker Unit Tests Begin <-----"
-    sudo python worker.py
+    sudo -E python worker.py
     WORKER_RES=$?
     echo "-----> Worker Unit Tests End <-----"
     echo
