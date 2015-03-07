@@ -40,7 +40,7 @@ def run():
             print "Error loading json (empty states), file: %s"%os.path.join("scenarios",sf)
             return -1
         try:
-            sw.load(version=sf,states=states)
+            sw.load(version=sf,states=states['component']['init']['state'])
         except Exception as e:
             print "Error loading states, file %s: %s"%(os.path.join("scenarios",sf),e)
             return -1
@@ -61,7 +61,7 @@ def run():
                 else:
                     print "State #%s succeed"%(sw.get_status())
         except Exception as e:
-            print "Error loading modules, file %s: %s"%(os.path.join("scenarios",sf),e)
+            print "Error executing state, file %s: %s"%(os.path.join("scenarios",sf),e)
             return -1
         print "--- File tested: %s"%(os.path.join("scenarios",sf))
     return 0
