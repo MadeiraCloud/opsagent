@@ -411,6 +411,10 @@ class StateWorker(threading.Thread):
         return self.__states
     def inc_status(self):
         self.__status += 1
+    def reset_status(self):
+        self.__status = 0
+        if done:
+            self.__done[:] = []
 
 
     # Load new recipe

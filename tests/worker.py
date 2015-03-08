@@ -40,6 +40,7 @@ def run():
         if not states:
             print "Error loading json (empty states), file: %s"%os.path.join("scenarios",sf)
             return -1
+        sw.reset_status()
         try:
             sw.load(version=sf,states=states['component']['init']['state'])
         except Exception as e:
