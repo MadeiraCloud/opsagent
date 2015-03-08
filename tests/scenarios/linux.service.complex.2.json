@@ -60,7 +60,7 @@
           "module": "linux.cmd",
           "_": "7 [test2] reset run status - True",
           "parameter": {
-            "cmd": "rm -f /tmp/run"
+            "cmd": "echo 0 > /tmp/run"
           }
         },
         {
