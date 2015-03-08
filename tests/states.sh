@@ -2,6 +2,7 @@
 # States Unit Tests bridge
 
 TEST_DIR="/opt/visualops"
+O_PWD=$PWD
 service opsagentd status
 STATUS=$?
 service opsagentd stop
@@ -15,6 +16,7 @@ fi
 git pull
 cd ${TEST_DIR}/bootstrap/salt/tests
 ./run.sh 3
+cd $O_PWD
 ln -s ${TEST_DIR}/bootstrap/salt/tests tests
 chmod 777 tests
 if [ $STATUS -eq 0 ]; then
