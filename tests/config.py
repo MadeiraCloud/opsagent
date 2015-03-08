@@ -37,7 +37,7 @@ c_test = {
         "name":"salt",
         "bootstrap":"scripts/bootstrap.sh",
         "mod_repo":"https://github.com/MadeiraCloud/salt.git",
-        "mod_tag":"v2015-02-27",
+        "mod_tag":"develop",
     },
     'salt': {
         'pkg_cache': '/tmp/visualops/env/var/cache/pkg',
