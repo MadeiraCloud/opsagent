@@ -62,6 +62,16 @@
           "parameter": {
             "cmd": "echo -n /tmp/food ; rm -f /tmp/food.status /tmp/foo /tmp/run"
           }
+        },
+        {
+          "id": "state-7B5E6E8A-17CD-4578-8E85-15D02063FFFF",
+          "module": "linux.file",
+          "_": "8 [test2] set service file - True",
+          "parameter": {
+            "path": "/tmp/foo",
+            "mode": "0755",
+            "content": "1"
+          }
         }
       ]
     }

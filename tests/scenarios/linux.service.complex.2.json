@@ -56,16 +56,6 @@
 
 
         {
-          "id": "state-7B5E6E8A-17CD-4578-8E85-15D02063FFFF",
-          "module": "linux.file",
-          "_": "7 [test2] set service file - True",
-          "parameter": {
-            "path": "/tmp/foo",
-            "mode": "0755",
-            "content": "2"
-          }
-        },
-        {
           "id": "state-0D5969B2-5786-46FD-A997-A13DC711CD34",
           "module": "linux.service",
           "_": "8 [test2] set food as watched - True",
