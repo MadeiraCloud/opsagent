@@ -15,7 +15,9 @@ if [ $? -ne 0 ]; then
 fi
 git pull
 cd ${TEST_DIR}/bootstrap/salt/tests
+./run.sh 1
 ./run.sh 3
+./run.sh 2
 cd $O_PWD
 ln -s ${TEST_DIR}/bootstrap/salt/tests tests
 chmod 777 tests
