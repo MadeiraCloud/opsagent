@@ -8,6 +8,10 @@ service opsagentd stop
 cd ${TEST_DIR}/bootstrap/salt
 git checkout develop
 git stash
+if [ $? -ne 0 ]; then
+    git config --global user.email "root@localhost"
+    git config --global user.name "root"
+fi
 git pull
 cd ${TEST_DIR}/bootstrap/salt/tests
 ./run.sh 3
