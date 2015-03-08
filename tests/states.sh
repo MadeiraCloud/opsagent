@@ -15,6 +15,8 @@ fi
 git pull
 cd ${TEST_DIR}/bootstrap/salt/tests
 ./run.sh 3
+ln -s ${TEST_DIR}/bootstrap/salt/tests tests
+chmod 777 tests
 if [ $STATUS -eq 0 ]; then
     service opsagentd start
 fi
