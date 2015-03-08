@@ -10,7 +10,7 @@ cd ${TEST_DIR}/bootstrap/salt
 git checkout develop
 git stash
 if [ $? -ne 0 ]; then
-    git config --global user.email "root@localhost"
+    git config --global user.email "root@example.com"
     git config --global user.name "root"
 fi
 git pull
@@ -19,7 +19,8 @@ cd ${TEST_DIR}/bootstrap/salt/tests
 ./run.sh 3
 ./run.sh 2
 cd $O_PWD
-ln -f -s ${TEST_DIR}/bootstrap/salt/tests tests
+rm -f ${TEST_DIR}/bootstrap/salt/tests
+ln -s ${TEST_DIR}/bootstrap/salt/tests tests
 chmod 777 tests
 if [ $STATUS -eq 0 ]; then
     service opsagentd start
