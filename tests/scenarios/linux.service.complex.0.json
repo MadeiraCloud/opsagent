@@ -58,15 +58,23 @@
         {
           "id": "state-7E596E8A-28CD-4578-8E85-15D020632A33",
           "module": "linux.cmd",
-          "_": "7 [test2] reset food status - True",
+          "_": "7 [test2] reset run status - True",
           "parameter": {
-            "cmd": "echo -n /tmp/food ; rm -f /tmp/food.status /tmp/foo /tmp/run"
+            "cmd": "rm -f /tmp/run"
+          }
+        },
+        {
+          "id": "state-7E596E8A-28CD-4578-8E85-15D020632A34",
+          "module": "linux.cmd",
+          "_": "8 [test2] reset food status - True",
+          "parameter": {
+            "cmd": "echo -n /tmp/food ; rm -f /tmp/food.status /tmp/foo"
           }
         },
         {
           "id": "state-7B5E6E8A-17CD-4578-8E85-15D02063FFFF",
           "module": "linux.file",
-          "_": "8 [test2] set service file - True",
+          "_": "9 [test2] set service file - True",
           "parameter": {
             "path": "/tmp/foo",
             "mode": "0755",

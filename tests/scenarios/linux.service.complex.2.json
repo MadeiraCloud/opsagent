@@ -56,6 +56,14 @@
 
 
         {
+          "id": "state-7E596E8A-28CD-4578-8E85-15D020632A33",
+          "module": "linux.cmd",
+          "_": "7 [test2] reset run status - True",
+          "parameter": {
+            "cmd": "rm -f /tmp/run"
+          }
+        },
+        {
           "id": "state-0D5969B2-5786-46FD-A997-A13DC711CD34",
           "module": "linux.service",
           "_": "8 [test2] set food as watched - True",

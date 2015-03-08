@@ -58,7 +58,7 @@ def run():
                 print "comment = '%s'"%comment
                 print "out_log = '%s'"%out_log
                 if not result:
-                    print "State #%s failed"%(sw.get_status())
+                    print "State #%s failed, file %s"%(sw.get_status(),os.path.join("scenarios",sf))
                     return -1
                 else:
                     print "State #%s succeed"%(sw.get_status())
