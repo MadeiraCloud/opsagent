@@ -17,6 +17,7 @@ from opsagent.state.worker import StateWorker
 
 def run():
     scenarios = os.listdir("scenarios")
+    scenarios.sort()
 
     c = Config(os.path.join(os.path.dirname(os.path.realpath("opsagent.conf")),"opsagent.conf"))
     c.parse_file()
@@ -39,6 +40,7 @@ def run():
         if not states:
             print "Error loading json (empty states), file: %s"%os.path.join("scenarios",sf)
             return -1
+        sw.reset_status()
         try:
             sw.load(version=sf,states=states['component']['init']['state'])
         except Exception as e:
@@ -56,7 +58,7 @@ def run():
                 print "comment = '%s'"%comment
                 print "out_log = '%s'"%out_log
                 if not result:
-                    print "State #%s failed"%(sw.get_status())
+                    print "State #%s failed, file %s"%(sw.get_status(),os.path.join("scenarios",sf))
                     return -1
                 else:
                     print "State #%s succeed"%(sw.get_status())

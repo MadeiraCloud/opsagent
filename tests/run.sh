@@ -5,6 +5,17 @@ echo
 echo "**** TESTS BEGIN ****"
 echo
 
+if [ "$1" = "-h" ]; then
+    echo "Usage: $0 [-y]"
+    exit 0
+fi
+
+if [ "$1" = "-y" ]; then
+    Y=1
+else
+    Y=0
+fi
+
 echo
 echo "Requirements: ws4py, cherrypy, msgpack_pure, jinja2"
 echo
@@ -63,8 +74,12 @@ sleep 1
 echo "-----> Test Web Server Stopped <-----"
 echo
 
-echo "Run Worker Tests? [y/N]"
-read RUN
+if [ $Y -eq 1 ]; then
+    RUN="y"
+else
+    echo "Run Worker Tests? [y/N]"
+    read RUN
+fi
 WORKER_RES=-1
 if [ "$RUN" = "y" ]; then
     echo
