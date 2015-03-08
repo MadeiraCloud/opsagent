@@ -17,6 +17,7 @@ from opsagent.state.worker import StateWorker
 
 def run():
     scenarios = os.listdir("scenarios")
+    scenarios.sort()
 
     c = Config(os.path.join(os.path.dirname(os.path.realpath("opsagent.conf")),"opsagent.conf"))
     c.parse_file()

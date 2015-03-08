@@ -60,7 +60,7 @@
           "module": "linux.cmd",
           "_": "7 [test2] reset food status - True",
           "parameter": {
-            "cmd": "echo -n /tmp/food ; rm -f /tmp/food.status"
+            "cmd": "echo -n /tmp/food ; rm -f /tmp/food.status /tmp/foo /tmp/run"
           }
         }
       ]
