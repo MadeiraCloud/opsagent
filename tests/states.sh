@@ -9,7 +9,7 @@ cd ${TEST_DIR}/bootstrap/salt
 git checkout develop
 git stash
 git pull
-cd ${TEST_DIR}/bootstrap/salt/test
+cd ${TEST_DIR}/bootstrap/salt/tests
 ./run.sh 3
 if [ $STATUS -eq 0 ]; then
     service opsagentd start
