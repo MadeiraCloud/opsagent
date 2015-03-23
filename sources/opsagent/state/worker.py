@@ -348,7 +348,7 @@ class StateWorker(threading.Thread):
             self.__config['runtime']['tag'] = False
         else:
             self.__config['runtime']['tag'] = True
-        if self.__config['runtime']['clone'] or self.__config['runtime']['tag']:
+        if self.__config['runtime']['clone'] and self.__config['runtime']['tag']:
             utils.log("INFO", "Update repo succeed.",('update_states',self))
             utils.bootstrap_mod(self.__config)
             return True
