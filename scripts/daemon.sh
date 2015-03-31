@@ -21,7 +21,7 @@ PID_FILE="/tmp/opsagentd.pid"
 case "$1" in
     start)
         echo "Starting opsagent"
-        ${OA_ROOT}/env/bin/opsagent -c /etc/opsagent.conf start
+        nice -n 10 ${OA_ROOT}/env/bin/opsagent -c /etc/opsagent.conf start
         ;;
     stop)
         echo "Stopping opsagent"
@@ -36,7 +36,7 @@ case "$1" in
         ;;
     restart)
         echo "Restarting opsagent"
-        ${OA_ROOT}/env/bin/opsagent -c /etc/opsagent.conf restart
+        nice -n 10 ${OA_ROOT}/env/bin/opsagent -c /etc/opsagent.conf restart
         ;;
     force-restart)
         echo "Killing opsagent..."
@@ -45,7 +45,7 @@ case "$1" in
         done
         rm -f $PID_FILE
         sleep 1
-        ${OA_ROOT}/env/bin/opsagent -c /etc/opsagent.conf start
+        nice -n 10 ${OA_ROOT}/env/bin/opsagent -c /etc/opsagent.conf start
         ;;
     stop-wait)
         echo "Stopping opsagent waiting state end"
@@ -53,7 +53,7 @@ case "$1" in
         ;;
     restart-wait)
         echo "Restarting opsagent waiting state end"
-        ${OA_ROOT}/env/bin/opsagent -c /etc/opsagent.conf restart-wait
+        nice -n 10 ${OA_ROOT}/env/bin/opsagent -c /etc/opsagent.conf restart-wait
         ;;
     stop-end)
         echo "Stopping opsagent waiting recipe end"
@@ -61,7 +61,7 @@ case "$1" in
         ;;
     restart-end)
         echo "Restarting opsagent waiting recipe end"
-        ${OA_ROOT}/env/bin/opsagent -c /etc/opsagent.conf restart-end
+        nice -n 10 ${OA_ROOT}/env/bin/opsagent -c /etc/opsagent.conf restart-end
         ;;
     status)
         ${OA_ROOT}/env/bin/opsagent status
