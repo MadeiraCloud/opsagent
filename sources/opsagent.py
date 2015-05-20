@@ -116,6 +116,7 @@ class OpsAgentRunner(Daemon):
         for sig in [signal.SIGTERM, signal.SIGINT, signal.SIGHUP, signal.SIGQUIT]:
             try: signal.signal(sig, handler)
             except Exception: pass #pass some signals if not POSIX
+            time.sleep(0.1)
 
         # start
         self.sw.start()
